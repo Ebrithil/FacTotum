@@ -399,7 +399,7 @@ implementation
 
         srcElem := srcCode.getElementById('dlboxinner') as IHTMLElement2;
 
-        // verifico se l'ultima versione è stabile
+        // verifico se l'ultima versione e' stabile
         srcTags := srcElem.getElementsByTagName('b');
         for i := 0 to pred(srcTags.length) do
         begin
