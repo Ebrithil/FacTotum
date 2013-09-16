@@ -131,28 +131,26 @@ begin
 end;
 
 // Porting of VB Split function
-function Split(StrBuf, Delimiter: String): TStringList;
+function split(strBuf, delimiter: string): tStringList;
 var
-  MyStrList: TStringList;
-  TmpBuf:    String;
-  LoopCount: Integer;
+    tmpBuf:    string;
+    loopCount: word;
 begin
-  MyStrList := TStringList.Create;
-  LoopCount := 1;
+    result := TStringList.Create;
 
-  repeat
-    if StrBuf[LoopCount] = Delimiter then
-    begin
-      MyStrList.Add(Trim(TmpBuf));
-      TmpBuf := '';
-    end;
+    loopCount := 1;
+    repeat
+        if strBuf[loopCount] = delimiter then
+        begin
+            result.add( trim(tmpBuf) );
+            tmpBuf := '';
+        end;
+        tmpBuf := tmpBuf + strBuf[loopCount];
 
-    TmpBuf := TmpBuf + StrBuf[LoopCount];
-    inc(LoopCount);
-  until LoopCount > Length(StrBuf);
-  MyStrList.Add(Trim(TmpBuf));
+        inc(LoopCount);
+    until loopCount > length(strBuf);
 
-  Result := MyStrList;
+    result.add( Trim(tmpBuf) );
 end;
 
 function ExtractVersion(SWString: String): String;
@@ -162,15 +160,15 @@ var
   CheckVer:   Boolean;
   TestString: String;
 begin
-  SL:= TStringList.Create;
   SL:= Split(SWString, ' ');
 
   for TestString in SL do
     begin
       CheckVer:= True;
       for i := 1 to Length(TestString) do
-        if not( (TestString[i] in ['0'..'9']) or (TestString[i] = '.') ) then
+        if not( charInSet(TestString[i], ['0'..'9']) or (TestString[i] = '.') ) then
           begin
+
             CheckVer:= False;
             Break;
           end;

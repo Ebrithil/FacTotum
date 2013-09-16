@@ -103,7 +103,7 @@ type
 
     downloadManager = class // Wrapper di funzioni per gestire i download
         public
-            function downloadLastStableVersion(downloadURL: string): tMemoryStream;
+            function downloadLastStableVersion(URL: string): tMemoryStream;
             function downloadPageSource(URL: string): string;
     end;
 
@@ -113,15 +113,10 @@ type
             procedure startInstallerWithCMD(cmd: string);
     end;
 
-    tError = class
-        public
-            errorCode: Exception;
-    end;
-
     errorHandler = class
         public
-            procedure pushErrorToList(error: tError);
-            function  pullErrorFromList(): tError;
+            procedure pushErrorToList(error: Exception);
+            function  pullErrorFromList(): Exception;
 
         protected
             m_errorMutex: tMutex;
@@ -138,7 +133,7 @@ var
     sUpdateParser: updateParser;
     sDownloadMgr:  downloadManager;
     sFileMgr:      fileManager;
-    sErrorHndlr:   errorHandler;
+    sErrorHdlr:    errorHandler;
 
 implementation
 
@@ -163,7 +158,7 @@ implementation
             begin
                 task := sTaskMgr.pullTaskFromInput();
 
-                if (assigned(task)) then // TODO: Controlla che sia il modo corretto
+                if assigned(task) then
                     begin
                         sleep(defaultThreadPoolSleepTime);
                         continue;
@@ -275,14 +270,13 @@ implementation
       chkVer:     Boolean;
       testStr:    String;
     begin
-        swParts := TStringList.Create;
         swParts := Split(swName, ' ');
 
         for testStr in swParts do
         begin
             chkVer := True;
             for i := 1 to length(testStr) do
-                 if not( (testStr[i] in ['0'..'9']) or (testStr[i] = '.') ) then
+                 if not( charInSet(testStr[i], ['0'..'9']) or (testStr[i] = '.') ) then
                  begin
                     chkVer := False;
                     break;
@@ -369,14 +363,6 @@ implementation
                         end;
                 end;
             end;
-
-        // TODO: cercare di liberare qualcosa:
-        {
-        freeAndNil(srcDoc3);
-        freeAndNil(srcElem);
-        freeAndNil(srcTags);
-        freeAndNil(srcTagE);
-        }
     end;
 
 
@@ -428,14 +414,6 @@ implementation
 
         if (result = '') then
             result := 'N/D';
-
-        // TODO: cercare di liberare qualcosa:
-        {
-        freeAndNil(srcDoc3);
-        freeAndNil(srcElem);
-        freeAndNil(srcTags);
-        freeAndNil(srcTagE);
-        }
     end;
 
     function updateParser.getLastStableLink(baseURL: string): string;
@@ -448,9 +426,9 @@ implementation
         srcDoc3: IHTMLDocument3;
     begin
         result := '';
-        targetV := self.getLastStableVerFromURL(baseURL);
 
-        srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
+        srcDoc3 := self.srcToIHTMLDocument3( sDownloadMgr.downloadPageSource(baseURL) );
+        targetV := self.getLastStableVerFromSrc(srcDoc3);
         srcElem := srcDoc3.getElementById('dlbox') as IHTMLElement2;
 
         // cerco il link alla ultima versione stabile
@@ -468,36 +446,48 @@ implementation
         end;
         result := ansiReplaceStr(result, 'about:/', softwareUpdateBaseURL);
         result := self.getDirectDownloadLink(result);
-
-        // TODO: cercare di liberare qualcosa:
-        {
-        freeAndNil(srcDoc3);
-        freeAndNil(srcElem);
-        freeAndNil(srcTags);
-        freeAndNil(srcTagE);
-        }
     end;
 
     // downloadManager
 
-    function downloadManager.downloadLastStableVersion(downloadURL: string): tMemoryStream;
+    function downloadManager.downloadLastStableVersion(URL: string): tMemoryStream;
+    var
+        http:  tIdHTTP;
+        tries: byte;
     begin
-        // TODO
         result := nil;
+        tries := 0;
+        http  := tIdHTTP.Create;
+        try
+            repeat
+                tries := tries + 1;
+                try
+                    http.get(URL, result);
+                    http.disconnect;
+                    break;
+                except
+                    on E: Exception do
+                        sErrorHdlr.pushErrorToList(E);
+                end;
+            until (tries = defaultMaxConnectionRetries);
+        finally
+        http.free;
+        end;
     end;
 
     function downloadManager.downloadPageSource(URL: string): string;
     var
         http: tIdHTTP;
     begin
-        http := tIdHTTP.Create;
+        result := '';
+        http   := tIdHTTP.Create;
         try
             try
                 result  := http.get(URL);
                 http.disconnect;
             except
                 on E: Exception do
-                    messageDlg(E.ClassName + ': ' + E.Message, mtError, [mbOK], 0); // TODO: Sistema con la gestione errori
+                    sErrorHdlr.pushErrorToList(E);
             end
         finally
             http.free;
@@ -518,14 +508,14 @@ implementation
 
     // errorHandler
 
-    procedure errorHandler.pushErrorToList(error: tError);
+    procedure errorHandler.pushErrorToList(error: Exception);
     begin
         m_errorMutex.Acquire;
         m_errorList.Add(error);
         m_errorMutex.Release;
     end;
 
-    function  errorHandler.pullErrorFromList(): tError;
+    function errorHandler.pullErrorFromList(): Exception;
     begin
         m_errorMutex.acquire;
 
@@ -533,6 +523,7 @@ implementation
         begin
             m_errorMutex.release;
             result := nil;
+            exit;
         end;
 
         result := m_errorList.first;
