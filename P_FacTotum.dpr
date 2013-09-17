@@ -7,7 +7,8 @@ uses
   Vcl.Styles,
   U_Classes in 'Units\U_Classes.pas',
   U_Functions in 'Units\U_Functions.pas',
-  U_DataBase in 'DataBase\U_DataBase.pas';
+  U_DataBase in 'DataBase\U_DataBase.pas',
+  U_Events in 'U_Events.pas' {fEvents};
 
 {$R *.res}
 
@@ -16,5 +17,6 @@ begin
   Application.MainFormOnTaskbar := True;
   TStyleManager.TrySetStyle('Metropolis UI Dark');
   Application.CreateForm(TF_FacTotum, F_FacTotum);
+  Application.CreateForm(TfEvents, fEvents);
   Application.Run;
 end.

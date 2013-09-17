@@ -116,8 +116,8 @@ type
     errorHandler = class
         public
             procedure pushErrorToList(error: Exception);
-            function  pullErrorFromList(): Exception;
-
+            function  pullErrorFromList: Exception;
+            function  isErrorListEmpty:  Boolean;
         protected
             m_errorMutex: tMutex;
             m_errorList:  tList;
@@ -529,6 +529,13 @@ implementation
         result := m_errorList.first;
         m_errorList.Remove(m_errorList.first);
         m_errorMutex.release;
+    end;
+
+    function  errorHandler.isErrorListEmpty:  Boolean;
+    begin
+        m_errorMutex.Acquire;
+        result := (m_errorList.count > 0);
+        m_errorMutex.Release;
     end;
 end.
 
