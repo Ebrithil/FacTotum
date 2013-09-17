@@ -124,14 +124,17 @@ end;
 
 procedure TF_FacTotum.FormCreate(Sender: TObject);
 begin
+  sErrorHdlr := errorHandler.create;
+
   F_FacTotum.Left := (Screen.Width - Width)   div 2;
   F_FacTotum.Top  := (Screen.Height - Height) div 2;
 
   sUpdateParser := updateParser.create;
 
   fEvents := TfEvents.create(self);
-  Application.OnIdle := self.fillEvents;
+  fEvents.show;
 
+  Application.OnIdle := self.fillEvents;
 
   ShowMessage(sUpdateParser.getLastStableLink('http://www.filehippo.com/it/download_google_chrome/'));
 

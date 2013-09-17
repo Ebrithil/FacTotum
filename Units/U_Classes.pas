@@ -115,6 +115,7 @@ type
 
     errorHandler = class
         public
+            constructor create;
             procedure pushErrorToList(error: Exception);
             function  pullErrorFromList: Exception;
             function  isErrorListEmpty:  Boolean;
@@ -508,6 +509,12 @@ implementation
 
     // errorHandler
 
+    constructor errorHandler.create;
+    begin
+        m_errorMutex := tMutex.create;
+        m_errorList := tList.create;
+    end;
+
     procedure errorHandler.pushErrorToList(error: Exception);
     begin
         m_errorMutex.Acquire;
@@ -531,10 +538,10 @@ implementation
         m_errorMutex.release;
     end;
 
-    function  errorHandler.isErrorListEmpty:  Boolean;
+    function errorHandler.isErrorListEmpty: boolean;
     begin
         m_errorMutex.Acquire;
-        result := (m_errorList.count > 0);
+        result := (m_errorList.count = 0);
         m_errorMutex.Release;
     end;
 end.
