@@ -116,9 +116,9 @@ type
     errorHandler = class
         public
             constructor create;
-            procedure pushErrorToList(error: Exception);
-            function  pullErrorFromList: Exception;
-            function  isErrorListEmpty:  Boolean;
+            procedure pushErrorToList;
+            function  pullErrorFromList: exception;
+            function  isErrorListEmpty:  boolean;
         protected
             m_errorMutex: tMutex;
             m_errorList:  tList;
@@ -457,39 +457,42 @@ implementation
         tries: byte;
     begin
         result := nil;
-        tries := 0;
-        http  := tIdHTTP.Create;
+        tries  := 0;
+        http   := tIdHTTP.Create;
         try
             repeat
-                tries := tries + 1;
+                inc(tries);
                 try
                     http.get(URL, result);
                     http.disconnect;
                     break;
                 except
-                    on E: Exception do
-                        sErrorHdlr.pushErrorToList(E);
+                    sErrorHdlr.pushErrorToList;
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
-        http.free;
+            http.free;
         end;
     end;
 
     function downloadManager.downloadPageSource(URL: string): string;
     var
-        http: tIdHTTP;
+        http:  tIdHTTP;
+        tries: byte;
     begin
         result := '';
+        tries  := 0;
         http   := tIdHTTP.Create;
         try
-            try
-                result  := http.get(URL);
-                http.disconnect;
-            except
-                on E: Exception do
-                    sErrorHdlr.pushErrorToList(E);
-            end
+            repeat
+                inc(tries);
+                try
+                    result  := http.get(URL);
+                    http.disconnect;
+                except
+                    sErrorHdlr.pushErrorToList;
+                end;
+            until (tries = defaultMaxConnectionRetries);
         finally
             http.free;
         end;
@@ -515,14 +518,15 @@ implementation
         m_errorList := tList.create;
     end;
 
-    procedure errorHandler.pushErrorToList(error: Exception);
+    procedure errorHandler.pushErrorToList;
     begin
-        m_errorMutex.Acquire;
-        m_errorList.Add(error);
-        m_errorMutex.Release;
+        m_errorMutex.acquire;
+        m_errorList.add( Exception(AcquireExceptionObject) );
+        ReleaseExceptionObject;
+        m_errorMutex.release;
     end;
 
-    function errorHandler.pullErrorFromList(): Exception;
+    function errorHandler.pullErrorFromList: exception;
     begin
         m_errorMutex.acquire;
 
@@ -533,16 +537,16 @@ implementation
             exit;
         end;
 
-        result := m_errorList.first;
-        m_errorList.Remove(m_errorList.first);
+        result := exception(m_errorList.first);
+        m_errorList.remove(m_errorList.first);
         m_errorMutex.release;
     end;
 
     function errorHandler.isErrorListEmpty: boolean;
     begin
-        m_errorMutex.Acquire;
+        m_errorMutex.acquire;
         result := (m_errorList.count = 0);
-        m_errorMutex.Release;
+        m_errorMutex.release;
     end;
 end.
 

@@ -76,8 +76,6 @@ type
 
     function ParseUrl(lbl, url: String): ArrayReturn;
     procedure BTN_CheckClick(Sender: TObject);
-
-    procedure fillEvents(Sender: TObject; var Done: Boolean);
   public
 
   end;
@@ -109,34 +107,16 @@ implementation
 
 {$R *.dfm}
 
-procedure TF_FacTotum.fillEvents(Sender: TObject; var Done: Boolean);
-var
-    error:  Exception;
-    iError: TListItem;
-begin
-    while not(sErrorHdlr.isErrorListEmpty) do
-    begin
-        error := sErrorHdlr.pullErrorFromList;
-        iError := fEvents.lvEvents.items.add;
-        iError.subItems.add( error.ClassName + ': ' + error.Message );
-    end;
-end;
-
 procedure TF_FacTotum.FormCreate(Sender: TObject);
 begin
-  sErrorHdlr := errorHandler.create;
+  sErrorHdlr      :=  errorHandler.create;
+  sUpdateParser   :=  updateParser.create;
 
   F_FacTotum.Left := (Screen.Width - Width)   div 2;
   F_FacTotum.Top  := (Screen.Height - Height) div 2;
 
-  sUpdateParser := updateParser.create;
-
-  fEvents := TfEvents.create(self);
+  fEvents         :=  TfEvents.create(self);
   fEvents.show;
-
-  Application.OnIdle := self.fillEvents;
-
-  ShowMessage(sUpdateParser.getLastStableLink('http://www.filehippo.com/it/download_google_chrome/'));
 
   {lastInsert := -1;
 

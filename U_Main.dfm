@@ -321,9 +321,9 @@ object F_FacTotum: TF_FacTotum
     Masked = False
     Width = 32
     Left = 476
-    Top = 153
+    Top = 157
     Bitmap = {
-      494C010103000800CC0020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103000800DC0020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000010000000100000002000000040000
@@ -866,7 +866,7 @@ object F_FacTotum: TF_FacTotum
       'DriverName=Sqlite'
       'Database=FacTotum.db')
     Left = 476
-    Top = 105
+    Top = 107
   end
   object IdHTTP: TIdHTTP
     OnWork = IdHTTPWork
@@ -888,6 +888,6 @@ object F_FacTotum: TF_FacTotum
     HTTPOptions = [hoForceEncodeParams]
     OnRedirect = IdHTTPRedirect
     Left = 476
-    Top = 201
+    Top = 207
   end
 end
