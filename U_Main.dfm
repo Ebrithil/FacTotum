@@ -34,8 +34,6 @@ object F_FacTotum: TF_FacTotum
     ParentFont = False
     TabOrder = 0
     StyleElements = []
-    OnChange = TABsChange
-    OnChanging = TABsChanging
     object TS_Installer: TTabSheet
       Caption = 'Installazione'
       DoubleBuffered = False
@@ -43,7 +41,7 @@ object F_FacTotum: TF_FacTotum
       object L_InstallInfo: TLabel
         Left = 3
         Top = 469
-        Width = 114
+        Width = 119
         Height = 22
         Caption = 'Installazione...'
         Color = clBlack
@@ -84,7 +82,7 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 20
+        ItemHeight = 18
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 1
@@ -96,7 +94,6 @@ object F_FacTotum: TF_FacTotum
         Height = 43
         Caption = 'Installa'
         TabOrder = 2
-        OnClick = BTN_InstallClick
       end
     end
     object TS_Configuration: TTabSheet
@@ -120,9 +117,6 @@ object F_FacTotum: TF_FacTotum
         RightClickSelect = True
         ShowHint = False
         TabOrder = 0
-        OnCreateNodeClass = trvSoftwareCreateNode
-        OnDragDrop = TV_SoftwareDragDrop
-        OnDragOver = TV_SoftwareDragOver
       end
       object RG_CompatibilityConfig: TRadioGroup
         Left = 332
@@ -155,9 +149,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 490
         Width = 530
-        Height = 27
-        EditLabel.Width = 71
-        EditLabel.Height = 19
+        Height = 26
+        EditLabel.Width = 69
+        EditLabel.Height = 18
         EditLabel.Caption = 'Comando'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -180,9 +174,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 542
         Width = 311
-        Height = 27
-        EditLabel.Width = 64
-        EditLabel.Height = 19
+        Height = 26
+        EditLabel.Width = 62
+        EditLabel.Height = 18
         EditLabel.Caption = 'Versione'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -206,9 +200,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 598
         Width = 311
-        Height = 27
-        EditLabel.Width = 149
-        EditLabel.Height = 19
+        Height = 26
+        EditLabel.Width = 140
+        EditLabel.Height = 18
         EditLabel.Caption = 'URL Aggiornamento'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -250,7 +244,7 @@ object F_FacTotum: TF_FacTotum
       object L_Progress: TLabel
         Left = 488
         Top = 505
-        Width = 27
+        Width = 29
         Height = 23
         Caption = '0%'
         Font.Charset = ANSI_CHARSET
@@ -277,7 +271,7 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 20
+        ItemHeight = 18
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 0
@@ -301,7 +295,6 @@ object F_FacTotum: TF_FacTotum
         Caption = 'Update'
         Enabled = False
         TabOrder = 2
-        OnClick = BTN_UpdateClick
       end
       object BTN_Check: TButton
         Left = 3
@@ -310,7 +303,6 @@ object F_FacTotum: TF_FacTotum
         Height = 43
         Caption = 'Check'
         TabOrder = 3
-        OnClick = BTN_CheckClick
       end
     end
   end
@@ -323,7 +315,7 @@ object F_FacTotum: TF_FacTotum
     Left = 476
     Top = 157
     Bitmap = {
-      494C010103000800DC0020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103000800E40020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000010000000100000002000000040000
@@ -845,17 +837,14 @@ object F_FacTotum: TF_FacTotum
     object PM_Software_Insert: TMenuItem
       Caption = 'Inserisci Software'
       ShortCut = 16457
-      OnClick = PM_Software_InsertClick
     end
     object PM_Software_Delete: TMenuItem
       Caption = 'Elimina Software'
       ShortCut = 8238
-      OnClick = PM_Software_DeleteClick
     end
     object PM_Set_Main_Command: TMenuItem
       Caption = 'Rendi Comando Principale'
       Visible = False
-      OnClick = PM_Set_Main_CommandClick
     end
   end
   object SQL_Connection: TSQLConnection
@@ -867,27 +856,5 @@ object F_FacTotum: TF_FacTotum
       'Database=FacTotum.db')
     Left = 476
     Top = 107
-  end
-  object IdHTTP: TIdHTTP
-    OnWork = IdHTTPWork
-    OnWorkBegin = IdHTTPWorkBegin
-    OnWorkEnd = IdHTTPWorkEnd
-    AllowCookies = False
-    HandleRedirects = True
-    ProxyParams.BasicAuthentication = False
-    ProxyParams.ProxyPort = 0
-    Request.ContentLength = -1
-    Request.ContentRangeEnd = -1
-    Request.ContentRangeStart = -1
-    Request.ContentRangeInstanceLength = -1
-    Request.Accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    Request.BasicAuthentication = False
-    Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
-    Request.Ranges.Units = 'bytes'
-    Request.Ranges = <>
-    HTTPOptions = [hoForceEncodeParams]
-    OnRedirect = IdHTTPRedirect
-    Left = 476
-    Top = 207
   end
 end

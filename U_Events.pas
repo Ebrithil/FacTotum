@@ -3,50 +3,48 @@ unit U_Events;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ImgList, Vcl.StdCtrls, Vcl.Buttons,
-  Vcl.ComCtrls, Vcl.ExtCtrls,
+    winapi.windows, winapi.messages, system.sysUtils, system.variants, system.classes, vcl.graphics,
+    vcl.controls, vcl.forms, vcl.dialogs, vcl.imgList, vcl.stdCtrls, vcl.buttons,
+    vcl.comCtrls, vcl.extCtrls,
 
-  U_Classes;
+    U_Classes;
 
 type
-  TfEvents = class(TForm)
-    lvEvents: TListView;
-    bbClear: TBitBtn;
-    ilEvents: TImageList;
-    tEvents: TTimer;
-    procedure bbClearClick(Sender: TObject);
-    procedure tEventsTimer(Sender: TObject);
-  private
-    { Private declarations }
-  public
-    { Public declarations }
-  end;
+    tFEvents = class(tForm)
+        lvEvents:  tListView;
+        bbClear:   tBitBtn;
+        ilEvents:  tImageList;
+        tEvents:   tTimer;
+        procedure  bbClearClick(sender: tObject);
+        procedure  tEventsTimer(sender: tObject);
+    private
+        { Private declarations }
+    public
+        { Public declarations }
+    end;
 
 var
-  fEvents: TfEvents;
+    fEvents: tFEvents;
 
 implementation
 
 {$R *.dfm}
 
-    procedure TfEvents.bbClearClick(Sender: TObject);
-    var
-          iEvent: TListItem;
+    procedure tFEvents.bbClearClick(sender: tObject);
     begin
           lvEvents.items.clear;
     end;
 
-    procedure TfEvents.tEventsTimer(Sender: TObject);
+    procedure TfEvents.tEventsTimer(Sender: tObject);
     var
-          error:  Exception;
-          iEvent: TListItem;
+          error:  exception;
+          iEvent: tListItem;
     begin
           while not(sErrorHdlr.isErrorListEmpty) do
           begin
               error := sErrorHdlr.pullErrorFromList;
-              iEvent := lvEvents.Items.Add;
-              iEvent.subItems.add( error.ClassName + ': ' + error.Message );
+              iEvent := lvEvents.items.add;
+              iEvent.subItems.add( error.className + ': ' + error.message );
           end;
     end;
 

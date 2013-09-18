@@ -5,6 +5,7 @@ interface
 uses
     System.UITypes, System.Classes, System.SyncObjs, System.Variants, System.SysUtils,
     Vcl.ComCtrls, IdHTTP, System.Types, MSHTML, Vcl.Dialogs, ActiveX, System.StrUtils,
+    ShellAPI, Windows, Forms,
 
     U_Functions;
 
@@ -90,7 +91,7 @@ type
 
     updateParser = class // Wrapper di funzioni ed helper per parsare l'html
         protected
-            function extractVersion(swName: string): string;
+            function getVersionFromFileName(swName: string): string;
             function isAcceptableVersion(version: string): boolean;
             function getDirectDownloadLink(swLink: string): string;
             function srcToIHTMLDocument3(srcCode: string): IHTMLDocument3;
@@ -264,14 +265,14 @@ implementation
 
     // updateParser
 
-    function updateParser.extractVersion(swName: string): string;
+    function updateParser.getVersionFromFileName(swName: string): string;
     var
       i:          Byte;
       swParts:    TStringList;
       chkVer:     Boolean;
       testStr:    String;
     begin
-        swParts := Split(swName, ' ');
+        swParts := split(swName, ' ');
 
         for testStr in swParts do
         begin
@@ -304,7 +305,7 @@ implementation
            ansiContainsText(version, 'beta')  or
            ansiContainsText(version, 'rc')    or
            ansiContainsText(version, 'dev')   or
-          (self.extractVersion(version) = 'N/D') then
+          (self.getVersionFromFileName(version) = 'N/D') then
               result := false;
     end;
 
@@ -393,7 +394,7 @@ implementation
             srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
             if self.isAcceptableVersion(srcTagE.innerText) then
             begin
-                result := self.extractVersion( trim( srcTagE.innerText ) );
+                result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                 break;
             end;
         end;
@@ -407,7 +408,7 @@ implementation
                 srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
                 if self.isAcceptableVersion(srcTagE.innerText) then
                 begin
-                    result := self.extractVersion( trim( srcTagE.innerText ) );
+                    result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                     break;
                 end;
             end;
