@@ -42,8 +42,8 @@ implementation
     begin
           while not(sErrorHdlr.isErrorListEmpty) do
           begin
-              error := sErrorHdlr.pullErrorFromList;
               iEvent := lvEvents.items.add;
+              error := sErrorHdlr.pullErrorFromList;
               iEvent.subItems.add( error.className + ': ' + error.message );
           end;
     end;

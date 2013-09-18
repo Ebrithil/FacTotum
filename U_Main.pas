@@ -3,13 +3,10 @@ unit U_Main;
 interface
 
 uses
-    winapi.windows, winapi.messages, system.sysUtils, system.variants, system.classes,
-    vcl.graphics, vcl.controls, vcl.forms, vcl.dialogs, vcl.comCtrls, vcl.stdCtrls,
-    vcl.imgList, vcl.checkLst, vcl.extCtrls, vcl.menus, data.dbxSqlite, data.DB,
-    data.sqlExpr, data.FMTBcd, MSHTML, idURI, idBaseComponent, idComponent,
-    idTCPConnection, idTCPClient, idHTTP, activeX, system.strUtils, system.syncObjs,
+    vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst,
+    vcl.extCtrls, vcl.menus,
 
-    U_DataBase, U_Functions, U_Classes, U_Events;
+    U_DataBase, U_Functions, U_Classes, U_Events, Vcl.ImgList, System.Classes;
 
 type
     TF_FacTotum = class(tForm)
@@ -27,7 +24,6 @@ type
         PM_Software: TPopupMenu;
         PM_Software_Insert: TMenuItem;
         PM_Software_Delete: TMenuItem;
-        SQL_Connection: TSQLConnection;
         BTN_Install: TButton;
         CLB_Download: TCheckListBox;
         L_DownloadInfo: TLabel;
@@ -47,24 +43,7 @@ const
     FH_URL  = 'http://www.filehippo.com/';
 
 var
-    F_FacTotum:          tF_FacTotum;
-
-    StartingPoint:       tPoint;
-    lastInsert,
-    architecture,
-    softwareCountFilter: integer;
-    resComandi,
-    resInstall,
-    resSoftware,
-    resSoftwareFilter:   tDataSet;
-    database:            tDatabase;
-    trnMain,
-    trnChild,
-    trnOrder:            tTreeNode;
-    vetInstall,
-    SelectedNode:        tSoftwareTreeNode;
-    vetUpdate:           array of array of string;
-
+    F_FacTotum: tF_FacTotum;
 
 implementation
 

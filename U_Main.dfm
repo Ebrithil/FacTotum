@@ -41,7 +41,7 @@ object F_FacTotum: TF_FacTotum
       object L_InstallInfo: TLabel
         Left = 3
         Top = 469
-        Width = 119
+        Width = 114
         Height = 22
         Caption = 'Installazione...'
         Color = clBlack
@@ -82,7 +82,7 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 18
+        ItemHeight = 20
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 1
@@ -149,9 +149,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 490
         Width = 530
-        Height = 26
-        EditLabel.Width = 69
-        EditLabel.Height = 18
+        Height = 27
+        EditLabel.Width = 71
+        EditLabel.Height = 19
         EditLabel.Caption = 'Comando'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -174,9 +174,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 542
         Width = 311
-        Height = 26
-        EditLabel.Width = 62
-        EditLabel.Height = 18
+        Height = 27
+        EditLabel.Width = 64
+        EditLabel.Height = 19
         EditLabel.Caption = 'Versione'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -200,9 +200,9 @@ object F_FacTotum: TF_FacTotum
         Left = 3
         Top = 598
         Width = 311
-        Height = 26
-        EditLabel.Width = 140
-        EditLabel.Height = 18
+        Height = 27
+        EditLabel.Width = 149
+        EditLabel.Height = 19
         EditLabel.Caption = 'URL Aggiornamento'
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
@@ -244,7 +244,7 @@ object F_FacTotum: TF_FacTotum
       object L_Progress: TLabel
         Left = 488
         Top = 505
-        Width = 29
+        Width = 27
         Height = 23
         Caption = '0%'
         Font.Charset = ANSI_CHARSET
@@ -271,7 +271,7 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 18
+        ItemHeight = 20
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 0
@@ -313,9 +313,9 @@ object F_FacTotum: TF_FacTotum
     Masked = False
     Width = 32
     Left = 476
-    Top = 157
+    Top = 61
     Bitmap = {
-      494C010103000800E40020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103000800E80020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000002000000001002000000000000040
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000010000000100000002000000040000
@@ -833,7 +833,7 @@ object F_FacTotum: TF_FacTotum
   end
   object PM_Software: TPopupMenu
     Left = 476
-    Top = 57
+    Top = 113
     object PM_Software_Insert: TMenuItem
       Caption = 'Inserisci Software'
       ShortCut = 16457
@@ -846,15 +846,5 @@ object F_FacTotum: TF_FacTotum
       Caption = 'Rendi Comando Principale'
       Visible = False
     end
-  end
-  object SQL_Connection: TSQLConnection
-    ConnectionName = 'SQLITECONNECTION'
-    DriverName = 'Sqlite'
-    LoginPrompt = False
-    Params.Strings = (
-      'DriverName=Sqlite'
-      'Database=FacTotum.db')
-    Left = 476
-    Top = 107
   end
 end

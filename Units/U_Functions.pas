@@ -3,7 +3,7 @@ unit U_Functions;
 interface
 
 uses
-    windows, system.strUtils, system.classes, system.sysUtils;
+    winapi.windows, system.strUtils, system.classes, system.sysUtils;
 
 type
     a = string;

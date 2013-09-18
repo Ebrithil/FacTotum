@@ -1,5 +1,5 @@
 ﻿[]
-Coordinates=475,231,91,58
+Coordinates=548,1,112,36
 
 [TABs]
 Coordinates=97,10,46,36
@@ -42,9 +42,6 @@ Coordinates=374,166,89,36
 
 [PM_Software_Insert]
 Coordinates=101,174,131,36
-
-[SQL_Connection]
-Coordinates=548,1,112,36
 
 [RG_CompatibilityConfig]
 Coordinates=221,78,115,58
