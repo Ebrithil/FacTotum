@@ -1,20 +1,8 @@
 ﻿[]
-Coordinates=548,1,112,36
+Coordinates=93,111,81,58
 
 [TABs]
 Coordinates=97,10,46,36
-
-[TS_Configuration]
-Coordinates=10,10,115,36
-
-[TS_Update]
-Coordinates=106,65,79,36
-
-[TS_Installer]
-Coordinates=10,56,83,36
-
-[BTN_Install]
-Coordinates=93,111,81,58
 
 [PM_Software]
 Coordinates=144,1,91,36
@@ -45,4 +33,13 @@ Coordinates=101,174,131,36
 
 [RG_CompatibilityConfig]
 Coordinates=221,78,115,58
+
+[tUpdate]
+Coordinates=106,65,79,36
+
+[tConfiguration]
+Coordinates=10,10,115,36
+
+[tInstaller]
+Coordinates=10,56,83,36
 

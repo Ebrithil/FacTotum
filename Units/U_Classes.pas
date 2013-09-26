@@ -460,6 +460,7 @@ implementation
         result := nil;
         tries  := 0;
         http   := tIdHTTP.Create;
+        http.handleRedirects := true;
         try
             repeat
                 inc(tries);
