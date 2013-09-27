@@ -117,18 +117,19 @@ type
     end;
 
     tEvent = class
-        value:     string;
-        imageType: tImageIndex;
+        value:      string;
+        imageType:  tImageIndex;
+        constructor create(value: string; imageType: tImgIndex);
     end;
 
     eventHandler = class
         public
             constructor create;
-            procedure pushEventToList(event: tEvent);
-            function  pullEventFromList: tEvent;
-            function  isEventListEmpty:  boolean;
-            function  getErrorCache:     boolean;
-            procedure clearErrorCache;
+            procedure   pushEventToList(event: tEvent);
+            function    pullEventFromList: tEvent;
+            function    isEventListEmpty:  boolean;
+            function    getErrorCache:     boolean;
+            procedure   clearErrorCache;
         protected
             m_eventMutex:     tMutex;
             m_eventList:      tList;
@@ -226,6 +227,8 @@ implementation
 
         setLength(m_threadPool, threadsCount);
 
+        sEventHdlr.pushEventToList(tEvent.create('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', Informations));
+
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create();
     end;
@@ -303,6 +306,7 @@ implementation
                 end;
         end;
         result := 'N/D';
+        sEventHdlr.pushEventToList(tEvent.create('Impossibile ottenere la versione del software: ' + swName, Errors));
         swParts.free;
     end;
 
@@ -316,7 +320,10 @@ implementation
            ansiContainsText(version, 'rc')    or
            ansiContainsText(version, 'dev')   or
           (self.getVersionFromFileName(version) = 'N/D') then
-              result := false;
+        begin
+            result := false;
+            sEventHdlr.pushEventToList(tEvent.create('Versione ' + version + ' non accettabile.', Informations));
+        end;
     end;
 
     function updateParser.srcToIHTMLDocument3(srcCode: string): IHTMLDocument3;
@@ -330,7 +337,12 @@ implementation
         srcDoc2.Write(PSafeArray(TVarData(V).VArray));
         srcDoc2.Close;
 
-        result := srcDoc2 as IHTMLDocument3;
+        try
+            result := srcDoc2 as IHTMLDocument3;
+        except
+            on E: exception do
+                sEventHdlr.pushEventToList(tEvent.create(E.className + ': ' + E.message, Errors));
+        end;
     end;
 
     function updateParser.getDirectDownloadLink(swLink: string): string;
@@ -383,7 +395,7 @@ implementation
         srcDoc3: IHTMLDocument3;
     begin
         srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
-        result := self.getLastStableVerFromSrc(srcDoc3)
+        result := self.getLastStableVerFromSrc(srcDoc3);
     end;
 
     function updateParser.getLastStableVerFromSrc(srcCode: IHTMLDocument3): string;
@@ -406,7 +418,9 @@ implementation
             begin
                 result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                 break;
-            end;
+            end
+            else
+                sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', Informations));
         end;
 
         // altrimenti passo alle precedenti
@@ -420,12 +434,17 @@ implementation
                 begin
                     result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                     break;
-                end;
+                end
+                else
+                    sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', Informations));
             end;
         end;
 
         if (result = '') then
+        begin
+            sEventHdlr.pushEventToList(tEvent.create('Nessuna versione accettabile trovata.', Alerts));
             result := 'N/D';
+        end;
     end;
 
     function updateParser.getLastStableLink(baseURL: string): string;
@@ -466,7 +485,6 @@ implementation
     var
         http:  tIdHTTP;
         tries: byte;
-        event: tEvent;
     begin
         result := nil;
         tries  := 0;
@@ -482,10 +500,7 @@ implementation
                 except
                     on E: exception do
                     begin
-                        event := tEvent.create;
-                        event.value := E.ClassName + ': ' + E.Message;
-                        event.imageType :=  tImageIndex(Errors);
-                        sEventHdlr.pushEventToList(event);
+                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, Errors));
                     end;
                 end;
             until (tries = defaultMaxConnectionRetries);
@@ -498,7 +513,6 @@ implementation
     var
         http:  tIdHTTP;
         tries: byte;
-        event: tEvent;
     begin
         result := '';
         tries  := 0;
@@ -512,10 +526,7 @@ implementation
                 except
                     on E: exception do
                     begin
-                        event := tEvent.create;
-                        event.value := E.ClassName + ': ' + E.Message;
-                        event.imageType := tImageIndex(Errors);
-                        sEventHdlr.pushEventToList(event);
+                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, Errors));
                     end;
                 end;
             until (tries = defaultMaxConnectionRetries);
@@ -537,6 +548,12 @@ implementation
     end;
 
     // eventHandler
+
+    constructor tEvent.create(value: string; imageType: tImgIndex);
+    begin
+        self.value := value;
+        self.imageType := tImageIndex(imageType);
+    end;
 
     constructor eventHandler.create;
     begin

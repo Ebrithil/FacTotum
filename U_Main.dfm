@@ -115,6 +115,10 @@ object F_FacTotum: TF_FacTotum
     object tConfiguration: TTabSheet
       Caption = 'Configura'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object TV_Software: TTreeView
         Left = 2
         Top = 3
@@ -244,6 +248,10 @@ object F_FacTotum: TF_FacTotum
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object L_DownloadInfo: TLabel
         Left = 3
         Top = 475
@@ -320,6 +328,10 @@ object F_FacTotum: TF_FacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -368,7 +380,7 @@ object F_FacTotum: TF_FacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C0101080008023C0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010108000802400120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       00000000000036000000280000008000000060000000010020000000000000C0
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

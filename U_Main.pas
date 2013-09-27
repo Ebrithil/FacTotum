@@ -63,7 +63,6 @@ implementation
             tLog.imageIndex := tImageIndex(EvtErr);
 
         if not(sEventHdlr.isEventListEmpty) then
-        begin
             while not(sEventHdlr.isEventListEmpty) do
             begin
                 iEvent := lvEvents.items.add;
@@ -72,12 +71,12 @@ implementation
                 iEvent.subItems.add(event.value);
                 event.free;
             end;
-        end;
     end;
 
     procedure TF_FacTotum.formCreate(sender: tObject);
     begin
         sEventHdlr      :=  eventHandler.create;
+        sTaskMgr        :=  taskManager.create;
         sUpdateParser   :=  updateParser.create;
 
         F_FacTotum.Left := (Screen.Width - Width)   div 2;
