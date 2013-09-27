@@ -59,17 +59,20 @@ implementation
           event:  tEvent;
           iEvent: tListItem;
     begin
-          if not(sEventHdlr.isEventListEmpty) then
-          begin
-              tLog.imageIndex := tImageIndex(EvtErr);
-              while not(sEventHdlr.isEventListEmpty) do
-              begin
-                  iEvent := lvEvents.items.add;
-                  event := sEventHdlr.pullEventFromList;
-                  iEvent.stateIndex := event.imageType;
-                  iEvent.subItems.add(event.value);
-              end;
-          end;
+        if (sEventHdlr.getErrorCache) then
+            tLog.imageIndex := tImageIndex(EvtErr);
+
+        if not(sEventHdlr.isEventListEmpty) then
+        begin
+            while not(sEventHdlr.isEventListEmpty) do
+            begin
+                iEvent := lvEvents.items.add;
+                event := sEventHdlr.pullEventFromList;
+                iEvent.stateIndex := event.imageType;
+                iEvent.subItems.add(event.value);
+                event.free;
+            end;
+        end;
     end;
 
     procedure TF_FacTotum.formCreate(sender: tObject);
@@ -88,6 +91,7 @@ implementation
     procedure TF_FacTotum.bClearClick(Sender: TObject);
     begin
         lvEvents.items.clear;
+        sEventHdlr.clearErrorCache;
         tLog.imageIndex := tImageIndex(Events);
     end;
 

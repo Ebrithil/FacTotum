@@ -10,7 +10,7 @@ uses
     U_Functions;
 
 type
-    tImgIndex = (NoImag = -1, Instal, Config, Update, Events, EvtErr, Errors);
+    tImgIndex = (NoImag = -1, Instal, Config, Update, Events, EvtErr, Errors, Alerts, Informations);
 
     // Array for Results
     ArrayReturn = Array[0..2] of String;
@@ -117,8 +117,8 @@ type
     end;
 
     tEvent = class
+        value:     string;
         imageType: tImageIndex;
-        value: string;
     end;
 
     eventHandler = class
@@ -127,9 +127,12 @@ type
             procedure pushEventToList(event: tEvent);
             function  pullEventFromList: tEvent;
             function  isEventListEmpty:  boolean;
+            function  getErrorCache:     boolean;
+            procedure clearErrorCache;
         protected
-            m_eventMutex: tMutex;
-            m_eventList:  tList;
+            m_eventMutex:     tMutex;
+            m_eventList:      tList;
+            m_containsErrors: boolean;
     end;
 
 const
@@ -545,8 +548,10 @@ implementation
     begin
         m_eventMutex.acquire;
         m_eventList.add(event);
-        ReleaseExceptionObject;
         m_eventMutex.release;
+
+        if event.imageType = tImageIndex(Errors) then
+            m_containsErrors := true;
     end;
 
     function eventHandler.pullEventFromList: tEvent;
@@ -570,6 +575,16 @@ implementation
         m_eventMutex.acquire;
         result := (m_eventList.count = 0);
         m_eventMutex.release;
+    end;
+
+    function eventHandler.getErrorCache: boolean;
+    begin
+        result := m_containsErrors;
+    end;
+
+    procedure eventHandler.clearErrorCache;
+    begin
+        m_containsErrors := false;
     end;
 end.
 
