@@ -10,7 +10,8 @@ uses
     U_Functions;
 
 type
-    tImgIndex = (NoImag = -1, Instal, Config, Update, Events, EvtErr, Errors, Alerts, Informations);
+    tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiEvtErr);
+    tEventImage = (eiNoImg = -1, eiInfo, eiAlert, eiError);
 
     // Array for Results
     ArrayReturn = Array[0..2] of String;
@@ -117,9 +118,10 @@ type
     end;
 
     tEvent = class
-        value:      string;
-        imageType:  tImageIndex;
-        constructor create(value: string; imageType: tImgIndex);
+        eventDesc,
+        eventTime:  string;
+        eventType:  tImageIndex;
+        constructor create(eDesc: string; eType: tEventImage);
     end;
 
     eventHandler = class
@@ -171,7 +173,7 @@ implementation
             begin
                 task := sTaskMgr.pullTaskFromInput();
 
-                if assigned(task) then
+                if not( assigned(task) ) then
                     begin
                         sleep(defaultThreadPoolSleepTime);
                         continue;
@@ -227,7 +229,7 @@ implementation
 
         setLength(m_threadPool, threadsCount);
 
-        sEventHdlr.pushEventToList(tEvent.create('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', Informations));
+        sEventHdlr.pushEventToList(tEvent.create('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', eiInfo));
 
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create();
@@ -306,7 +308,7 @@ implementation
                 end;
         end;
         result := 'N/D';
-        sEventHdlr.pushEventToList(tEvent.create('Impossibile ottenere la versione del software: ' + swName, Errors));
+        sEventHdlr.pushEventToList(tEvent.create('Impossibile ottenere la versione del software: ' + swName, eiError));
         swParts.free;
     end;
 
@@ -322,7 +324,7 @@ implementation
           (self.getVersionFromFileName(version) = 'N/D') then
         begin
             result := false;
-            sEventHdlr.pushEventToList(tEvent.create('Versione ' + version + ' non accettabile.', Informations));
+            sEventHdlr.pushEventToList(tEvent.create('Versione ' + version + ' non accettabile.', eiInfo));
         end;
     end;
 
@@ -341,7 +343,7 @@ implementation
             result := srcDoc2 as IHTMLDocument3;
         except
             on E: exception do
-                sEventHdlr.pushEventToList(tEvent.create(E.className + ': ' + E.message, Errors));
+                sEventHdlr.pushEventToList(tEvent.create(E.className + ': ' + E.message, eiError));
         end;
     end;
 
@@ -420,7 +422,7 @@ implementation
                 break;
             end
             else
-                sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', Informations));
+                sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo));
         end;
 
         // altrimenti passo alle precedenti
@@ -436,13 +438,13 @@ implementation
                     break;
                 end
                 else
-                    sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', Informations));
+                    sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo));
             end;
         end;
 
         if (result = '') then
         begin
-            sEventHdlr.pushEventToList(tEvent.create('Nessuna versione accettabile trovata.', Alerts));
+            sEventHdlr.pushEventToList(tEvent.create('Nessuna versione accettabile trovata.', eiAlert));
             result := 'N/D';
         end;
     end;
@@ -500,7 +502,7 @@ implementation
                 except
                     on E: exception do
                     begin
-                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, Errors));
+                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, eiError));
                     end;
                 end;
             until (tries = defaultMaxConnectionRetries);
@@ -526,7 +528,7 @@ implementation
                 except
                     on E: exception do
                     begin
-                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, Errors));
+                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, eiError));
                     end;
                 end;
             until (tries = defaultMaxConnectionRetries);
@@ -549,10 +551,11 @@ implementation
 
     // eventHandler
 
-    constructor tEvent.create(value: string; imageType: tImgIndex);
+    constructor tEvent.create(eDesc: string; eType: tEventImage);
     begin
-        self.value := value;
-        self.imageType := tImageIndex(imageType);
+        self.eventType := tImageIndex(eType);
+        self.eventTime := FormatDateTime('hh:nn:ss', now);
+        self.eventDesc := eDesc;
     end;
 
     constructor eventHandler.create;
@@ -567,7 +570,7 @@ implementation
         m_eventList.add(event);
         m_eventMutex.release;
 
-        if event.imageType = tImageIndex(Errors) then
+        if event.eventType = tImageIndex(eiError) then
             m_containsErrors := true;
     end;
 

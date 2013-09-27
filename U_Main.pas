@@ -37,6 +37,7 @@ type
         bUpdate: TButton;
         lvEvents: TListView;
         bClear: TButton;
+        ilEvents: TImageList;
 
         procedure formCreate(Sender: TObject);
         procedure applicationIdleEvents(Sender: TObject; var Done: Boolean);
@@ -45,7 +46,7 @@ type
     end;
 
 const
-    FH_URL         = 'http://www.filehippo.com/';
+    FH_URL = 'http://www.filehippo.com/';
 
 var
     F_FacTotum: tF_FacTotum;
@@ -57,26 +58,29 @@ implementation
     procedure TF_FacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
     var
           event:  tEvent;
-          iEvent: tListItem;
     begin
         if (sEventHdlr.getErrorCache) then
-            tLog.imageIndex := tImageIndex(EvtErr);
+            tLog.imageIndex := tImageIndex(tiEvtErr);
 
         if not(sEventHdlr.isEventListEmpty) then
             while not(sEventHdlr.isEventListEmpty) do
-            begin
-                iEvent := lvEvents.items.add;
-                event := sEventHdlr.pullEventFromList;
-                iEvent.stateIndex := event.imageType;
-                iEvent.subItems.add(event.value);
-                event.free;
-            end;
+                with lvEvents.items.add do
+                begin
+                    event := sEventHdlr.pullEventFromList;
+
+                    stateIndex := event.eventType;
+                    subItems.add(event.eventTime);
+                    subItems.add(event.eventDesc);
+
+                    event.free;
+                end;
     end;
 
     procedure TF_FacTotum.formCreate(sender: tObject);
     begin
         sEventHdlr      :=  eventHandler.create;
-        sTaskMgr        :=  taskManager.create;
+        //sTaskMgr        :=  taskManager.create;
+        sDbManager      :=  dbManager.create;
         sUpdateParser   :=  updateParser.create;
 
         F_FacTotum.Left := (Screen.Width - Width)   div 2;
@@ -91,7 +95,7 @@ implementation
     begin
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
-        tLog.imageIndex := tImageIndex(Events);
+        tLog.imageIndex := tImageIndex(tiEvents);
     end;
 
 end.
