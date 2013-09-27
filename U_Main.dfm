@@ -21,7 +21,7 @@ object F_FacTotum: TF_FacTotum
     Top = 0
     Width = 513
     Height = 635
-    ActivePage = tLog
+    ActivePage = tInstaller
     Align = alCustom
     DoubleBuffered = False
     Font.Charset = ANSI_CHARSET
@@ -38,7 +38,6 @@ object F_FacTotum: TF_FacTotum
       Caption = 'Installa'
       DoubleBuffered = False
       ParentDoubleBuffered = False
-      ExplicitHeight = 620
       object L_InstallInfo: TLabel
         Left = 3
         Top = 475
@@ -116,8 +115,6 @@ object F_FacTotum: TF_FacTotum
     object tConfiguration: TTabSheet
       Caption = 'Configura'
       ImageIndex = 1
-      ExplicitWidth = 625
-      ExplicitHeight = 600
       object TV_Software: TTreeView
         Left = 2
         Top = 3
@@ -151,6 +148,7 @@ object F_FacTotum: TF_FacTotum
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
+        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -246,8 +244,6 @@ object F_FacTotum: TF_FacTotum
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
-      ExplicitWidth = 548
-      ExplicitHeight = 628
       object L_DownloadInfo: TLabel
         Left = 3
         Top = 475
@@ -265,9 +261,9 @@ object F_FacTotum: TF_FacTotum
         StyleElements = [seClient, seBorder]
       end
       object L_Progress: TLabel
-        Left = 455
+        Left = 453
         Top = 509
-        Width = 46
+        Width = 48
         Height = 22
         Alignment = taRightJustify
         Caption = '100%'
@@ -324,9 +320,6 @@ object F_FacTotum: TF_FacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
-      ExplicitLeft = -132
-      ExplicitTop = -63
-      ExplicitHeight = 544
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -334,18 +327,24 @@ object F_FacTotum: TF_FacTotum
         Height = 536
         Columns = <
           item
-            Width = 26
+            MaxWidth = 41
+            MinWidth = 41
+            Width = 41
           end
           item
             AutoSize = True
             Caption = 'Descrizione'
           end>
+        ColumnClick = False
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -16
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
+        ReadOnly = True
+        RowSelect = True
         ParentFont = False
+        StateImages = IL_FacTotum
         TabOrder = 0
         ViewStyle = vsReport
       end
@@ -367,9 +366,9 @@ object F_FacTotum: TF_FacTotum
     Masked = False
     Width = 32
     Left = 452
-    Top = 69
+    Top = 77
     Bitmap = {
-      494C010106000800F80020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106000800FC0020002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1399,7 +1398,7 @@ object F_FacTotum: TF_FacTotum
   end
   object PM_Software: TPopupMenu
     Left = 452
-    Top = 121
+    Top = 129
     object PM_Software_Insert: TMenuItem
       Caption = 'Inserisci Software'
       ShortCut = 16457

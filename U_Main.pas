@@ -33,19 +33,26 @@ type
         L_Progress: TLabel;
         tLog: TTabSheet;
         lSetupPercentage: TLabel;
-    bInstall: TButton;
-    bUpdate: TButton;
+        bInstall: TButton;
+        bUpdate: TButton;
         lvEvents: TListView;
-    bClear: TButton;
+        bClear: TButton;
 
         procedure formCreate(Sender: TObject);
-        procedure ApplicationIdleEvents(Sender: TObject; var Done: Boolean);
-    procedure bClearClick(Sender: TObject);
+        procedure applicationIdleEvents(Sender: TObject; var Done: Boolean);
+        procedure bClearClick(Sender: TObject);
 
     end;
 
 const
-    FH_URL  = 'http://www.filehippo.com/';
+    imgIndexNoImag = -1;
+    imgIndexInstal = 0;
+    imgIndexConfig = 1;
+    imgIndexUpdate = 2;
+    imgIndexEvents = 3;
+    imgIndexEvtErr = 4;
+    imgIndexErrors = 5;
+    FH_URL         = 'http://www.filehippo.com/';
 
 var
     F_FacTotum: tF_FacTotum;
@@ -54,20 +61,21 @@ implementation
 
 {$R *.dfm}
 
-    procedure TF_FacTotum.ApplicationIdleEvents(Sender: TObject; var Done: Boolean);
+    procedure TF_FacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
     var
           error:  exception;
           iEvent: tListItem;
     begin
           if not(sErrorHdlr.isErrorListEmpty) then
           begin
-              tLog.imageIndex := 4;
+              tLog.imageIndex := imgIndexEvtErr;
               while not(sErrorHdlr.isErrorListEmpty) do
               begin
                   iEvent := lvEvents.items.add;
+                  iEvent.imageIndex := imgIndexNoImag;
+                  iEvent.stateIndex := imgIndexErrors;
                   error := sErrorHdlr.pullErrorFromList;
                   iEvent.subItems.add( error.className + ': ' + error.message );
-                  //iEvent.ImageIndex :=
               end;
           end;
     end;
@@ -88,6 +96,7 @@ implementation
     procedure TF_FacTotum.bClearClick(Sender: TObject);
     begin
         lvEvents.items.clear;
+        tLog.imageIndex := imgIndexEvents;
     end;
 
 end.
