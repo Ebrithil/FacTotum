@@ -10,6 +10,8 @@ uses
     U_Functions;
 
 type
+    tImgIndex = (NoImag = -1, Instal, Config, Update, Events, EvtErr, Errors);
+
     // Array for Results
     ArrayReturn = Array[0..2] of String;
 
@@ -114,15 +116,20 @@ type
             procedure startInstallerWithCMD(cmd: string);
     end;
 
-    errorHandler = class
+    tEvent = class
+        imageType: tImageIndex;
+        value: string;
+    end;
+
+    eventHandler = class
         public
             constructor create;
-            procedure pushErrorToList;
-            function  pullErrorFromList: exception;
-            function  isErrorListEmpty:  boolean;
+            procedure pushEventToList(event: tEvent);
+            function  pullEventFromList: tEvent;
+            function  isEventListEmpty:  boolean;
         protected
-            m_errorMutex: tMutex;
-            m_errorList:  tList;
+            m_eventMutex: tMutex;
+            m_eventList:  tList;
     end;
 
 const
@@ -135,7 +142,7 @@ var
     sUpdateParser: updateParser;
     sDownloadMgr:  downloadManager;
     sFileMgr:      fileManager;
-    sErrorHdlr:    errorHandler;
+    sEventHdlr:    eventHandler;
 
 implementation
 
@@ -456,6 +463,7 @@ implementation
     var
         http:  tIdHTTP;
         tries: byte;
+        event: tEvent;
     begin
         result := nil;
         tries  := 0;
@@ -469,7 +477,13 @@ implementation
                     http.disconnect;
                     break;
                 except
-                    sErrorHdlr.pushErrorToList;
+                    on E: exception do
+                    begin
+                        event := tEvent.create;
+                        event.value := E.ClassName + ': ' + E.Message;
+                        event.imageType :=  tImageIndex(Errors);
+                        sEventHdlr.pushEventToList(event);
+                    end;
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
@@ -481,6 +495,7 @@ implementation
     var
         http:  tIdHTTP;
         tries: byte;
+        event: tEvent;
     begin
         result := '';
         tries  := 0;
@@ -492,7 +507,13 @@ implementation
                     result  := http.get(URL);
                     http.disconnect;
                 except
-                    sErrorHdlr.pushErrorToList;
+                    on E: exception do
+                    begin
+                        event := tEvent.create;
+                        event.value := E.ClassName + ': ' + E.Message;
+                        event.imageType := tImageIndex(Errors);
+                        sEventHdlr.pushEventToList(event);
+                    end;
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
@@ -512,43 +533,43 @@ implementation
         // TODO
     end;
 
-    // errorHandler
+    // eventHandler
 
-    constructor errorHandler.create;
+    constructor eventHandler.create;
     begin
-        m_errorMutex := tMutex.create;
-        m_errorList := tList.create;
+        m_eventMutex := tMutex.create;
+        m_eventList := tList.create;
     end;
 
-    procedure errorHandler.pushErrorToList;
+    procedure eventHandler.pushEventToList(event: tEvent);
     begin
-        m_errorMutex.acquire;
-        m_errorList.add( Exception(AcquireExceptionObject) );
+        m_eventMutex.acquire;
+        m_eventList.add(event);
         ReleaseExceptionObject;
-        m_errorMutex.release;
+        m_eventMutex.release;
     end;
 
-    function errorHandler.pullErrorFromList: exception;
+    function eventHandler.pullEventFromList: tEvent;
     begin
-        m_errorMutex.acquire;
+        m_eventMutex.acquire;
 
-        if m_errorList.count = 0 then
+        if m_eventList.count = 0 then
         begin
-            m_errorMutex.release;
+            m_eventMutex.release;
             result := nil;
             exit;
         end;
 
-        result := exception(m_errorList.first);
-        m_errorList.remove(m_errorList.first);
-        m_errorMutex.release;
+        result := tEvent(m_eventList.first);
+        m_eventList.remove(m_eventList.first);
+        m_eventMutex.release;
     end;
 
-    function errorHandler.isErrorListEmpty: boolean;
+    function eventHandler.isEventListEmpty: boolean;
     begin
-        m_errorMutex.acquire;
-        result := (m_errorList.count = 0);
-        m_errorMutex.release;
+        m_eventMutex.acquire;
+        result := (m_eventList.count = 0);
+        m_eventMutex.release;
     end;
 end.
 

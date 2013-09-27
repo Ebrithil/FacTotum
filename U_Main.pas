@@ -6,7 +6,7 @@ uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst,
     vcl.extCtrls, vcl.menus, system.sysutils,
 
-    U_DataBase, U_Functions, U_Classes, Vcl.ImgList, System.Classes;
+    U_DataBase, U_Functions, U_Classes, Vcl.ImgList, System.Classes, System.UITypes;
 
 type
     TF_FacTotum = class(tForm)
@@ -45,13 +45,6 @@ type
     end;
 
 const
-    imgIndexNoImag = -1;
-    imgIndexInstal = 0;
-    imgIndexConfig = 1;
-    imgIndexUpdate = 2;
-    imgIndexEvents = 3;
-    imgIndexEvtErr = 4;
-    imgIndexErrors = 5;
     FH_URL         = 'http://www.filehippo.com/';
 
 var
@@ -63,26 +56,25 @@ implementation
 
     procedure TF_FacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
     var
-          error:  exception;
+          event:  tEvent;
           iEvent: tListItem;
     begin
-          if not(sErrorHdlr.isErrorListEmpty) then
+          if not(sEventHdlr.isEventListEmpty) then
           begin
-              tLog.imageIndex := imgIndexEvtErr;
-              while not(sErrorHdlr.isErrorListEmpty) do
+              tLog.imageIndex := tImageIndex(EvtErr);
+              while not(sEventHdlr.isEventListEmpty) do
               begin
                   iEvent := lvEvents.items.add;
-                  iEvent.imageIndex := imgIndexNoImag;
-                  iEvent.stateIndex := imgIndexErrors;
-                  error := sErrorHdlr.pullErrorFromList;
-                  iEvent.subItems.add( error.className + ': ' + error.message );
+                  event := sEventHdlr.pullEventFromList;
+                  iEvent.stateIndex := event.imageType;
+                  iEvent.subItems.add(event.value);
               end;
           end;
     end;
 
     procedure TF_FacTotum.formCreate(sender: tObject);
     begin
-        sErrorHdlr      :=  errorHandler.create;
+        sEventHdlr      :=  eventHandler.create;
         sUpdateParser   :=  updateParser.create;
 
         F_FacTotum.Left := (Screen.Width - Width)   div 2;
@@ -96,7 +88,7 @@ implementation
     procedure TF_FacTotum.bClearClick(Sender: TObject);
     begin
         lvEvents.items.clear;
-        tLog.imageIndex := imgIndexEvents;
+        tLog.imageIndex := tImageIndex(Events);
     end;
 
 end.
