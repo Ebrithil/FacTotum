@@ -3,9 +3,29 @@ unit U_DataBase;
 interface
 
 uses
-  Windows, System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, U_Classes;
+    Windows, System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, System.Classes,
+
+    U_Classes;
 
 type
+    softwareRecord = record
+        commands: tList;
+    end;
+
+    commandRecord = record
+
+    end;
+
+    databaseManager = class
+        public
+            function loadRecordsFromDB(): tList;
+            function writeSoftwareRecordToDB(data: softwareRecord): integer;
+            function writeCommandRecordToDB(data: commandRecord): integer;
+
+        protected
+            m_connector: tSQLConnection;
+    end;
+
   TDatabase = class
   private
     Connector: TSQLConnection;
@@ -344,6 +364,21 @@ end;
 function TDataBase.UpdateCmdVersion(id: string; version: string): Boolean;
 begin
   Result := Self.Query('UPDATE commands SET version=''' + version + ''' WHERE ID=' + id);
+end;
+
+function databaseManager.loadRecordsFromDB(): tList;
+begin
+
+end;
+
+function databaseManager.writeSoftwareRecordToDB(data: softwareRecord): integer;
+begin
+
+end;
+
+function databaseManager.writeCommandRecordToDB(data: commandRecord): integer;
+begin
+
 end;
 
 //------------------------------------------------------------------------------
