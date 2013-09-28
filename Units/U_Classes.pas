@@ -506,10 +506,8 @@ implementation
                     http.disconnect;
                     break;
                 except
-                    on E: exception do
-                    begin
-                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, eiError));
-                    end;
+                    on e: exception do
+                        sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
@@ -532,10 +530,8 @@ implementation
                     result  := http.get(URL);
                     http.disconnect;
                 except
-                    on E: exception do
-                    begin
-                        sEventHdlr.pushEventToList(tEvent.create(E.ClassName + ': ' + E.Message, eiError));
-                    end;
+                    on e: exception do
+                        sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
