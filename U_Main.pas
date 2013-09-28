@@ -3,36 +3,36 @@ unit U_Main;
 interface
 
 uses
-    vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst,
-    vcl.extCtrls, vcl.menus, system.sysutils,
+    vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
+    vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes,
 
-    U_DataBase, U_Functions, U_Classes, Vcl.ImgList, System.Classes, System.UITypes;
+    U_DataBase, U_Functions, U_Classes;
 
 type
     TF_FacTotum = class(tForm)
-        TABs: TPageControl;
+        pcTabs: TPageControl;
         tInstaller: TTabSheet;
         tConfiguration: TTabSheet;
         tUpdate: TTabSheet;
-        PB_Progress: TProgressBar;
-        L_InstallInfo: TLabel;
-        CLB_Software: TCheckListBox;
-        IL_FacTotum: TImageList;
-        TV_Software: TTreeView;
-        RG_CompatibilityConfig: TRadioGroup;
-        LE_CmdInfo: TLabeledEdit;
-        PM_Software: TPopupMenu;
-        PM_Software_Insert: TMenuItem;
-        PM_Software_Delete: TMenuItem;
-        CLB_Download: TCheckListBox;
-        L_DownloadInfo: TLabel;
-        PB_Download: TProgressBar;
-        LE_Versione: TLabeledEdit;
-        LE_Url: TLabeledEdit;
-        PM_Set_Main_Command: TMenuItem;
-        L_Progress: TLabel;
+        pbProgress: TProgressBar;
+        lInstallInfo: TLabel;
+        clbSoftware: TCheckListBox;
+        ilFacTotum: TImageList;
+        tvSoftware: TTreeView;
+        rgCompConfig: TRadioGroup;
+        leCmdInfo: TLabeledEdit;
+        pmSoftware: TPopupMenu;
+        pmSwInsert: TMenuItem;
+        pmSwDelete: TMenuItem;
+        clbDownload: TCheckListBox;
+        lDownloadInfo: TLabel;
+        pbDownload: TProgressBar;
+        leVersion: TLabeledEdit;
+        leUrl: TLabeledEdit;
+        pmSetMainCmd: TMenuItem;
+        lUpdateProg: TLabel;
         tLog: TTabSheet;
-        lSetupPercentage: TLabel;
+        lSetupProg: TLabel;
         bInstall: TButton;
         bUpdate: TButton;
         lvEvents: TListView;
@@ -79,7 +79,7 @@ implementation
     procedure TF_FacTotum.formCreate(sender: tObject);
     begin
         sEventHdlr      :=  eventHandler.create;
-        //sTaskMgr        :=  taskManager.create;
+        sTaskMgr        :=  taskManager.create;
         sDbManager      :=  dbManager.create;
         sUpdateParser   :=  updateParser.create;
 
@@ -97,6 +97,5 @@ implementation
         sEventHdlr.clearErrorCache;
         tLog.imageIndex := tImageIndex(tiEvents);
     end;
-
 end.
 

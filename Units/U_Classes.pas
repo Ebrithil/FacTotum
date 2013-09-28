@@ -171,13 +171,19 @@ implementation
     begin
         while not(self.Terminated) do
             begin
+                if not( assigned(sTaskMgr) ) then
+                begin
+                    sleep(defaultThreadPoolSleepTime);
+                    continue;
+                end;
+
                 task := sTaskMgr.pullTaskFromInput();
 
                 if not( assigned(task) ) then
-                    begin
-                        sleep(defaultThreadPoolSleepTime);
-                        continue;
-                     end;
+                begin
+                    sleep(defaultThreadPoolSleepTime);
+                    continue;
+                end;
 
                 task.exec;
                 task.free;
@@ -266,7 +272,7 @@ implementation
     begin
         queueMutex.acquire;
 
-        if taskQueue.Count > 0 then
+        if taskQueue.count > 0 then
         begin
             result := tTask(taskQueue.first);
             taskQueue.remove(taskQueue.first);

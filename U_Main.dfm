@@ -16,12 +16,12 @@ object F_FacTotum: TF_FacTotum
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
-  object TABs: TPageControl
+  object pcTabs: TPageControl
     Left = 0
     Top = 0
     Width = 513
     Height = 635
-    ActivePage = tLog
+    ActivePage = tUpdate
     Align = alCustom
     DoubleBuffered = False
     Font.Charset = ANSI_CHARSET
@@ -29,7 +29,7 @@ object F_FacTotum: TF_FacTotum
     Font.Height = -19
     Font.Name = 'Eras Medium ITC'
     Font.Style = []
-    Images = IL_FacTotum
+    Images = ilFacTotum
     ParentDoubleBuffered = False
     ParentFont = False
     TabOrder = 0
@@ -38,7 +38,7 @@ object F_FacTotum: TF_FacTotum
       Caption = 'Installa'
       DoubleBuffered = False
       ParentDoubleBuffered = False
-      object L_InstallInfo: TLabel
+      object lInstallInfo: TLabel
         Left = 3
         Top = 475
         Width = 114
@@ -54,7 +54,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object lSetupPercentage: TLabel
+      object lSetupProg: TLabel
         Left = 455
         Top = 509
         Width = 46
@@ -70,7 +70,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object CLB_Software: TCheckListBox
+      object clbSoftware: TCheckListBox
         Left = 2
         Top = 3
         Width = 499
@@ -92,7 +92,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         TabOrder = 1
       end
-      object PB_Progress: TProgressBar
+      object pbProgress: TProgressBar
         Left = 3
         Top = 500
         Width = 446
@@ -115,9 +115,9 @@ object F_FacTotum: TF_FacTotum
     object tConfiguration: TTabSheet
       Caption = 'Configura'
       ImageIndex = 1
-      object TV_Software: TTreeView
-        Left = 2
-        Top = 3
+      object tvSoftware: TTreeView
+        Left = 3
+        Top = 0
         Width = 499
         Height = 467
         DragMode = dmAutomatic
@@ -129,7 +129,7 @@ object F_FacTotum: TF_FacTotum
         Indent = 19
         ParentFont = False
         ParentShowHint = False
-        PopupMenu = PM_Software
+        PopupMenu = pmSoftware
         RightClickSelect = True
         ShowHint = False
         TabOrder = 0
@@ -141,33 +141,7 @@ object F_FacTotum: TF_FacTotum
           0000000000000000000000010C53006500720076006900630065002000500061
           0063006B00}
       end
-      object RG_CompatibilityConfig: TRadioGroup
-        Left = 295
-        Top = 534
-        Width = 206
-        Height = 43
-        BiDiMode = bdLeftToRight
-        Caption = 'Compatibilit'#224
-        Color = clBtnFace
-        Columns = 4
-        Font.Charset = ANSI_CHARSET
-        Font.Color = clBlack
-        Font.Height = -16
-        Font.Name = 'Eras Medium ITC'
-        Font.Style = []
-        Items.Strings = (
-          'ALL'
-          'x86'
-          'x64'
-          'No')
-        ParentBiDiMode = False
-        ParentBackground = False
-        ParentColor = False
-        ParentFont = False
-        TabOrder = 1
-        StyleElements = [seClient]
-      end
-      object LE_CmdInfo: TLabeledEdit
+      object leCmdInfo: TLabeledEdit
         Left = 3
         Top = 501
         Width = 366
@@ -189,9 +163,9 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         LabelSpacing = 0
         ParentFont = False
-        TabOrder = 2
+        TabOrder = 1
       end
-      object LE_Versione: TLabeledEdit
+      object leVersion: TLabeledEdit
         Left = 384
         Top = 501
         Width = 117
@@ -214,9 +188,9 @@ object F_FacTotum: TF_FacTotum
         LabelSpacing = 0
         ParentFont = False
         ReadOnly = True
-        TabOrder = 3
+        TabOrder = 2
       end
-      object LE_Url: TLabeledEdit
+      object leUrl: TLabeledEdit
         Left = 3
         Top = 550
         Width = 286
@@ -238,13 +212,39 @@ object F_FacTotum: TF_FacTotum
         Font.Style = []
         LabelSpacing = 0
         ParentFont = False
+        TabOrder = 3
+      end
+      object rgCompConfig: TRadioGroup
+        Left = 295
+        Top = 534
+        Width = 206
+        Height = 43
+        BiDiMode = bdLeftToRight
+        Caption = 'Compatibilit'#224
+        Color = clBtnFace
+        Columns = 4
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -16
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        Items.Strings = (
+          'ALL'
+          'x86'
+          'x64'
+          'No')
+        ParentBiDiMode = False
+        ParentBackground = False
+        ParentColor = False
+        ParentFont = False
         TabOrder = 4
+        StyleElements = [seClient]
       end
     end
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
-      object L_DownloadInfo: TLabel
+      object lDownloadInfo: TLabel
         Left = 3
         Top = 475
         Width = 144
@@ -260,7 +260,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object L_Progress: TLabel
+      object lUpdateProg: TLabel
         Left = 453
         Top = 509
         Width = 48
@@ -275,7 +275,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object CLB_Download: TCheckListBox
+      object clbDownload: TCheckListBox
         Left = 2
         Top = 3
         Width = 499
@@ -297,7 +297,7 @@ object F_FacTotum: TF_FacTotum
         ParentFont = False
         TabOrder = 0
       end
-      object PB_Download: TProgressBar
+      object pbDownload: TProgressBar
         Left = 3
         Top = 500
         Width = 446
@@ -365,7 +365,7 @@ object F_FacTotum: TF_FacTotum
       end
     end
   end
-  object IL_FacTotum: TImageList
+  object ilFacTotum: TImageList
     ColorDepth = cd32Bit
     DrawingStyle = dsTransparent
     Height = 32
@@ -374,7 +374,7 @@ object F_FacTotum: TF_FacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802540120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802580120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1402,18 +1402,18 @@ object F_FacTotum: TF_FacTotum
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000000000000000000000000000}
   end
-  object PM_Software: TPopupMenu
+  object pmSoftware: TPopupMenu
     Left = 452
     Top = 177
-    object PM_Software_Insert: TMenuItem
+    object pmSwInsert: TMenuItem
       Caption = 'Inserisci Software'
       ShortCut = 16457
     end
-    object PM_Software_Delete: TMenuItem
+    object pmSwDelete: TMenuItem
       Caption = 'Elimina Software'
       ShortCut = 8238
     end
-    object PM_Set_Main_Command: TMenuItem
+    object pmSetMainCmd: TMenuItem
       Caption = 'Rendi Comando Principale'
       Visible = False
     end
@@ -1425,7 +1425,7 @@ object F_FacTotum: TF_FacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01580110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C015C0110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000
