@@ -9,12 +9,20 @@ uses
     U_Classes;
 
 type
-    softwareRecord = record
+    swRecord = record
+        id:       integer;
+        name:     string;
         commands: tList;
     end;
 
-    commandRecord = record
-
+    cmdRecord = record
+        id:            integer;
+        order:         byte;
+        compatibility: shortInt;
+        name,
+        exeCmd,
+        version,
+        updateURL:     string;
     end;
 
     dbManager = class
@@ -25,9 +33,11 @@ type
             procedure    rebuildDbStructure;
             function     query(qString: string): boolean;
             function     queryRes(qString: string): tDataSet;
+            function     getCommandList(const swID: integer): tList;
         public
             constructor create;
             destructor  destroy; override;
+            function    getSoftwareList: tList;
             //function loadRecordsFromDB(): tList;
             //function writeSoftwareRecordToDB(data: softwareRecord): integer;
             //function writeCommandRecordToDB(data: commandRecord): integer;
@@ -91,29 +101,35 @@ implementation
 
     procedure dbManager.disconnect;
     begin
-        m_connector.close;
-        sEventHdlr.pushEventToList( tEvent.create('Terminata connessione al DataBase.', eiInfo) );
+        try
+            m_connector.close;
+            sEventHdlr.pushEventToList( tEvent.create('Terminata connessione al DataBase.', eiInfo) );
+        except
+            on e: exception do
+                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
+        end;
     end;
 
-    function dbManager.Query(QString: String): Boolean;
+    function dbManager.query(qString: string): boolean;
     begin
+        result := false;
         try
             self.m_connector.executeDirect(qString);
             result:= true;
         except
             on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
+                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
         end;
     end;
 
-    function dbManager.QueryRes(QString: String): TDataSet;
+    function dbManager.QueryRes(qString: string): TDataSet;
     begin
         result := nil;
         try
             self.m_connector.execute(qString, nil, result);
         except
             on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
+                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
         end;
     end;
 
@@ -144,6 +160,56 @@ implementation
         + 'FOREIGN KEY(software) REFERENCES software(ID) ON DELETE CASCADE ON UPDATE CASCADE '
         + ');';
         self.query(query);
+    end;
+
+    function dbManager.getCommandList(const swID: integer): tList;
+    var
+        cmdRec:  cmdRecord;
+        sqlData: tDataSet;
+    begin
+        sqlData := self.queryRes('SELECT * FROM commands WHERE software = ' + intToStr(swID) + ' ORDER BY [order];');
+
+        sqlData.first;
+        while not( sqlData.eof ) do
+        begin
+            with cmdRec do
+            begin
+                id            := sqlData.fieldByName('id').asInteger;
+                name          := sqlData.fieldByName('label').toString;
+                order         := sqlData.fieldByName('order').asLongWord;
+                exeCmd        := sqlData.fieldByName('command').toString;
+                version       := sqlData.fieldByName('version').toString;
+                updateURL     := sqlData.fieldByName('updateurl').toString;
+                compatibility := sqlData.fieldByName('compatibility').asInteger;
+            end;
+            sqlData.next;
+            //result.add(cmdRec);
+        end;
+
+        sqlData.free;
+    end;
+
+    function dbManager.getSoftwareList: tList;
+    var
+        swRec:   swRecord;
+        sqlData: tDataSet;
+    begin
+        sqlData := self.queryRes('SELECT * FROM software;');
+
+        sqlData.first;
+        while not( sqlData.eof ) do
+        begin
+            with swRec do
+            begin
+                id       := sqlData.fieldByName('id').asInteger;
+                name     := sqlData.fieldByName('name').toString;
+                commands := self.getCommandList(id);
+            end;
+            sqlData.next;
+            //result.add(swRec);
+        end;
+
+        sqlData.free;
     end;
 
 //------------------------------------------------------------------------------
