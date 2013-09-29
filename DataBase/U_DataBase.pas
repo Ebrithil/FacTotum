@@ -9,13 +9,13 @@ uses
     U_Classes;
 
 type
-    swRecord = record
+    swRecord = class
         id:       integer;
         name:     string;
         commands: tList;
     end;
 
-    cmdRecord = record
+    cmdRecord = class
         id:            integer;
         order:         byte;
         compatibility: shortInt;
@@ -36,7 +36,7 @@ type
             function     getCommandList(const swID: integer): tList;
         public
             constructor create;
-            destructor  destroy; override;
+            destructor  Destroy; override;
             function    getSoftwareList: tList;
             //function loadRecordsFromDB(): tList;
             //function writeSoftwareRecordToDB(data: softwareRecord): integer;
@@ -47,7 +47,7 @@ const
     dbNamePath = 'FacTotum.db';
 
 var
-    sDbManager:    dbManager;
+    sDbManager:  dbManager;
 
 implementation
 
@@ -168,6 +168,8 @@ implementation
         sqlData: tDataSet;
     begin
         sqlData := self.queryRes('SELECT * FROM commands WHERE software = ' + intToStr(swID) + ' ORDER BY [order];');
+        cmdRec  := cmdRecord.create;
+        result  := tList.create;
 
         sqlData.first;
         while not( sqlData.eof ) do
@@ -183,7 +185,7 @@ implementation
                 compatibility := sqlData.fieldByName('compatibility').asInteger;
             end;
             sqlData.next;
-            //result.add(cmdRec);
+            result.add(cmdRec);
         end;
 
         sqlData.free;
@@ -195,6 +197,8 @@ implementation
         sqlData: tDataSet;
     begin
         sqlData := self.queryRes('SELECT * FROM software;');
+        swRec   := swRecord.create;
+        result  := tList.create;
 
         sqlData.first;
         while not( sqlData.eof ) do
@@ -206,7 +210,7 @@ implementation
                 commands := self.getCommandList(id);
             end;
             sqlData.next;
-            //result.add(swRec);
+            result.add(swRec);
         end;
 
         sqlData.free;
