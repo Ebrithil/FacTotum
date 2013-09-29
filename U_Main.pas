@@ -78,10 +78,12 @@ implementation
 
     procedure TF_FacTotum.formCreate(sender: tObject);
     begin
-        sEventHdlr      :=  eventHandler.create;
-        sTaskMgr        :=  taskManager.create;
-        sDbManager      :=  dbManager.create;
-        sUpdateParser   :=  updateParser.create;
+        sEventHdlr    := eventHandler.create;
+        sTaskMgr      := taskManager.create;
+        sUpdateParser := updateParser.create;
+        sDownloadMgr  := downloadManager.create;
+        sFileMgr      := fileManager.create;
+        sDBMgr        := dbManager.create;
 
         F_FacTotum.Left := (Screen.Width - Width)   div 2;
         F_FacTotum.Top  := (Screen.Height - Height) div 2;

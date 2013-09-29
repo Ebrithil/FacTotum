@@ -288,16 +288,16 @@ implementation
 
     function updateParser.getVersionFromFileName(swName: string): string;
     var
-      i:          Byte;
-      swParts:    TStringList;
-      chkVer:     Boolean;
-      testStr:    String;
+      i:          byte;
+      swParts:    tStringList;
+      chkVer:     boolean;
+      testStr:    string;
     begin
         swParts := split(swName, ' ');
 
         for testStr in swParts do
         begin
-            chkVer := True;
+            chkVer := true;
             for i := 1 to length(testStr) do
                  if not( charInSet(testStr[i], ['0'..'9']) or (testStr[i] = '.') ) then
                  begin
@@ -334,58 +334,58 @@ implementation
         end;
     end;
 
-    function updateParser.srcToIHTMLDocument3(srcCode: string): IHTMLDocument3;
+    function updateParser.srcToIHTMLDocument3(srcCode: string): iHTMLDocument3;
     var
-        V:       OleVariant;
-        srcDoc2: IHTMLDocument2;
+        V:       oleVariant;
+        srcDoc2: iHTMLDocument2;
     begin
-        srcDoc2 := coHTMLDocument.Create as IHTMLDocument2;
-        V := VarArrayCreate([0, 0], varVariant);
+        srcDoc2 := coHTMLDocument.create as iHTMLDocument2;
+        V := varArrayCreate([0, 0], varVariant);
         V[0] := srcCode;
-        srcDoc2.Write(PSafeArray(TVarData(V).VArray));
-        srcDoc2.Close;
+        srcDoc2.write( pSafeArray(tVarData(V).vArray) );
+        srcDoc2.close;
 
-        try
-            result := srcDoc2 as IHTMLDocument3;
+        try // TODO: Serve questo try?
+            result := srcDoc2 as iHTMLDocument3;
         except
-            on E: exception do
-                sEventHdlr.pushEventToList(tEvent.create(E.className + ': ' + E.message, eiError));
+            on e: exception do
+                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
         end;
     end;
 
     function updateParser.getDirectDownloadLink(swLink: string): string;
     var
-        i:       Byte;
-        srcTags: IHTMLElementCollection;
-        srcTagE: IHTMLElement;
-        srcElem: IHTMLElement2;
-        srcDoc3: IHTMLDocument3;
+        i:       byte;
+        srcTags: iHTMLElementCollection;
+        srcTagE: iHTMLElement;
+        srcElem: iHTMLElement2;
+        srcDoc3: iHTMLDocument3;
     begin
         result := '';
-        srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(swLink));
+        srcDoc3 := self.srcToIHTMLDocument3( sDownloadMgr.downloadPageSource(swLink) );
 
         // ricavo il link diretto di download
         srcTags := srcDoc3.getElementsByTagName('meta');
         for i := 0 to pred(srcTags.length) do
         begin
-            srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
+            srcTagE := srcTags.item(i, emptyParam) as iHTMLElement;
             if ansiContainsText(srcTagE.outerHTML, 'refresh') then
             begin
                 result := ansiMidStr(srcTagE.outerHTML,
                           ansiPos('url', srcTagE.outerHTML),
-                          LastDelimiter('"', srcTagE.outerHTML) - ansiPos('url', srcTagE.outerHTML));
-                result := StringReplace(result, 'url=/', softwareUpdateBaseURL, [rfIgnoreCase]);
+                          lastDelimiter('"', srcTagE.outerHTML) - ansiPos('url', srcTagE.outerHTML));
+                result := stringReplace(result, 'url=/', softwareUpdateBaseURL, [rfIgnoreCase]);
                 break;
             end;
         end;
 
         if (result = '') then
             begin
-                srcElem := srcDoc3.getElementById('dlbox') as IHTMLElement2;
+                srcElem := srcDoc3.getElementById('dlbox') as iHTMLElement2;
                 srcTags := srcElem.getElementsByTagName('a');
                 for i := 0 to pred(srcTags.length) do
                 begin
-                    srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
+                    srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
                     if ansiContainsText(srcTagE.innerText, 'scarica') then
                         begin
                             result := srcTagE.getAttribute('href', 0);
@@ -400,35 +400,35 @@ implementation
 
     function updateParser.getLastStableVerFromURL(baseURL: string): string;
     var
-        srcDoc3: IHTMLDocument3;
+        srcDoc3: iHTMLDocument3;
     begin
         srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
-        result := self.getLastStableVerFromSrc(srcDoc3);
+        result  := self.getLastStableVerFromSrc(srcDoc3);
     end;
 
-    function updateParser.getLastStableVerFromSrc(srcCode: IHTMLDocument3): string;
+    function updateParser.getLastStableVerFromSrc(srcCode: iHTMLDocument3): string;
     var
-        i:       Byte;
-        srcTags: IHTMLElementCollection;
-        srcTagE: IHTMLElement;
-        srcElem: IHTMLElement2;
+        i:       byte;
+        srcTags: iHTMLElementCollection;
+        srcTagE: iHTMLElement;
+        srcElem: iHTMLElement2;
     begin
-        result := '';
+        result  := '';
 
-        srcElem := srcCode.getElementById('dlboxinner') as IHTMLElement2;
+        srcElem := srcCode.getElementById('dlboxinner') as iHTMLElement2;
 
         // verifico se l'ultima versione e' stabile
         srcTags := srcElem.getElementsByTagName('b');
         for i := 0 to pred(srcTags.length) do
         begin
-            srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
+            srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
             if self.isAcceptableVersion(srcTagE.innerText) then
             begin
                 result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                 break;
             end
             else
-                sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo));
+                sEventHdlr.pushEventToList( tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo) );
         end;
 
         // altrimenti passo alle precedenti
@@ -437,44 +437,44 @@ implementation
             srcTags := srcElem.getElementsByTagName('a');
             for i := 0 to pred(srcTags.length) do
             begin
-                srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
+                srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
                 if self.isAcceptableVersion(srcTagE.innerText) then
                 begin
                     result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                     break;
                 end
                 else
-                    sEventHdlr.pushEventToList(tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo));
+                    sEventHdlr.pushEventToList( tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo) );
             end;
         end;
 
         if (result = '') then
         begin
-            sEventHdlr.pushEventToList(tEvent.create('Nessuna versione accettabile trovata.', eiAlert));
+            sEventHdlr.pushEventToList( tEvent.create('Nessuna versione accettabile trovata.', eiAlert) );
             result := 'N/D';
         end;
     end;
 
     function updateParser.getLastStableLink(baseURL: string): string;
     var
-        i:       Byte;
-        targetV: String;
-        srcTags: IHTMLElementCollection;
-        srcTagE: IHTMLElement;
-        srcElem: IHTMLElement2;
-        srcDoc3: IHTMLDocument3;
+        i:       byte;
+        targetV: string;
+        srcTags: iHTMLElementCollection;
+        srcTagE: iHTMLElement;
+        srcElem: iHTMLElement2;
+        srcDoc3: iHTMLDocument3;
     begin
-        result := '';
+        result  := '';
 
         srcDoc3 := self.srcToIHTMLDocument3( sDownloadMgr.downloadPageSource(baseURL) );
         targetV := self.getLastStableVerFromSrc(srcDoc3);
-        srcElem := srcDoc3.getElementById('dlbox') as IHTMLElement2;
+        srcElem := srcDoc3.getElementById('dlbox') as iHTMLElement2;
 
         // cerco il link alla ultima versione stabile
         srcTags := srcElem.getElementsByTagName('a');
         for i := 0 to pred(srcTags.length) do
         begin
-            srcTagE := srcTags.item(i, EmptyParam) as IHTMLElement;
+            srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
             if ansiContainsText(srcTagE.innerText, 'scarica') then
                 result := srcTagE.getAttribute('href', 0)
             else if ansiContainsText( srcTagE.innerText, targetV ) then
@@ -543,7 +543,7 @@ implementation
 
     procedure fileManager.saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
     begin
-        dataStream.SaveToFile(fileName)
+        dataStream.saveToFile(fileName)
     end;
 
     procedure fileManager.startInstallerWithCMD(cmd: string);

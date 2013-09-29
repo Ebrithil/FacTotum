@@ -3,7 +3,7 @@ unit U_DataBase;
 interface
 
 uses
-    System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DbxSqlite,
+    System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DBXSqlite,
     System.Classes, winapi.windows,
 
     U_Classes;
@@ -25,12 +25,12 @@ type
         updateURL:     string;
     end;
 
-    dbManager = class
+    DBManager = class
         protected
             m_connector: tSQLConnection;
             procedure    connect;
             procedure    disconnect;
-            procedure    rebuildDbStructure;
+            procedure    rebuildDBStructure;
             function     query(qString: string): boolean;
             function     queryRes(qString: string): tDataSet;
             function     getCommandList(const swID: integer): tList;
@@ -44,41 +44,41 @@ type
     end;
 
 const
-    dbNamePath = 'FacTotum.db';
+    DBNamePath = 'FacTotum.db';
 
 var
-    sDbManager:  dbManager;
+    sDBMgr: DBManager;
 
 implementation
 
 // Start Implementation of TDatabase Class
 //------------------------------------------------------------------------------
 
-    constructor dbManager.create;
+    constructor DBManager.create;
     begin
         m_connector := tSQLConnection.create(nil);
 
         m_connector.connectionName := 'SQLITECONNECTION';
-        m_connector.driverName := 'Sqlite';
-        m_connector.loginPrompt := false;
+        m_connector.driverName     := 'Sqlite';
+        m_connector.loginPrompt    := false;
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
-        m_connector.params.add('Database=' + dbNamePath);
+        m_connector.params.add('Database=' + DBNamePath);
         m_connector.params.add('FailIfMissing=False');
 
         self.connect;
     end;
 
-    destructor  dbManager.destroy;
+    destructor DBManager.destroy;
     begin
         self.disconnect;
         inherited;
     end;
 
-    procedure dbManager.connect;
+    procedure DBManager.connect;
     begin
-        if not( fileExists(dbNamePath) ) then
+        if not( fileExists(DBNamePath) ) then
         begin
              sEventHdlr.pushEventToList( tEvent.create('DataBase non trovato.', eiAlert) );
              sEventHdlr.pushEventToList( tEvent.create('Il DataBase verrà ricreato.', eiAlert) );
@@ -89,7 +89,7 @@ implementation
             try
                 m_connector.open;
                 sEventHdlr.pushEventToList( tEvent.create('Effettuata connessione al DataBase.', eiInfo) );
-                self.rebuildDbStructure;
+                self.rebuildDBStructure;
             except
                 on e: exception do
                     sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
@@ -99,7 +99,7 @@ implementation
         end;
     end;
 
-    procedure dbManager.disconnect;
+    procedure DBManager.disconnect;
     begin
         try
             m_connector.close;
@@ -110,7 +110,7 @@ implementation
         end;
     end;
 
-    function dbManager.query(qString: string): boolean;
+    function DBManager.query(qString: string): boolean;
     begin
         result := false;
         try
@@ -122,7 +122,7 @@ implementation
         end;
     end;
 
-    function dbManager.QueryRes(qString: string): TDataSet;
+    function DBManager.QueryRes(qString: string): TDataSet;
     begin
         result := nil;
         try
@@ -133,7 +133,7 @@ implementation
         end;
     end;
 
-    procedure dbManager.rebuildDbStructure;
+    procedure DBManager.rebuildDBStructure;
     var
         query: string;
     begin
@@ -162,7 +162,7 @@ implementation
         self.query(query);
     end;
 
-    function dbManager.getCommandList(const swID: integer): tList;
+    function DBManager.getCommandList(const swID: integer): tList;
     var
         cmdRec:  cmdRecord;
         sqlData: tDataSet;
@@ -191,7 +191,7 @@ implementation
         sqlData.free;
     end;
 
-    function dbManager.getSoftwareList: tList;
+    function DBManager.getSoftwareList: tList;
     var
         swRec:   swRecord;
         sqlData: tDataSet;
@@ -201,7 +201,7 @@ implementation
         result  := tList.create;
 
         sqlData.first;
-        while not( sqlData.eof ) do
+        while not(sqlData.eof) do
         begin
             with swRec do
             begin
@@ -209,6 +209,7 @@ implementation
                 name     := sqlData.fieldByName('name').toString;
                 commands := self.getCommandList(id);
             end;
+
             sqlData.next;
             result.add(swRec);
         end;
