@@ -9,16 +9,20 @@ uses
     U_Classes;
 
 type
+    compatibilityMask = ( archNone, archx86, archx64 );
+
     swRecord = class
         id:       integer;
         name:     string;
         commands: tList;
+
+        function hasValidCommands: boolean;
     end;
 
     cmdRecord = class
         id:            integer;
-        order:         byte;
-        compatibility: shortInt;
+        order,
+        compatibility: byte;
         name,
         exeCmd,
         version,
@@ -28,6 +32,7 @@ type
     DBManager = class
         protected
             m_connector: tSQLConnection;
+            m_software:  tList;
             procedure    connect;
             procedure    disconnect;
             procedure    rebuildDBStructure;
@@ -38,7 +43,6 @@ type
             constructor create;
             destructor  Destroy; override;
             function    getSoftwareList: tList;
-            //function loadRecordsFromDB(): tList;
             //function writeSoftwareRecordToDB(data: softwareRecord): integer;
             //function writeCommandRecordToDB(data: commandRecord): integer;
     end;
@@ -50,6 +54,21 @@ var
     sDBMgr: DBManager;
 
 implementation
+
+    function swRecord.hasValidCommands: boolean;
+    var
+        i: integer;
+    begin
+        for i := 0 to commands.count do
+            // Confronto il mask di compatibility con la mask generata dall'architettura del SO, usando la Magia Nera
+            if ( (cmdRecord(commands.items[i]).compatibility and (1 shl byte(tOSVersion.architecture))) > 0 ) then
+            begin
+                result := true;
+                exit
+            end;
+
+        result := false;
+    end;
 
 // Start Implementation of TDatabase Class
 //------------------------------------------------------------------------------
@@ -70,7 +89,7 @@ implementation
         self.connect;
     end;
 
-    destructor DBManager.destroy;
+    destructor DBManager.Destroy;
     begin
         self.disconnect;
         inherited;
@@ -122,7 +141,7 @@ implementation
         end;
     end;
 
-    function DBManager.QueryRes(qString: string): TDataSet;
+    function DBManager.queryRes(qString: string): tDataSet;
     begin
         result := nil;
         try
@@ -176,13 +195,13 @@ implementation
         begin
             with cmdRec do
             begin
-                id            := sqlData.fieldByName('id').asInteger;
-                name          := sqlData.fieldByName('label').toString;
-                order         := sqlData.fieldByName('order').asLongWord;
-                exeCmd        := sqlData.fieldByName('command').toString;
-                version       := sqlData.fieldByName('version').toString;
-                updateURL     := sqlData.fieldByName('updateurl').toString;
-                compatibility := sqlData.fieldByName('compatibility').asInteger;
+                id            := sqlData.fieldByName('id').value;
+                name          := sqlData.fieldByName('label').value;
+                order         := sqlData.fieldByName('order').value;
+                exeCmd        := sqlData.fieldByName('command').value;
+                version       := sqlData.fieldByName('version').value;
+                updateURL     := sqlData.fieldByName('updateurl').value;
+                compatibility := sqlData.fieldByName('compatibility').value;
             end;
             sqlData.next;
             result.add(cmdRec);
@@ -196,25 +215,32 @@ implementation
         swRec:   swRecord;
         sqlData: tDataSet;
     begin
-        sqlData := self.queryRes('SELECT * FROM software;');
-        swRec   := swRecord.create;
-        result  := tList.create;
+        if assigned(m_software) then
+        begin
+            result := m_software;
+            exit;
+        end;
+
+        sqlData     := self.queryRes('SELECT * FROM software;');
+        swRec       := swRecord.create;
+        m_software  := tList.create;
 
         sqlData.first;
         while not(sqlData.eof) do
         begin
             with swRec do
             begin
-                id       := sqlData.fieldByName('id').asInteger;
-                name     := sqlData.fieldByName('name').toString;
+                id       := sqlData.fieldByName('id').value;
+                name     := sqlData.fieldByName('name').value;
                 commands := self.getCommandList(id);
             end;
 
             sqlData.next;
-            result.add(swRec);
+            m_software.add(swRec);
         end;
 
         sqlData.free;
+        result := m_software;
     end;
 
 //------------------------------------------------------------------------------

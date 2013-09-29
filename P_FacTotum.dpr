@@ -2,7 +2,7 @@ program P_FacTotum;
 
 uses
   Vcl.Forms,
-  U_Main in 'U_Main.pas' {F_FacTotum},
+  U_Main in 'U_Main.pas' {fFacTotum},
   Vcl.Themes,
   Vcl.Styles,
   U_Classes in 'Units\U_Classes.pas',
@@ -15,6 +15,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   TStyleManager.TrySetStyle('Metropolis UI Dark');
-  Application.CreateForm(TF_FacTotum, F_FacTotum);
+  Application.CreateForm(TfFacTotum, fFacTotum);
   Application.Run;
 end.

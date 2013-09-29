@@ -9,7 +9,7 @@ uses
     U_DataBase, U_Functions, U_Classes;
 
 type
-    TF_FacTotum = class(tForm)
+    tfFacTotum = class(tForm)
         pcTabs: TPageControl;
         tInstaller: TTabSheet;
         tConfiguration: TTabSheet;
@@ -42,20 +42,44 @@ type
         procedure formCreate(Sender: TObject);
         procedure applicationIdleEvents(Sender: TObject; var Done: Boolean);
         procedure bClearClick(Sender: TObject);
-
+        procedure refreshSoftwareList;
     end;
 
 const
     FH_URL = 'http://www.filehippo.com/';
 
 var
-    F_FacTotum: tF_FacTotum;
+    fFacTotum: tfFacTotum;
 
 implementation
 
 {$R *.dfm}
 
-    procedure TF_FacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
+    procedure tfFacTotum.refreshSoftwareList;
+    var
+        software: tList;
+        j,
+        i:        integer;
+        node:     tTreeNode;
+        swRec:    swRecord;
+    begin
+        software := sDBMgr.getSoftwareList;
+
+        for i := 0 to pred(software.count) do
+        begin
+            swRec := swRecord(software.items[i]);
+
+            if swRec.hasValidCommands then
+                clbSoftware.items.add(swRec.name);
+
+            node := tvSoftware.items.add(nil, swRec.name);
+
+            for j := 0 to pred(swRec.commands.count) do
+                tvSoftware.items.addChild( node, cmdRecord(swRec.commands[j]).name );
+        end;
+    end;
+
+    procedure tfFacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
     var
           event:  tEvent;
     begin
@@ -76,7 +100,7 @@ implementation
                 end;
     end;
 
-    procedure TF_FacTotum.formCreate(sender: tObject);
+    procedure tfFacTotum.formCreate(sender: tObject);
     begin
         sEventHdlr    := eventHandler.create;
         sTaskMgr      := taskManager.create;
@@ -85,15 +109,17 @@ implementation
         sFileMgr      := fileManager.create;
         sDBMgr        := dbManager.create;
 
-        F_FacTotum.Left := (Screen.Width - Width)   div 2;
-        F_FacTotum.Top  := (Screen.Height - Height) div 2;
+        fFacTotum.Left := (Screen.Width - Width)   div 2;
+        fFacTotum.Top  := (Screen.Height - Height) div 2;
 
-        F_FacTotum.Caption:= F_FacTotum.Caption + ' v' + GetFmtFileVersion(Application.ExeName);
+        fFacTotum.Caption:= fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
 
-        Application.OnIdle := ApplicationIdleEvents;
+        application.OnIdle := applicationIdleEvents;
+
+        self.refreshSoftwareList;
     end;
 
-    procedure TF_FacTotum.bClearClick(Sender: TObject);
+    procedure tfFacTotum.bClearClick(Sender: TObject);
     begin
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;

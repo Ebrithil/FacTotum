@@ -1,4 +1,4 @@
-object F_FacTotum: TF_FacTotum
+object fFacTotum: TfFacTotum
   Left = 0
   Top = 0
   BorderIcons = [biSystemMenu]
@@ -21,7 +21,7 @@ object F_FacTotum: TF_FacTotum
     Top = 0
     Width = 513
     Height = 635
-    ActivePage = tInstaller
+    ActivePage = tConfiguration
     Align = alCustom
     DoubleBuffered = False
     Font.Charset = ANSI_CHARSET
@@ -115,20 +115,16 @@ object F_FacTotum: TF_FacTotum
     object tConfiguration: TTabSheet
       Caption = 'Configura'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object tvSoftware: TTreeView
-        Left = 3
-        Top = 0
+        Left = 2
+        Top = 3
         Width = 499
         Height = 467
         DragMode = dmAutomatic
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
-        Font.Height = -16
-        Font.Name = 'Eras Light ITC'
+        Font.Height = -19
+        Font.Name = 'Eras Medium ITC'
         Font.Style = []
         Indent = 19
         ParentFont = False
@@ -225,7 +221,6 @@ object F_FacTotum: TF_FacTotum
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
-        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -248,10 +243,6 @@ object F_FacTotum: TF_FacTotum
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object lDownloadInfo: TLabel
         Left = 3
         Top = 475
@@ -328,10 +319,6 @@ object F_FacTotum: TF_FacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -386,7 +373,7 @@ object F_FacTotum: TF_FacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802600120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802680120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1437,7 +1424,7 @@ object F_FacTotum: TF_FacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01640110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C016C0110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000
