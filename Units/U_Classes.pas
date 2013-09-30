@@ -19,8 +19,8 @@ type
     // Custom Node for Config
     tSoftwareTreeNode = class(tTreeNode)
         public
-            softwareID, commandID, order, compatibility, mainCommand:   integer;
-            software, version, description, command, URL:               string;
+            softwareID, commandID, order, compatibility, mainCommand: integer;
+            software, version, description, command, URL:             string;
     end;
 
     thread = class(tThread)
@@ -67,8 +67,6 @@ type
             id:     word;
             status: tStatus;
             param:  integer; // Percentuale completamento in caso 'status = processing' o codice errore in caso 'status = failed'
-
-            procedure exec; override;
     end;
 
     tThreads = Array of thread;
@@ -183,7 +181,7 @@ implementation
                 continue;
             end;
 
-            task.exec;
+            task.exec; // TODO: Verifica che non faccia crashare qualora exec non fosse overridden
             task.free;
         end;
     end;
@@ -208,11 +206,6 @@ implementation
     procedure tTaskFlush.exec;
     begin
         sFileMgr.saveDataStreamToFile(self.fileName, self.dataStream)
-    end;
-
-    procedure tTaskReport.exec; // Dummy. Il report non ha motivo di essere eseguito (esiste solo in uscita)
-    begin
-        exit;
     end;
 
     // taskManager
@@ -277,9 +270,9 @@ implementation
 
     procedure taskManager.pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
     begin
-        m_outputMutex.acquire;
-        m_outputTasks.add(taskToAdd);
-        m_outputMutex.release;
+        queueMutex.acquire;
+        taskQueue.add(taskToAdd);
+        queueMutex.release;
     end;
 
     function taskManager.pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;

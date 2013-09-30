@@ -4,12 +4,14 @@ interface
 
 uses
     System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DBXSqlite,
-    System.Classes, winapi.windows,
+    System.Classes, winapi.windows, System.SyncObjs,
 
     U_Classes;
 
 type
     compatibilityMask = ( archNone, archx86, archx64 );
+    recordType        = ( recordSoftware, recordCommand );
+    modificationType  = ( modInsert, modUpdate, modDelete );
 
     DBRecord = class
         rType: string;
@@ -33,39 +35,67 @@ type
         updateURL:     string;
     end;
 
-    fieldUpdate = class
-        rType: string;
-        rID:   integer;
-        field: string;
-        value: variant;
-
-        constructor create(rType: string; rID: integer; field: string; value:variant);
+    tTaskRecordOP = class(tTask)
+        public
+            tRecord: recordType;
+            pRecord: DBRecord;
     end;
 
-    updateWrapper = class
-        recordInfo: DBRecord;
-        data:       tList;
+    tTaskRecordInsert = class(tTaskRecordOP)
+        public
+            procedure exec; override;
+    end;
+
+    tTaskRecordUpdate = class(tTaskRecordOP)
+        public
+            field: string;
+            value: variant;
+
+            procedure exec; override;
+    end;
+
+    tTaskRecordDelete = class(tTaskRecordOP)
+        public
+            procedure exec; override;
+    end;
+
+    tTaskDBUpdate = class(tTask)
+        public
+            procedure exec; override;
+    end;
+
+    recordModification = class
+        public
+            modType: modificationType;
+            pRecord: DBRecord;
+            field:   string;
+            value:   variant;
+
+            constructor create(modType: modificationType; pRecord: DBRecord); overload;
+            constructor create(modType: modificationType; pRecord: DBRecord; field: string; value: variant); overload;
     end;
 
     DBManager = class
         protected
-            m_connector: tSQLConnection;
+            m_connector:   tSQLConnection;
             m_updates,
-            m_software:  tList;
-            procedure    connect;
-            procedure    disconnect;
-            procedure    rebuildDBStructure;
-            function     query(qString: string): boolean;
-            function     queryRes(qString: string): tDataSet;
-            function     getCommandList(const swID: integer): tList;
+            m_software:    tList;
+            m_updateMutex: tMutex;
+            m_updated:     boolean;
+            procedure      connect;
+            procedure      disconnect;
+            procedure      rebuildDBStructure;
+            function       query(qString: string): boolean;
+            function       queryRes(qString: string): tDataSet;
+            function       getCommandList(const swID: integer): tList;
         public
             constructor create;
             destructor  Destroy; override;
             function    getSoftwareList: tList;
-            procedure   addModificationToUpdateList(update: updateWrapper);
+            function    wasUpdated: boolean;
+            procedure   enqueueModification(data: recordModification);
             procedure   flushModificationsToDB;
     end;
-
 const
     DBNamePath = 'FacTotum.db';
 
@@ -78,6 +108,11 @@ implementation
     var
         i: integer;
     begin
+        result := false;
+
+        if not assigned(commands) then
+            exit;
+
         for i := 0 to pred(commands.count) do
             // Confronto il mask di compatibility con la mask generata dall'architettura del SO, usando la Magia Nera
             if ( (cmdRecord(commands.items[i]).compatibility and (1 shl byte(tOSVersion.architecture))) > 0 ) then
@@ -85,8 +120,6 @@ implementation
                 result := true;
                 exit
             end;
-
-        result := false;
     end;
 
 // Start Implementation of TDatabase Class
@@ -94,12 +127,14 @@ implementation
 
     constructor DBManager.create;
     begin
-        m_connector := tSQLConnection.create(nil);
+        m_connector   := tSQLConnection.create(nil);
+        m_updateMutex := tMutex.create;
+        m_updates     := tList.create;
+        m_updated     := true;
 
         m_connector.connectionName := 'SQLITECONNECTION';
         m_connector.driverName     := 'Sqlite';
         m_connector.loginPrompt    := false;
-        m_updates                  := tList.create;
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
@@ -177,7 +212,7 @@ implementation
         query: string;
     begin
         // Eventually rebuild Software Table
-        query:=
+        query :=
         'CREATE TABLE IF NOT EXISTS software ( '
         + 'id INTEGER PRIMARY KEY AUTOINCREMENT, '
         + 'name VARCHAR(50) NOT NULL '
@@ -185,7 +220,7 @@ implementation
         self.query(query);
 
         // Eventually rebuild Commands History Table
-        query:=
+        query :=
         'CREATE TABLE IF NOT EXISTS commands ( '
         + 'id INTEGER PRIMARY KEY AUTOINCREMENT, '
         + 'software INTEGER NOT NULL, '
@@ -263,35 +298,75 @@ implementation
         result := m_software;
     end;
 
-    procedure DBManager.addModificationToUpdateList(update: updateWrapper);
+    procedure DBManager.flushModificationsToDB;
     var
-        i:   integer;
-        add: boolean;
+        query: string;
     begin
-        add := true;
+        query := ''; // TODO PER MATTIA :P
+        self.query(query);
+    end;
 
-        for i := 0 to m_updates.count do
-            if updateWrapper(m_updates.items[i]).recordInfo = update.recordInfo  then
-            begin
-                add := false;
-                break;
-            end;
+    procedure DBManager.enqueueModification(data: recordModification);
+    begin
+        self.m_updateMutex.acquire;
+        self.m_updates.add(data);
+        self.m_updateMutex.release;
+        m_updated := true;
+    end;
 
-        if add then
-            m_updates.add(update)
+    function DBManager.wasUpdated: boolean;
+    begin
+        if m_updated then
+        begin
+            m_updated := false;
+            result    := true;
+        end
         else
-            updateWrapper(m_updates.items[i]).data.add(fieldUpdate(update.data.items[0]))
+            result := false;
     end;
 
 //------------------------------------------------------------------------------
 // End Implementation of TDatabase Class
 
-    constructor fieldUpdate.create(rType: string; rID: integer; field: string; value: variant);
+    constructor recordModification.create(modType: modificationType; pRecord: DBRecord);
     begin
-        self.rType := rType;
-        self.rID   := rID;
-        self.field := field;
-        self.value := value;
+        self.create(modType, pRecord, '', 0);
+    end;
+
+    constructor recordModification.create(modType: modificationType; pRecord: DBRecord; field: string; value: variant);
+    begin
+        self.modType := modType;
+        self.pRecord := pRecord;
+        self.field   := field;
+        self.value   := value;
+    end;
+
+    procedure tTaskRecordInsert.exec;
+    var
+        pList: tList;
+    begin
+        sDBMgr.enqueueModification(recordModification.create(modInsert, self.pRecord));
+        pList := sDBMgr.getSoftwareList;
+
+        case self.tRecord of
+            recordSoftware : pList.add(self.pRecord);
+            recordCommand  : swRecord(pList.items[pList.indexOf(self.pRecord)]).commands.add(self.pRecord);
+        end;
+    end;
+
+    procedure tTaskRecordUpdate.exec;
+    begin
+
+    end;
+
+    procedure tTaskRecordDelete.exec;
+    begin
+        sDBMgr.enqueueModification(recordModification.create(modDelete, self.pRecord));
+    end;
+
+    procedure tTaskDBUpdate.exec;
+    begin
+        sDBMgr.flushModificationsToDB;
     end;
 
 end.

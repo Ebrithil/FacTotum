@@ -45,6 +45,7 @@ type
         procedure refreshSoftwareList;
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
+        procedure pmSwInsertClick(Sender: TObject);
     end;
 
 const
@@ -91,6 +92,11 @@ implementation
         node:     tTreeNode;
         swRec:    swRecord;
     begin
+        if not sDBMgr.wasUpdated then
+            exit;
+
+        tvSoftware.items.clear;
+
         software := sDBMgr.getSoftwareList;
 
         for i := 0 to pred(software.count) do
@@ -102,6 +108,9 @@ implementation
 
             node := tvSoftware.items.add(nil, swRec.name);
 
+            if not assigned(swRec.commands) then
+                continue;
+
             for j := 0 to pred(swRec.commands.count) do
                 tvSoftware.items.addChild( node, cmdRecord(swRec.commands[j]).name );
         end;
@@ -111,6 +120,8 @@ implementation
     var
           event:  tEvent;
     begin
+        done := false;
+
         if (sEventHdlr.getErrorCache) then
             tLog.imageIndex := tImageIndex(tiEvtErr);
 
@@ -126,6 +137,8 @@ implementation
 
                     event.free;
                 end;
+
+        self.refreshSoftwareList;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
@@ -143,11 +156,19 @@ implementation
         fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
 
         application.onIdle  := applicationIdleEvents;
-
-        self.refreshSoftwareList;
     end;
 
-    procedure tfFacTotum.bClearClick(sender: tObject);
+    procedure tfFacTotum.pmSwInsertClick(Sender: TObject);
+    var
+        taskInsert: tTaskRecordInsert;
+    begin
+        taskInsert := tTaskRecordInsert.create;
+        taskInsert.tRecord := recordSoftware;
+        taskInsert.pRecord := swRecord.create;
+        sTaskMgr.pushTaskToInput(taskInsert);
+    end;
+
+procedure tfFacTotum.bClearClick(sender: tObject);
     begin
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
