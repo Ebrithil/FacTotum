@@ -161,32 +161,31 @@ implementation
     constructor thread.create;
     begin
         inherited create(false);
-        freeOnTerminate := true;
     end;
 
     procedure thread.execute;
     var
         task: tTask;
     begin
-        while not(self.Terminated) do
+        while not(self.terminated) do
+        begin
+            if not( assigned(sTaskMgr) ) then
             begin
-                if not( assigned(sTaskMgr) ) then
-                begin
-                    sleep(defaultThreadPoolSleepTime);
-                    continue;
-                end;
-
-                task := sTaskMgr.pullTaskFromInput();
-
-                if not( assigned(task) ) then
-                begin
-                    sleep(defaultThreadPoolSleepTime);
-                    continue;
-                end;
-
-                task.exec;
-                task.free;
+                sleep(defaultThreadPoolSleepTime);
+                continue;
             end;
+
+            task := sTaskMgr.pullTaskFromInput();
+
+            if not( assigned(task) ) then
+            begin
+                sleep(defaultThreadPoolSleepTime);
+                continue;
+            end;
+
+            task.exec;
+            task.free;
+        end;
     end;
 
     // Implementazioni tTask
@@ -213,7 +212,7 @@ implementation
 
     procedure tTaskReport.exec; // Dummy. Il report non ha motivo di essere eseguito (esiste solo in uscita)
     begin
-        exit
+        exit;
     end;
 
     // taskManager
@@ -227,11 +226,14 @@ implementation
     var
         i: integer;
     begin
-        for i := 0 to length(m_threadPool) do
+        for i := 0 to pred(length(m_threadPool)) do
             m_threadPool[i].terminate;
 
-        for i := 0 to length(m_threadPool) do
+        for i := 0 to pred(length(m_threadPool)) do
+        begin
             m_threadPool[i].waitFor;
+            m_threadPool[i].free;
+        end;
 
         inherited;
     end;

@@ -40,11 +40,11 @@ type
         ilEvents: TImageList;
 
         procedure formCreate(sender: tObject);
-        procedure formExit(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
         procedure bClearClick(sender: tObject);
         procedure refreshSoftwareList;
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
+        procedure formClose(sender: tObject; var action: tCloseAction);
     end;
 
 const
@@ -76,6 +76,11 @@ implementation
             leUrl.text             := cmdRec.updateURL;
             rgCompConfig.itemIndex := cmdRec.compatibility;
         end;
+    end;
+
+    procedure tfFacTotum.formClose(sender: tObject; var action: tCloseAction);
+    begin
+        sTaskMgr.free;
     end;
 
     procedure tfFacTotum.refreshSoftwareList;
@@ -121,11 +126,6 @@ implementation
 
                     event.free;
                 end;
-    end;
-
-    procedure tfFacTotum.formExit(sender: TObject);
-    begin
-        sTaskMgr.free;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
