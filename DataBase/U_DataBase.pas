@@ -59,7 +59,7 @@ implementation
     var
         i: integer;
     begin
-        for i := 0 to commands.count do
+        for i := 0 to pred(commands.count) do
             // Confronto il mask di compatibility con la mask generata dall'architettura del SO, usando la Magia Nera
             if ( (cmdRecord(commands.items[i]).compatibility and (1 shl byte(tOSVersion.architecture))) > 0 ) then
             begin
@@ -187,12 +187,12 @@ implementation
         sqlData: tDataSet;
     begin
         sqlData := self.queryRes('SELECT * FROM commands WHERE software = ' + intToStr(swID) + ' ORDER BY [order];');
-        cmdRec  := cmdRecord.create;
         result  := tList.create;
 
         sqlData.first;
         while not( sqlData.eof ) do
         begin
+            cmdRec  := cmdRecord.create;
             with cmdRec do
             begin
                 id            := sqlData.fieldByName('id').value;

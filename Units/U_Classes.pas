@@ -77,6 +77,7 @@ type
         public
             constructor create; overload;
             constructor create(const threadsCount: byte); overload;
+            destructor  Destroy; override;
 
             procedure pushTaskToInput(taskToAdd: tTask);
             function  pullTaskFromInput: tTask;
@@ -155,8 +156,6 @@ implementation
 // Implementation of
 //------------------------------------------------------------------------------
 
-    // TODO: inizializza tutte le variabili delle classi... T^T
-
     // thread
 
     constructor thread.create;
@@ -222,6 +221,19 @@ implementation
     constructor taskManager.create;
     begin
         self.create(CPUCount)
+    end;
+
+    destructor taskManager.Destroy;
+    var
+        i: integer;
+    begin
+        for i := 0 to length(m_threadPool) do
+            m_threadPool[i].terminate;
+
+        for i := 0 to length(m_threadPool) do
+            m_threadPool[i].waitFor;
+
+        inherited;
     end;
 
     constructor taskManager.create(const threadsCount: byte);

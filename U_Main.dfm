@@ -133,13 +133,7 @@ object fFacTotum: TfFacTotum
         RightClickSelect = True
         ShowHint = False
         TabOrder = 0
-        Items.NodeData = {
-          0301000000340000000000000000000000FFFFFFFFFFFFFFFF00000000000000
-          0002000000010B4F0066006600690063006500200032003000310033002A0000
-          000000000000000000FFFFFFFFFFFFFFFF00000000000000000000000001064F
-          0066006600690063006500360000000000000000000000FFFFFFFFFFFFFFFF00
-          0000000000000000000000010C53006500720076006900630065002000500061
-          0063006B00}
+        OnChange = configureUpdateOnTreeSelect
       end
       object leCmdInfo: TLabeledEdit
         Left = 3
@@ -156,6 +150,7 @@ object fFacTotum: TfFacTotum
         EditLabel.Font.Style = []
         EditLabel.ParentFont = False
         EditLabel.Transparent = True
+        Enabled = False
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -16
@@ -180,6 +175,7 @@ object fFacTotum: TfFacTotum
         EditLabel.Font.Style = []
         EditLabel.ParentFont = False
         EditLabel.Transparent = True
+        Enabled = False
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -16
@@ -205,6 +201,7 @@ object fFacTotum: TfFacTotum
         EditLabel.Font.Style = []
         EditLabel.ParentFont = False
         EditLabel.Transparent = True
+        Enabled = False
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -16
@@ -221,6 +218,7 @@ object fFacTotum: TfFacTotum
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
+        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -228,10 +226,10 @@ object fFacTotum: TfFacTotum
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
         Items.Strings = (
-          'ALL'
+          'NO'
           'x86'
           'x64'
-          'No')
+          'ALL')
         ParentBiDiMode = False
         ParentBackground = False
         ParentColor = False
@@ -373,7 +371,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802680120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C0101050008026C0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1424,7 +1422,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C016C0110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C01700110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000

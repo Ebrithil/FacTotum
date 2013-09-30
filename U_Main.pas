@@ -39,10 +39,12 @@ type
         bClear: TButton;
         ilEvents: TImageList;
 
-        procedure formCreate(Sender: TObject);
-        procedure applicationIdleEvents(Sender: TObject; var Done: Boolean);
-        procedure bClearClick(Sender: TObject);
+        procedure formCreate(sender: tObject);
+        procedure formExit(sender: tObject);
+        procedure applicationIdleEvents(sender: tObject; var done: boolean);
+        procedure bClearClick(sender: tObject);
         procedure refreshSoftwareList;
+        procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
     end;
 
 const
@@ -54,6 +56,27 @@ var
 implementation
 
 {$R *.dfm}
+
+    procedure tfFacTotum.configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
+    var
+        isChild: boolean;
+        cmdRec:  cmdRecord;
+    begin
+        isChild              := assigned(node.parent);
+        leCmdInfo.enabled    := isChild;
+        leVersion.enabled    := isChild;
+        leUrl.enabled        := isChild;
+        rgCompConfig.enabled := isChild;
+
+        if isChild then
+        begin
+            cmdRec                 := cmdRecord(swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index]);
+            leCmdInfo.text         := cmdRec.exeCmd;
+            leVersion.text         := cmdRec.version;
+            leUrl.text             := cmdRec.updateURL;
+            rgCompConfig.itemIndex := cmdRec.compatibility;
+        end;
+    end;
 
     procedure tfFacTotum.refreshSoftwareList;
     var
@@ -79,7 +102,7 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.applicationIdleEvents(Sender: TObject; var Done: Boolean);
+    procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
     var
           event:  tEvent;
     begin
@@ -100,26 +123,31 @@ implementation
                 end;
     end;
 
+    procedure tfFacTotum.formExit(sender: TObject);
+    begin
+        sTaskMgr.free;
+    end;
+
     procedure tfFacTotum.formCreate(sender: tObject);
     begin
-        sEventHdlr    := eventHandler.create;
-        sTaskMgr      := taskManager.create;
-        sUpdateParser := updateParser.create;
-        sDownloadMgr  := downloadManager.create;
-        sFileMgr      := fileManager.create;
-        sDBMgr        := dbManager.create;
+        sEventHdlr          := eventHandler.create;
+        sTaskMgr            := taskManager.create;
+        sUpdateParser       := updateParser.create;
+        sDownloadMgr        := downloadManager.create;
+        sFileMgr            := fileManager.create;
+        sDBMgr              := dbManager.create;
 
-        fFacTotum.Left := (Screen.Width - Width)   div 2;
-        fFacTotum.Top  := (Screen.Height - Height) div 2;
+        fFacTotum.left      := (Screen.Width - Width)   div 2;
+        fFacTotum.top       := (Screen.Height - Height) div 2;
 
-        fFacTotum.Caption:= fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
+        fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
 
-        application.OnIdle := applicationIdleEvents;
+        application.onIdle  := applicationIdleEvents;
 
         self.refreshSoftwareList;
     end;
 
-    procedure tfFacTotum.bClearClick(Sender: TObject);
+    procedure tfFacTotum.bClearClick(sender: tObject);
     begin
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
