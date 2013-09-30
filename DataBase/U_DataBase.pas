@@ -11,7 +11,11 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
 
-    swRecord = class
+    DBRecord = class
+        rType: string;
+    end;
+
+    swRecord = class(DBRecord)
         id:       integer;
         name:     string;
         commands: tList;
@@ -19,7 +23,7 @@ type
         function hasValidCommands: boolean;
     end;
 
-    cmdRecord = class
+    cmdRecord = class(DBRecord)
         id:            integer;
         order,
         compatibility: byte;
@@ -29,9 +33,24 @@ type
         updateURL:     string;
     end;
 
+    fieldUpdate = class
+        rType: string;
+        rID:   integer;
+        field: string;
+        value: variant;
+
+        constructor create(rType: string; rID: integer; field: string; value:variant);
+    end;
+
+    updateWrapper = class
+        recordInfo: DBRecord;
+        data:       tList;
+    end;
+
     DBManager = class
         protected
             m_connector: tSQLConnection;
+            m_updates,
             m_software:  tList;
             procedure    connect;
             procedure    disconnect;
@@ -43,8 +62,8 @@ type
             constructor create;
             destructor  Destroy; override;
             function    getSoftwareList: tList;
-            //function writeSoftwareRecordToDB(data: softwareRecord): integer;
-            //function writeCommandRecordToDB(data: commandRecord): integer;
+            procedure   addModificationToUpdateList(update: updateWrapper);
+            procedure   flushModificationsToDB;
     end;
 
 const
@@ -80,6 +99,7 @@ implementation
         m_connector.connectionName := 'SQLITECONNECTION';
         m_connector.driverName     := 'Sqlite';
         m_connector.loginPrompt    := false;
+        m_updates                  := tList.create;
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
@@ -243,7 +263,35 @@ implementation
         result := m_software;
     end;
 
+    procedure DBManager.addModificationToUpdateList(update: updateWrapper);
+    var
+        i:   integer;
+        add: boolean;
+    begin
+        add := true;
+
+        for i := 0 to m_updates.count do
+            if updateWrapper(m_updates.items[i]).recordInfo = update.recordInfo  then
+            begin
+                add := false;
+                break;
+            end;
+
+        if add then
+            m_updates.add(update)
+        else
+            updateWrapper(m_updates.items[i]).data.add(fieldUpdate(update.data.items[0]))
+    end;
+
 //------------------------------------------------------------------------------
 // End Implementation of TDatabase Class
+
+    constructor fieldUpdate.create(rType: string; rID: integer; field: string; value: variant);
+    begin
+        self.rType := rType;
+        self.rID   := rID;
+        self.field := field;
+        self.value := value;
+    end;
 
 end.
