@@ -94,7 +94,7 @@ const
     dbFieldSwGUID   = 'guid';
     dbFieldSwName   = 'name';
     dbFieldCmdGUID  = 'guid';
-    dbFieldCmdSoft  = 'swid';
+    dbFieldCmdSwID  = 'swid';
     dbFieldCmdPrty  = 'prty';
     dbFieldCmdName  = 'name';
     dbFieldCmdCmmd  = 'cmmd';
@@ -245,12 +245,12 @@ implementation
           // Table name
           dbTableCommands,
           // Table columns
-          dbFieldCmdGUID, dbFieldCmdSoft, dbFieldCmdPrty, dbFieldCmdArch,
+          dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdArch,
           dbFieldCmdName, dbFieldCmdVers, dbFieldCmdCmmd, dbFieldCmduURL,
           // Table constraints
           dbFieldCmdGUID, dbFieldCmdPrty, dbFieldCmdArch, dbFieldCmdName,
           // Table foreign keys
-          dbTableSoftware, dbFieldCmdSoft, dbFieldSwGUID
+          dbFieldCmdSwID, dbTableSoftware, dbFieldSwGUID
           ]
         );
         self.query(query);
@@ -273,7 +273,7 @@ implementation
           // Select
           dbTableCommands,
           // Where
-          dbFieldCmdSoft, swID,
+          dbFieldCmdSwID, swID,
           // Order
           dbFieldCmdPrty
           ]
@@ -287,7 +287,7 @@ implementation
             with cmdRec do
             begin
                 guid := sqlData.fieldByName(dbFieldCmdGUID).value;
-                soft := sqlData.fieldByName(dbFieldCmdSoft).value;
+                soft := sqlData.fieldByName(dbFieldCmdSwID).value;
                 prty := sqlData.fieldByName(dbFieldCmdPrty).value;
                 arch := sqlData.fieldByName(dbFieldCmdArch).value;
                 name := sqlData.fieldByName(dbFieldCmdName).value;
@@ -374,7 +374,7 @@ implementation
           // Table
           dbTableCommands,
           // Columns
-          dbFieldCmdSoft, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd,
+          dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd,
           dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
           // Values
           command.soft, command.prty, command.name, command.cmmd,
