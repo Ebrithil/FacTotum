@@ -17,7 +17,7 @@ type
     end;
 
     swRecord = class(DBRecord)
-        id:       integer;
+        guid:     integer;
         name:     string;
         commands: tList;
 
@@ -25,13 +25,14 @@ type
     end;
 
     cmdRecord = class(DBRecord)
-        id:            integer;
-        order,
-        compatibility: byte;
+        guid,
+        soft: integer;
+        prty,
+        arch: byte;
         name,
-        exeCmd,
-        version,
-        updateURL:     string;
+        cmmd,
+        vers,
+        uURL: string;
     end;
 
     tTaskRecordOP = class(tTask)
@@ -60,29 +61,46 @@ type
 
     DBManager = class
         protected
-            m_connector:   tSQLConnection;
-            m_software:    tList;
-            m_updated:     boolean;
-            procedure      connect;
-            procedure      disconnect;
-            procedure      rebuildDBStructure;
-            function       query(qString: string): boolean;
-            function       queryRes(qString: string): tDataSet;
-            function       getCommandList(const swID: integer): tList;
+            m_connector: tSQLConnection;
+            m_software:  tList;
+            m_updated:   boolean;
+            procedure    connect;
+            procedure    disconnect;
+            procedure    rebuildDBStructure;
+            procedure    insertRecordInDB(software: swRecord); overload;
+            procedure    insertRecordInDB(command: cmdRecord); overload;
+            procedure    updateRecordInDB(software: swRecord; field: string; value: variant); overload;
+            procedure    updateRecordInDB(command: cmdRecord; field: string; value: variant); overload;
+            procedure    deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord); overload;
+            procedure    deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord); overload;
+            function     query(qString: string): boolean;
+            function     queryRes(qString: string): tDataSet;
+            function     getCommandList(const swID: integer): tList;
         public
             constructor create;
             destructor  Destroy; override;
-            function    getSoftwareList: tList;
+            procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
+            procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
+            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
             function    wasUpdated: boolean;
-            procedure   insertRecordInDB(software: swRecord); overload;
-            procedure   insertRecordInDB(command: cmdRecord); overload;
-            procedure   updateRecordInDB(software: swRecord; field: string; value: variant); overload;
-            procedure   updateRecordInDB(command: cmdRecord; field: string; value: variant); overload;
-            procedure   deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord); overload;
-            procedure   deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord); overload;
+            function    getSoftwareList: tList;
     end;
+
 const
     DBNamePath = 'FacTotum.db';
+    // Database related strings
+    dbTableCommands = 'commands';
+    dbTableSoftware = 'software';
+    dbFieldSwGUID   = 'guid';
+    dbFieldSwName   = 'name';
+    dbFieldCmdGUID  = 'guid';
+    dbFieldCmdSoft  = 'swid';
+    dbFieldCmdPrty  = 'prty';
+    dbFieldCmdName  = 'name';
+    dbFieldCmdCmmd  = 'cmmd';
+    dbFieldCmdVers  = 'vers';
+    dbFieldCmdArch  = 'arch';
+    dbFieldCmduURL  = 'uurl';
 
 var
     sDBMgr: DBManager;
@@ -100,7 +118,7 @@ implementation
 
         for i := 0 to pred(commands.count) do
             // Confronto il mask di compatibility con la mask generata dall'architettura del SO, usando la Magia Nera
-            if ( (cmdRecord(commands.items[i]).compatibility and (1 shl byte(tOSVersion.architecture))) > 0 ) then
+            if ( (cmdRecord(commands.items[i]).arch and (1 shl byte(tOSVersion.architecture))) > 0 ) then
             begin
                 result := true;
                 exit
@@ -195,37 +213,72 @@ implementation
         query: string;
     begin
         // Eventually rebuild Software Table
-        query :=
-        'CREATE TABLE IF NOT EXISTS software ( '
-        + 'id INTEGER PRIMARY KEY AUTOINCREMENT, '
-        + 'name VARCHAR(50) NOT NULL '
-        + ');';
+        query := format(
+          'CREATE TABLE IF NOT EXISTS %s ( '
+          + '%s INTEGER PRIMARY KEY AUTOINCREMENT, '
+          + '%s VARCHAR(50) NOT NULL '
+          + ');',
+          [
+          // Table name
+          dbTableSoftware,
+          // Table columns
+          dbFieldSwGUID, dbFieldSwName
+          ]
+        );
         self.query(query);
 
         // Eventually rebuild Commands History Table
-        query :=
-        'CREATE TABLE IF NOT EXISTS commands ( '
-        + 'id INTEGER PRIMARY KEY AUTOINCREMENT, '
-        + 'software INTEGER NOT NULL, '
-        + '[order] INT(3) NOT NULL, '
-        + 'label VARCHAR(25) NOT NULL, '
-        + 'command TEXT NOT NULL, '
-        + 'version VARCHAR(25) NULL, '
-        + 'compatibility INT(1) NOT NULL DEFAULT 0, '
-        + 'updateurl TEXT NULL, '
-        + 'CONSTRAINT u_command UNIQUE(software, [order], label, compatibility), '
-        + 'FOREIGN KEY(software) REFERENCES software(ID) ON DELETE CASCADE ON UPDATE CASCADE '
-        + ');';
+        query := format(
+          'CREATE TABLE IF NOT EXISTS %s ( '
+          + '%s INTEGER PRIMARY KEY AUTOINCREMENT, '
+          + '%s INTEGER NOT NULL, '
+          + '%s INT(3) NOT NULL, '
+          + '%s INT(1) NOT NULL DEFAULT 0, '
+          + '%s VARCHAR(25) NOT NULL, '
+          + '%s VARCHAR(25) NULL, '
+          + '%s TEXT NOT NULL, '
+          + '%s TEXT NULL, '
+          + 'CONSTRAINT u_command UNIQUE(%s, %s, %s, %s), '
+          + 'FOREIGN KEY(%s) REFERENCES %s(%s) ON DELETE CASCADE ON UPDATE CASCADE '
+          + ');',
+          [
+          // Table name
+          dbTableCommands,
+          // Table columns
+          dbFieldCmdGUID, dbFieldCmdSoft, dbFieldCmdPrty, dbFieldCmdArch,
+          dbFieldCmdName, dbFieldCmdVers, dbFieldCmdCmmd, dbFieldCmduURL,
+          // Table constraints
+          dbFieldCmdGUID, dbFieldCmdPrty, dbFieldCmdArch, dbFieldCmdName,
+          // Table foreign keys
+          dbTableSoftware, dbFieldCmdSoft, dbFieldSwGUID
+          ]
+        );
         self.query(query);
     end;
 
     function DBManager.getCommandList(const swID: integer): tList;
     var
+        query:   string;
         cmdRec:  cmdRecord;
         sqlData: tDataSet;
     begin
-        sqlData := self.queryRes('SELECT * FROM commands WHERE software = ' + intToStr(swID) + ' ORDER BY [order];');
         result  := tList.create;
+
+        query := format(
+          'SELECT * '
+        + 'FROM %s '
+        + 'WHERE %s = %d '
+        + 'ORDER BY %s;',
+          [
+          // Select
+          dbTableCommands,
+          // Where
+          dbFieldCmdSoft, swID,
+          // Order
+          dbFieldCmdPrty
+          ]
+        );
+        sqlData := self.queryRes(query);
 
         sqlData.first;
         while not( sqlData.eof ) do
@@ -233,13 +286,14 @@ implementation
             cmdRec  := cmdRecord.create;
             with cmdRec do
             begin
-                id            := sqlData.fieldByName('id').value;
-                name          := sqlData.fieldByName('label').value;
-                order         := sqlData.fieldByName('order').value;
-                exeCmd        := sqlData.fieldByName('command').value;
-                version       := sqlData.fieldByName('version').value;
-                updateURL     := sqlData.fieldByName('updateurl').value;
-                compatibility := sqlData.fieldByName('compatibility').value;
+                guid := sqlData.fieldByName(dbFieldCmdGUID).value;
+                soft := sqlData.fieldByName(dbFieldCmdSoft).value;
+                prty := sqlData.fieldByName(dbFieldCmdPrty).value;
+                arch := sqlData.fieldByName(dbFieldCmdArch).value;
+                name := sqlData.fieldByName(dbFieldCmdName).value;
+                cmmd := sqlData.fieldByName(dbFieldCmdCmmd).value;
+                vers := sqlData.fieldByName(dbFieldCmdVers).value;
+                uURL := sqlData.fieldByName(dbFieldCmduURL).value;
             end;
             sqlData.next;
             result.add(cmdRec);
@@ -250,6 +304,7 @@ implementation
 
     function DBManager.getSoftwareList: tList;
     var
+        query:   string;
         swRec:   swRecord;
         sqlData: tDataSet;
     begin
@@ -259,7 +314,15 @@ implementation
             exit;
         end;
 
-        sqlData     := self.queryRes('SELECT * FROM software;');
+        query := format(
+          'SELECT * '
+        + 'FROM %s;',
+          [
+          // Tables
+          dbTableSoftware
+          ]
+        );
+        sqlData     := self.queryRes( query );
         swRec       := swRecord.create;
         m_software  := tList.create;
 
@@ -268,9 +331,9 @@ implementation
         begin
             with swRec do
             begin
-                id       := sqlData.fieldByName('id').value;
-                name     := sqlData.fieldByName('name').value;
-                commands := self.getCommandList(id);
+                guid     := sqlData.fieldByName(dbFieldSwGUID).value;
+                name     := sqlData.fieldByName(dbFieldSwName).value;
+                commands := self.getCommandList(guid);
             end;
 
             sqlData.next;
@@ -282,18 +345,63 @@ implementation
     end;
 
     procedure DBManager.insertRecordInDB(software: swRecord);
+    var
+        query: string;
     begin
-
+        query := format(
+          'INSERT INTO %s (%s)'
+        + 'VALUES (%s);',
+          [
+          // Table
+          dbTableSoftware,
+          // Columns
+          dbFieldSwName,
+          // Values
+          software.name
+          ]
+        );
+        self.query(query);
     end;
 
     procedure DBManager.insertRecordInDB(command: cmdRecord);
+    var
+        query: string;
     begin
-
+        query := format(
+          'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s)'
+        + 'VALUES (%d, %u, %s, %s, %s, %u, %s);',
+          [
+          // Table
+          dbTableCommands,
+          // Columns
+          dbFieldCmdSoft, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd,
+          dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
+          // Values
+          command.soft, command.prty, command.name, command.cmmd,
+          command.vers, command.arch, command.uURL
+          ]
+        );
+        self.query(query);
     end;
 
     procedure DBManager.updateRecordInDB(software: swRecord; field: string; value: variant);
+    var
+        query: string;
     begin
-
+        query := format(
+          'UPDATE %s '
+        + 'SET %s = %s'
+        + 'WHERE %s = %s;',
+          [
+          // Update
+          dbTableSoftware,
+          // Set
+          field, value,
+          // Where
+          dbFieldSwGUID, software.guid
+          ]
+        );
+        self.query(query);
     end;
 
     procedure DBManager.updateRecordInDB(command: cmdRecord; field: string; value: variant);
@@ -307,6 +415,21 @@ implementation
     end;
 
     procedure DBManager.deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord);
+    begin
+
+    end;
+
+    procedure DBManager.insertDBRecord(tRecord: recordType; pRecord: DBRecord);
+    begin
+
+    end;
+
+    procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
+    begin
+
+    end;
+
+    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
     begin
 
     end;

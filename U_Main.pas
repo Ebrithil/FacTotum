@@ -75,10 +75,10 @@ implementation
         if isChild then
         begin
             cmdRec                 := cmdRecord(swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index]);
-            leCmdInfo.text         := cmdRec.exeCmd;
-            leVersion.text         := cmdRec.version;
-            leUrl.text             := cmdRec.updateURL;
-            rgCompConfig.itemIndex := cmdRec.compatibility;
+            leCmdInfo.text         := cmdRec.cmmd;
+            leVersion.text         := cmdRec.vers;
+            leUrl.text             := cmdRec.uURL;
+            rgCompConfig.itemIndex := cmdRec.arch;
         end
         else
         begin
