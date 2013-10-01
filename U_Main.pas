@@ -4,7 +4,7 @@ interface
 
 uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
-    vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes,
+    vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
 
     U_DataBase, U_Functions, U_Classes;
 
@@ -22,7 +22,7 @@ type
         rgCompConfig: TRadioGroup;
         leCmdInfo: TLabeledEdit;
         pmSoftware: TPopupMenu;
-        pmSwInsert: TMenuItem;
+        pmInsert: TMenuItem;
         pmSwDelete: TMenuItem;
         clbDownload: TCheckListBox;
         lDownloadInfo: TLabel;
@@ -45,7 +45,10 @@ type
         procedure refreshSoftwareList;
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
-        procedure pmSwInsertClick(Sender: TObject);
+        procedure pmInsertClick(Sender: TObject);
+        procedure tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton;
+          Shift: TShiftState; X, Y: Integer);
+    procedure pmSoftwarePopup(Sender: TObject);
     end;
 
 const
@@ -60,6 +63,7 @@ implementation
 
     procedure tfFacTotum.configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
     var
+        i:       byte;
         isChild: boolean;
         cmdRec:  cmdRecord;
     begin
@@ -76,6 +80,13 @@ implementation
             leVersion.text         := cmdRec.version;
             leUrl.text             := cmdRec.updateURL;
             rgCompConfig.itemIndex := cmdRec.compatibility;
+        end
+        else
+        begin
+            leUrl.text             := '';
+            leCmdInfo.text         := '';
+            leVersion.text         := '';
+            rgCompConfig.itemIndex := -1;
         end;
     end;
 
@@ -114,6 +125,16 @@ implementation
             for j := 0 to pred(swRec.commands.count) do
                 tvSoftware.items.addChild( node, cmdRecord(swRec.commands[j]).name );
         end;
+    end;
+
+    procedure tfFacTotum.tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton;
+        Shift: TShiftState; X, Y: Integer);
+    var
+        node: tTreeNode;
+    begin
+        node := tvSoftware.getNodeAt(X, Y);
+        if assigned(node) then
+            node.selected := true;
     end;
 
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
@@ -158,7 +179,7 @@ implementation
         application.onIdle  := applicationIdleEvents;
     end;
 
-    procedure tfFacTotum.pmSwInsertClick(Sender: TObject);
+    procedure tfFacTotum.pmInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordInsert;
     begin
@@ -168,7 +189,15 @@ implementation
         sTaskMgr.pushTaskToInput(taskInsert);
     end;
 
-procedure tfFacTotum.bClearClick(sender: tObject);
+    procedure tfFacTotum.pmSoftwarePopup(Sender: TObject);
+    begin
+        if assigned(tvSoftware.selected.parent) then
+            pmInsert.caption := 'Inserisci Comando'
+        else
+            pmInsert.caption := 'Inserisci Software'
+    end;
+
+    procedure tfFacTotum.bClearClick(sender: tObject);
     begin
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
