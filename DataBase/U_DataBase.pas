@@ -11,7 +11,6 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
-    modificationType  = ( modInsert, modUpdate, modDelete );
 
     DBRecord = class
         rType: string;
@@ -59,28 +58,10 @@ type
             procedure exec; override;
     end;
 
-    tTaskDBUpdate = class(tTask)
-        public
-            procedure exec; override;
-    end;
-
-    recordModification = class
-        public
-            modType: modificationType;
-            pRecord: DBRecord;
-            field:   string;
-            value:   variant;
-
-            constructor create(modType: modificationType; pRecord: DBRecord); overload;
-            constructor create(modType: modificationType; pRecord: DBRecord; field: string; value: variant); overload;
-    end;
-
     DBManager = class
         protected
             m_connector:   tSQLConnection;
-            m_updates,
             m_software:    tList;
-            m_updateMutex: tMutex;
             m_updated:     boolean;
             procedure      connect;
             procedure      disconnect;
@@ -93,8 +74,9 @@ type
             destructor  Destroy; override;
             function    getSoftwareList: tList;
             function    wasUpdated: boolean;
-            procedure   enqueueModification(data: recordModification);
-            procedure   flushModificationsToDB;
+            procedure   addRecordToDB(tRecord: recordType; pRecord: DBRecord);
+            procedure   updateRecordInDB(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
+            procedure   deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord);
     end;
 const
     DBNamePath = 'FacTotum.db';
@@ -128,8 +110,6 @@ implementation
     constructor DBManager.create;
     begin
         m_connector   := tSQLConnection.create(nil);
-        m_updateMutex := tMutex.create;
-        m_updates     := tList.create;
         m_updated     := true;
 
         m_connector.connectionName := 'SQLITECONNECTION';
@@ -298,20 +278,19 @@ implementation
         result := m_software;
     end;
 
-    procedure DBManager.flushModificationsToDB;
-    var
-        query: string;
+    procedure DBManager.addRecordToDB(tRecord: recordType; pRecord: DBRecord);
     begin
-        query := ''; // TODO PER MATTIA :P
-        self.query(query);
+
     end;
 
-    procedure DBManager.enqueueModification(data: recordModification);
+    procedure DBManager.updateRecordInDB(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
     begin
-        self.m_updateMutex.acquire;
-        self.m_updates.add(data);
-        self.m_updateMutex.release;
-        m_updated := true;
+
+    end;
+
+    procedure DBManager.deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord);
+    begin
+
     end;
 
     function DBManager.wasUpdated: boolean;
@@ -328,24 +307,11 @@ implementation
 //------------------------------------------------------------------------------
 // End Implementation of TDatabase Class
 
-    constructor recordModification.create(modType: modificationType; pRecord: DBRecord);
-    begin
-        self.create(modType, pRecord, '', 0);
-    end;
-
-    constructor recordModification.create(modType: modificationType; pRecord: DBRecord; field: string; value: variant);
-    begin
-        self.modType := modType;
-        self.pRecord := pRecord;
-        self.field   := field;
-        self.value   := value;
-    end;
-
     procedure tTaskRecordInsert.exec;
     var
         pList: tList;
     begin
-        sDBMgr.enqueueModification(recordModification.create(modInsert, self.pRecord));
+        sDBMgr.addRecordToDB(self.tRecord, self.pRecord);
         pList := sDBMgr.getSoftwareList;
 
         case self.tRecord of
@@ -361,12 +327,7 @@ implementation
 
     procedure tTaskRecordDelete.exec;
     begin
-        sDBMgr.enqueueModification(recordModification.create(modDelete, self.pRecord));
-    end;
 
-    procedure tTaskDBUpdate.exec;
-    begin
-        sDBMgr.flushModificationsToDB;
     end;
 
 end.

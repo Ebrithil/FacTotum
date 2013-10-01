@@ -63,7 +63,6 @@ implementation
 
     procedure tfFacTotum.configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
     var
-        i:       byte;
         isChild: boolean;
         cmdRec:  cmdRecord;
     begin
