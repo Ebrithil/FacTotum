@@ -74,9 +74,12 @@ type
             destructor  Destroy; override;
             function    getSoftwareList: tList;
             function    wasUpdated: boolean;
-            procedure   addRecordToDB(tRecord: recordType; pRecord: DBRecord);
-            procedure   updateRecordInDB(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
-            procedure   deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord);
+            procedure   insertRecordInDB(software: swRecord); overload;
+            procedure   insertRecordInDB(command: cmdRecord); overload;
+            procedure   updateRecordInDB(software: swRecord; field: string; value: variant); overload;
+            procedure   updateRecordInDB(command: cmdRecord; field: string; value: variant); overload;
+            procedure   deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord); overload;
+            procedure   deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord); overload;
     end;
 const
     DBNamePath = 'FacTotum.db';
@@ -278,17 +281,32 @@ implementation
         result := m_software;
     end;
 
-    procedure DBManager.addRecordToDB(tRecord: recordType; pRecord: DBRecord);
+    procedure DBManager.insertRecordInDB(software: swRecord);
     begin
 
     end;
 
-    procedure DBManager.updateRecordInDB(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
+    procedure DBManager.insertRecordInDB(command: cmdRecord);
+    begin
+
+    end;
+
+    procedure DBManager.updateRecordInDB(software: swRecord; field: string; value: variant);
+    begin
+
+    end;
+
+    procedure DBManager.updateRecordInDB(command: cmdRecord; field: string; value: variant);
     begin
 
     end;
 
     procedure DBManager.deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord);
+    begin
+
+    end;
+
+    procedure DBManager.deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord);
     begin
 
     end;
@@ -311,12 +329,19 @@ implementation
     var
         pList: tList;
     begin
-        sDBMgr.addRecordToDB(self.tRecord, self.pRecord);
         pList := sDBMgr.getSoftwareList;
 
         case self.tRecord of
-            recordSoftware : pList.add(self.pRecord);
-            recordCommand  : swRecord(pList.items[pList.indexOf(self.pRecord)]).commands.add(self.pRecord);
+            recordSoftware:
+            begin
+                pList.add(self.pRecord);
+                sDBMgr.InsertRecordInDB(swRecord(self.pRecord));
+            end;
+            recordCommand:
+            begin
+                swRecord(pList.items[pList.indexOf(self.pRecord)]).commands.add(self.pRecord);
+                sDBMgr.insertRecordInDB(cmdRecord(self.pRecord));
+            end;
         end;
     end;
 
