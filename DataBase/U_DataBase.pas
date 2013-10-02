@@ -14,7 +14,6 @@ type
     dbStringsIndex    = ( DBNamePath, dbTableCommands, dbTableSoftware, dbFieldSwGUID, dbFieldSwName, dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd, dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL );
 
     DBRecord = class
-        rType: string;
     end;
 
     swRecord = class(DBRecord)
@@ -325,12 +324,13 @@ implementation
           ]
         );
         sqlData     := self.queryRes( query );
-        swRec       := swRecord.create;
         m_software  := tList.create;
 
         sqlData.first;
         while not(sqlData.eof) do
         begin
+            swRec := swRecord.create;
+
             with swRec do
             begin
                 guid     := sqlData.fieldByName( dbStrings[dbFieldSwGUID] ).value;
@@ -352,7 +352,7 @@ implementation
     begin
         query := format(
           'INSERT INTO %s (%s) '
-        + 'VALUES (%s);',
+        + 'VALUES (''%s'');',
           [
           // Table
           dbStrings[dbTableSoftware],
@@ -371,7 +371,7 @@ implementation
     begin
         query := format(
           'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s) '
-        + 'VALUES (%d, %u, %s, %s, %s, %u, %s);',
+        + 'VALUES (''%d'', ''%u'', ''%s'', ''%s'', ''%s'', ''%u'', ''%s'');',
           [
           // Table
           dbStrings[dbTableCommands],
@@ -393,14 +393,14 @@ implementation
         query := format(
           'UPDATE %s '
         + 'SET %s = ''%s'' '
-        + 'WHERE %s = %s;',
+        + 'WHERE %s = ''%d'';',
           [
           // Update
           dbStrings[dbTableSoftware],
           // Set
           dbStrings[field], value,
           // Where
-          dbStrings[dbFieldSwGUID], intToStr(software.guid)
+          dbStrings[dbFieldSwGUID], software.guid
           ]
         );
         self.query(query);
@@ -413,7 +413,7 @@ implementation
         query := format(
           'UPDATE %s '
         + 'SET %s = ''%s'' '
-        + 'WHERE %s = %s;',
+        + 'WHERE %s = ''%d'';',
           [
           // Update
           dbStrings[dbTableCommands],
@@ -433,7 +433,7 @@ implementation
         query := format(
           'DELETE '
         + 'FROM %s '
-        + 'WHERE %s = %s;',
+        + 'WHERE %s = ''%d'';',
           [
           // From
           dbStrings[dbTableSoftware],
@@ -451,7 +451,7 @@ implementation
         query := format(
           'DELETE '
         + 'FROM %s '
-        + 'WHERE %s = %s;',
+        + 'WHERE %s = ''%d;''',
           [
           // From
           dbStrings[dbTableSoftware],
@@ -470,6 +470,7 @@ implementation
         end;
 
         m_updated := true;
+        FreeAndNil(m_software);
     end;
 
     procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
@@ -477,7 +478,9 @@ implementation
         case tRecord of
             recordSoftware: self.deleteRecordFromDB( swRecord(pRecord) );
             recordCommand:  self.deleteRecordFromDB( cmdRecord(pRecord) );
-        end
+        end;
+
+        m_updated := true;
     end;
 
     procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
@@ -485,7 +488,9 @@ implementation
         case tRecord of
             recordSoftware: self.updateRecordInDB( swRecord(pRecord), field, value );
             recordCommand:  self.updateRecordInDB( cmdRecord(pRecord), field, value );
-        end
+        end;
+
+        m_updated := true;
     end;
 
     function DBManager.wasUpdated: boolean;
@@ -513,6 +518,7 @@ implementation
             begin
                 pList.add(self.pRecord);
                 sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
+                // TODO: Creazione command figlio. Non può esistere un software senza command.
             end;
             recordCommand:
             begin
@@ -561,12 +567,13 @@ implementation
         pList:    tList;
         index:    integer;
      begin
+        // TODO: Se il record è l'ultimo command di un software elimina il software padre. Non può esistere un software senza command.
         pList := sDBMgr.getSoftwareList;
         index := pList.IndexOf(self.pRecord);
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
 
-        self.pRecord.free;
+        DBRecord(pList.items[index]).free;
         pList.delete(index);
     end;
 
