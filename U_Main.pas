@@ -137,10 +137,8 @@ implementation
 
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
     var
-          event:  tEvent;
+        event:  tEvent;
     begin
-        done := false;
-
         if (sEventHdlr.getErrorCache) then
             tLog.imageIndex := tImageIndex(tiEvtErr);
 
@@ -180,7 +178,7 @@ implementation
 
         tasku := tTaskRecordUpdate.create;
         tasku.field := dbFieldSwName;
-        tasku.value := 'Prova';
+        tasku.value := 'Prova2';
         tasku.pRecord := swRecord(sDBMgr.getSoftwareList.First);
         tasku.tRecord := recordSoftware;
         sTaskMgr.pushTaskToInput(tasku);

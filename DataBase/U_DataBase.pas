@@ -351,7 +351,7 @@ implementation
         query: string;
     begin
         query := format(
-          'INSERT INTO %s (%s)'
+          'INSERT INTO %s (%s) '
         + 'VALUES (%s);',
           [
           // Table
@@ -370,7 +370,7 @@ implementation
         query: string;
     begin
         query := format(
-          'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s)'
+          'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s) '
         + 'VALUES (%d, %u, %s, %s, %s, %u, %s);',
           [
           // Table
@@ -392,7 +392,7 @@ implementation
     begin
         query := format(
           'UPDATE %s '
-        + 'SET %s = %s'
+        + 'SET %s = ''%s'' '
         + 'WHERE %s = %s;',
           [
           // Update
@@ -403,7 +403,6 @@ implementation
           dbStrings[dbFieldSwGUID], intToStr(software.guid)
           ]
         );
-        ShowMessage(query);
         self.query(query);
     end;
 
@@ -413,7 +412,7 @@ implementation
     begin
         query := format(
           'UPDATE %s '
-        + 'SET %s = %s'
+        + 'SET %s = ''%s'' '
         + 'WHERE %s = %s;',
           [
           // Update
@@ -433,7 +432,7 @@ implementation
     begin
         query := format(
           'DELETE '
-        + 'FROM %s'
+        + 'FROM %s '
         + 'WHERE %s = %s;',
           [
           // From
@@ -451,7 +450,7 @@ implementation
     begin
         query := format(
           'DELETE '
-        + 'FROM %s'
+        + 'FROM %s '
         + 'WHERE %s = %s;',
           [
           // From
@@ -526,17 +525,10 @@ implementation
     procedure tTaskRecordUpdate.exec;
     var
         pList:    tList;
-        i,
         index:    integer;
      begin
         pList := sDBMgr.getSoftwareList;
         index := pList.IndexOf(self.pRecord);
-
-        if index = -1 then
-        begin
-            sEventHdlr.pushEventToList( tEvent.create('Impossibile aggiornare record non esistente in DB.', eiError) );
-            exit;
-        end;
 
         case self.tRecord of
             recordSoftware:
@@ -571,12 +563,6 @@ implementation
      begin
         pList := sDBMgr.getSoftwareList;
         index := pList.IndexOf(self.pRecord);
-
-        if index = -1 then
-        begin
-            sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare record non esistente in DB.', eiError) );
-            exit;
-        end;
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
 
