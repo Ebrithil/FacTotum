@@ -26,7 +26,7 @@ type
 
     cmdRecord = class(DBRecord)
         guid,
-        soft: integer;
+        swid: integer;
         prty,
         arch: byte;
         name,
@@ -71,8 +71,8 @@ type
             procedure    insertRecordInDB(command: cmdRecord); overload;
             procedure    updateRecordInDB(software: swRecord; field: string; value: variant); overload;
             procedure    updateRecordInDB(command: cmdRecord; field: string; value: variant); overload;
-            procedure    deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord); overload;
-            procedure    deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord); overload;
+            procedure    deleteRecordFromDB(software: swRecord); overload;
+            procedure    deleteRecordFromDB(command: cmdRecord); overload;
             function     query(qString: string): boolean;
             function     queryRes(qString: string): tDataSet;
             function     getCommandList(const swID: integer): tList;
@@ -287,7 +287,7 @@ implementation
             with cmdRec do
             begin
                 guid := sqlData.fieldByName(dbFieldCmdGUID).value;
-                soft := sqlData.fieldByName(dbFieldCmdSwID).value;
+                swid := sqlData.fieldByName(dbFieldCmdSwID).value;
                 prty := sqlData.fieldByName(dbFieldCmdPrty).value;
                 arch := sqlData.fieldByName(dbFieldCmdArch).value;
                 name := sqlData.fieldByName(dbFieldCmdName).value;
@@ -377,7 +377,7 @@ implementation
           dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd,
           dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
           // Values
-          command.soft, command.prty, command.name, command.cmmd,
+          command.swid, command.prty, command.name, command.cmmd,
           command.vers, command.arch, command.uURL
           ]
         );
@@ -396,7 +396,7 @@ implementation
           // Update
           dbTableSoftware,
           // Set
-          field, value,
+          field, string(value),
           // Where
           dbFieldSwGUID, software.guid
           ]
@@ -405,33 +405,83 @@ implementation
     end;
 
     procedure DBManager.updateRecordInDB(command: cmdRecord; field: string; value: variant);
+    var
+        query: string;
     begin
-
+        query := format(
+          'UPDATE %s '
+        + 'SET %s = %s'
+        + 'WHERE %s = %s;',
+          [
+          // Update
+          dbTableCommands,
+          // Set
+          field, string(value),
+          // Where
+          dbFieldCmdGUID, command.guid
+          ]
+        );
+        self.query(query);
     end;
 
-    procedure DBManager.deleteRecordFromDB(tRecord: recordType; pRecord: DBRecord);
+    procedure DBManager.deleteRecordFromDB(software: swRecord);
+    var
+        query: string;
     begin
-
+        query := format(
+          'DELETE '
+        + 'FROM %s'
+        + 'WHERE %s = %s;',
+          [
+          // From
+          dbTableSoftware,
+          // Where
+          dbFieldSwGUID, software.guid
+          ]
+        );
+        self.query(query);
     end;
 
-    procedure DBManager.deleteRecordFromDB(command: cmdRecord; pRecord: DBRecord);
+    procedure DBManager.deleteRecordFromDB(command: cmdRecord);
+    var
+        query: string;
     begin
-
+        query := format(
+          'DELETE '
+        + 'FROM %s'
+        + 'WHERE %s = %s;',
+          [
+          // From
+          dbTableSoftware,
+          // Where
+          dbFieldCmdGUID, command.guid
+          ]
+        );
+        self.query(query);
     end;
 
     procedure DBManager.insertDBRecord(tRecord: recordType; pRecord: DBRecord);
     begin
-
+        case tRecord of
+            recordSoftware: self.insertRecordInDB( swRecord(pRecord) );
+            recordCommand:  self.insertRecordInDB( cmdRecord(pRecord) );
+        end
     end;
 
     procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
     begin
-
+        case tRecord of
+            recordSoftware: self.deleteRecordFromDB( swRecord(pRecord) );
+            recordCommand:  self.deleteRecordFromDB( cmdRecord(pRecord) );
+        end
     end;
 
     procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
     begin
-
+        case tRecord of
+            recordSoftware: self.updateRecordInDB( swRecord(pRecord), field, value );
+            recordCommand:  self.updateRecordInDB( cmdRecord(pRecord), field, value );
+        end
     end;
 
     function DBManager.wasUpdated: boolean;
