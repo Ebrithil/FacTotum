@@ -283,7 +283,7 @@ implementation
         sqlData := self.queryRes(query);
 
         sqlData.first;
-        while not( sqlData.eof ) do
+        while not(sqlData.eof) do
         begin
             cmdRec  := cmdRecord.create;
             with cmdRec do
@@ -510,12 +510,12 @@ implementation
             recordSoftware:
             begin
                 pList.add(self.pRecord);
-                sDBMgr.InsertRecordInDB(swRecord(self.pRecord));
+                sDBMgr.InsertRecordInDB( swRecord(self.pRecord) );
             end;
             recordCommand:
             begin
-                swRecord(pList.items[pList.indexOf(self.pRecord)]).commands.add(self.pRecord);
-                sDBMgr.insertRecordInDB(cmdRecord(self.pRecord));
+                swRecord( pList.items[pList.indexOf(self.pRecord)] ).commands.add(self.pRecord);
+                sDBMgr.insertRecordInDB( cmdRecord(self.pRecord) );
             end;
         end;
     end;
@@ -538,21 +538,21 @@ implementation
             recordSoftware:
             begin
                 case self.field of
-                    dbFieldSwGUID: swRecord(pList.items[index]).guid := self.value;
-                    dbFieldSwName: swRecord(pList.items[index]).name := self.value;
+                    dbFieldSwGUID: swRecord( pList.items[index] ).guid := self.value;
+                    dbFieldSwName: swRecord( pList.items[index] ).name := self.value;
                 end;
             end;
             recordCommand:
             begin
                 case self.field of
-                    dbFieldCmdGUID: cmdRecord(pList.items[index]).guid := self.value;
-                    dbFieldCmdSwID: cmdRecord(pList.items[index]).swid := self.value;
-                    dbFieldCmdPrty: cmdRecord(pList.items[index]).prty := self.value;
-                    dbFieldCmdName: cmdRecord(pList.items[index]).name := self.value;
-                    dbFieldCmdCmmd: cmdRecord(pList.items[index]).cmmd := self.value;
-                    dbFieldCmdVers: cmdRecord(pList.items[index]).vers := self.value;
-                    dbFieldCmdArch: cmdRecord(pList.items[index]).arch := self.value;
-                    dbFieldCmduURL: cmdRecord(pList.items[index]).uURL := self.value;
+                    dbFieldCmdGUID: cmdRecord( pList.items[index] ).guid := self.value;
+                    dbFieldCmdSwID: cmdRecord( pList.items[index] ).swid := self.value;
+                    dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := self.value;
+                    dbFieldCmdName: cmdRecord( pList.items[index] ).name := self.value;
+                    dbFieldCmdCmmd: cmdRecord( pList.items[index] ).cmmd := self.value;
+                    dbFieldCmdVers: cmdRecord( pList.items[index] ).vers := self.value;
+                    dbFieldCmdArch: cmdRecord( pList.items[index] ).arch := self.value;
+                    dbFieldCmduURL: cmdRecord( pList.items[index] ).uURL := self.value;
                 end;
             end;
         end;

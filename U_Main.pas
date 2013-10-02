@@ -46,9 +46,8 @@ type
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
         procedure pmInsertClick(Sender: TObject);
-        procedure tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton;
-          Shift: TShiftState; X, Y: Integer);
-    procedure pmSoftwarePopup(Sender: TObject);
+        procedure tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure pmSoftwarePopup(Sender: TObject);
     end;
 
 const
@@ -74,7 +73,7 @@ implementation
 
         if isChild then
         begin
-            cmdRec                 := cmdRecord(swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index]);
+            cmdRec                 := cmdRecord( swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index] );
             leCmdInfo.text         := cmdRec.cmmd;
             leVersion.text         := cmdRec.vers;
             leUrl.text             := cmdRec.uURL;
@@ -126,12 +125,12 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton;
-        Shift: TShiftState; X, Y: Integer);
+    procedure tfFacTotum.tvSoftwareMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; X, Y: integer);
     var
         node: tTreeNode;
     begin
         node := tvSoftware.getNodeAt(X, Y);
+
         if assigned(node) then
             node.selected := true;
     end;
