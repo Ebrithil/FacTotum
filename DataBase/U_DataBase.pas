@@ -11,6 +11,7 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
+    dbStringsIndex = ( DBNamePath, dbTableCommands, dbTableSoftware, dbFieldSwGUID, dbFieldSwName, dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd, dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL );
 
     DBRecord = class
         rType: string;
@@ -48,7 +49,7 @@ type
 
     tTaskRecordUpdate = class(tTaskRecordOP)
         public
-            field: string;
+            field: dbStringsIndex;
             value: variant;
 
             procedure exec; override;
@@ -69,8 +70,8 @@ type
             procedure    rebuildDBStructure;
             procedure    insertRecordInDB(software: swRecord); overload;
             procedure    insertRecordInDB(command: cmdRecord); overload;
-            procedure    updateRecordInDB(software: swRecord; field: string; value: variant); overload;
-            procedure    updateRecordInDB(command: cmdRecord; field: string; value: variant); overload;
+            procedure    updateRecordInDB(software: swRecord; field: dbStringsIndex; value: variant); overload;
+            procedure    updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: variant); overload;
             procedure    deleteRecordFromDB(software: swRecord); overload;
             procedure    deleteRecordFromDB(command: cmdRecord); overload;
             function     query(qString: string): boolean;
@@ -81,26 +82,27 @@ type
             destructor  Destroy; override;
             procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
             procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
-            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
+            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: variant);
             function    wasUpdated: boolean;
             function    getSoftwareList: tList;
     end;
 
 const
-    DBNamePath = 'FacTotum.db';
+    dbStrings: array[dbStringsIndex] of string = (
+    'FacTotum.db',
     // Database related strings
-    dbTableCommands = 'commands';
-    dbTableSoftware = 'software';
-    dbFieldSwGUID   = 'guid';
-    dbFieldSwName   = 'name';
-    dbFieldCmdGUID  = 'guid';
-    dbFieldCmdSwID  = 'swid';
-    dbFieldCmdPrty  = 'prty';
-    dbFieldCmdName  = 'name';
-    dbFieldCmdCmmd  = 'cmmd';
-    dbFieldCmdVers  = 'vers';
-    dbFieldCmdArch  = 'arch';
-    dbFieldCmduURL  = 'uurl';
+    'commands',
+    'software',
+    'guid',
+    'name',
+    'guid',
+    'swid',
+    'prty',
+    'name',
+    'cmmd',
+    'vers',
+    'arch',
+    'uurl' );
 
 var
     sDBMgr: DBManager;
@@ -139,7 +141,7 @@ implementation
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
-        m_connector.params.add('Database=' + DBNamePath);
+        m_connector.params.add('Database=' + dbStrings[DBNamePath]);
         m_connector.params.add('FailIfMissing=False');
 
         self.connect;
@@ -153,7 +155,7 @@ implementation
 
     procedure DBManager.connect;
     begin
-        if not( fileExists(DBNamePath) ) then
+        if not( fileExists(dbStrings[DBNamePath]) ) then
         begin
              sEventHdlr.pushEventToList( tEvent.create('DataBase non trovato.', eiAlert) );
              sEventHdlr.pushEventToList( tEvent.create('Il DataBase verrà ricreato.', eiAlert) );
@@ -220,9 +222,9 @@ implementation
           + ');',
           [
           // Table name
-          dbTableSoftware,
+          dbStrings[dbTableSoftware],
           // Table columns
-          dbFieldSwGUID, dbFieldSwName
+          dbStrings[dbFieldSwGUID], dbStrings[dbFieldSwName]
           ]
         );
         self.query(query);
@@ -243,14 +245,14 @@ implementation
           + ');',
           [
           // Table name
-          dbTableCommands,
+          dbStrings[dbTableCommands],
           // Table columns
-          dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdArch,
-          dbFieldCmdName, dbFieldCmdVers, dbFieldCmdCmmd, dbFieldCmduURL,
+          dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch],
+          dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdCmmd], dbStrings[dbFieldCmduURL],
           // Table constraints
-          dbFieldCmdGUID, dbFieldCmdPrty, dbFieldCmdArch, dbFieldCmdName,
+          dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmdName],
           // Table foreign keys
-          dbFieldCmdSwID, dbTableSoftware, dbFieldSwGUID
+          dbStrings[dbFieldCmdSwID], dbStrings[dbTableSoftware], dbStrings[dbFieldSwGUID]
           ]
         );
         self.query(query);
@@ -271,11 +273,11 @@ implementation
         + 'ORDER BY %s;',
           [
           // Select
-          dbTableCommands,
+          dbStrings[dbTableCommands],
           // Where
-          dbFieldCmdSwID, swID,
+          dbStrings[dbFieldCmdSwID], swID,
           // Order
-          dbFieldCmdPrty
+          dbStrings[dbFieldCmdPrty]
           ]
         );
         sqlData := self.queryRes(query);
@@ -286,14 +288,14 @@ implementation
             cmdRec  := cmdRecord.create;
             with cmdRec do
             begin
-                guid := sqlData.fieldByName(dbFieldCmdGUID).value;
-                swid := sqlData.fieldByName(dbFieldCmdSwID).value;
-                prty := sqlData.fieldByName(dbFieldCmdPrty).value;
-                arch := sqlData.fieldByName(dbFieldCmdArch).value;
-                name := sqlData.fieldByName(dbFieldCmdName).value;
-                cmmd := sqlData.fieldByName(dbFieldCmdCmmd).value;
-                vers := sqlData.fieldByName(dbFieldCmdVers).value;
-                uURL := sqlData.fieldByName(dbFieldCmduURL).value;
+                guid := sqlData.fieldByName( dbStrings[dbFieldCmdGUID] ).value;
+                swid := sqlData.fieldByName( dbStrings[dbFieldCmdSwID] ).value;
+                prty := sqlData.fieldByName( dbStrings[dbFieldCmdPrty] ).value;
+                arch := sqlData.fieldByName( dbStrings[dbFieldCmdArch] ).value;
+                name := sqlData.fieldByName( dbStrings[dbFieldCmdName] ).value;
+                cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
+                vers := sqlData.fieldByName( dbStrings[dbFieldCmdVers] ).value;
+                uURL := sqlData.fieldByName( dbStrings[dbFieldCmduURL] ).value;
             end;
             sqlData.next;
             result.add(cmdRec);
@@ -319,7 +321,7 @@ implementation
         + 'FROM %s;',
           [
           // Tables
-          dbTableSoftware
+          dbStrings[dbTableSoftware]
           ]
         );
         sqlData     := self.queryRes( query );
@@ -331,8 +333,8 @@ implementation
         begin
             with swRec do
             begin
-                guid     := sqlData.fieldByName(dbFieldSwGUID).value;
-                name     := sqlData.fieldByName(dbFieldSwName).value;
+                guid     := sqlData.fieldByName( dbStrings[dbFieldSwGUID] ).value;
+                name     := sqlData.fieldByName( dbStrings[dbFieldSwName] ).value;
                 commands := self.getCommandList(guid);
             end;
 
@@ -353,9 +355,9 @@ implementation
         + 'VALUES (%s);',
           [
           // Table
-          dbTableSoftware,
+          dbStrings[dbTableSoftware],
           // Columns
-          dbFieldSwName,
+          dbStrings[dbFieldSwName],
           // Values
           software.name
           ]
@@ -372,10 +374,10 @@ implementation
         + 'VALUES (%d, %u, %s, %s, %s, %u, %s);',
           [
           // Table
-          dbTableCommands,
+          dbStrings[dbTableCommands],
           // Columns
-          dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd,
-          dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
+          dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdCmmd],
+          dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmduURL],
           // Values
           command.swid, command.prty, command.name, command.cmmd,
           command.vers, command.arch, command.uURL
@@ -384,7 +386,7 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.updateRecordInDB(software: swRecord; field: string; value: variant);
+    procedure DBManager.updateRecordInDB(software: swRecord; field: dbStringsIndex; value: variant);
     var
         query: string;
     begin
@@ -394,17 +396,17 @@ implementation
         + 'WHERE %s = %s;',
           [
           // Update
-          dbTableSoftware,
+          dbStrings[dbTableSoftware],
           // Set
-          field, string(value),
+          dbStrings[field], string(value),
           // Where
-          dbFieldSwGUID, software.guid
+          dbStrings[dbFieldSwGUID], software.guid
           ]
         );
         self.query(query);
     end;
 
-    procedure DBManager.updateRecordInDB(command: cmdRecord; field: string; value: variant);
+    procedure DBManager.updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: variant);
     var
         query: string;
     begin
@@ -414,11 +416,11 @@ implementation
         + 'WHERE %s = %s;',
           [
           // Update
-          dbTableCommands,
+          dbStrings[dbTableCommands],
           // Set
-          field, string(value),
+          dbStrings[field], string(value),
           // Where
-          dbFieldCmdGUID, command.guid
+          dbStrings[dbFieldCmdGUID], command.guid
           ]
         );
         self.query(query);
@@ -434,9 +436,9 @@ implementation
         + 'WHERE %s = %s;',
           [
           // From
-          dbTableSoftware,
+          dbStrings[dbTableSoftware],
           // Where
-          dbFieldSwGUID, software.guid
+          dbStrings[dbFieldSwGUID], software.guid
           ]
         );
         self.query(query);
@@ -452,9 +454,9 @@ implementation
         + 'WHERE %s = %s;',
           [
           // From
-          dbTableSoftware,
+          dbStrings[dbTableSoftware],
           // Where
-          dbFieldCmdGUID, command.guid
+          dbStrings[dbFieldCmdGUID], command.guid
           ]
         );
         self.query(query);
@@ -476,7 +478,7 @@ implementation
         end
     end;
 
-    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: string; value: variant);
+    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: variant);
     begin
         case tRecord of
             recordSoftware: self.updateRecordInDB( swRecord(pRecord), field, value );
@@ -519,13 +521,61 @@ implementation
     end;
 
     procedure tTaskRecordUpdate.exec;
-    begin
+    var
+        pList:    tList;
+        index:    integer;
+     begin
+        pList := sDBMgr.getSoftwareList;
+        index := pList.IndexOf(self.pRecord);
 
+        if index = -1 then
+        begin
+            sEventHdlr.pushEventToList( tEvent.create('Impossibile aggiornare record non esistente in DB.', eiError) );
+            exit;
+        end;
+
+        case self.tRecord of
+            recordSoftware:
+            begin
+                case self.field of
+                    dbFieldSwGUID: swRecord(pList.items[index]).guid := self.value;
+                    dbFieldSwName: swRecord(pList.items[index]).name := self.value;
+                end;
+            end;
+            recordCommand:
+            begin
+                case self.field of
+                    dbFieldCmdGUID: cmdRecord(pList.items[index]).guid := self.value;
+                    dbFieldCmdSwID: cmdRecord(pList.items[index]).swid := self.value;
+                    dbFieldCmdPrty: cmdRecord(pList.items[index]).prty := self.value;
+                    dbFieldCmdName: cmdRecord(pList.items[index]).name := self.value;
+                    dbFieldCmdCmmd: cmdRecord(pList.items[index]).cmmd := self.value;
+                    dbFieldCmdVers: cmdRecord(pList.items[index]).vers := self.value;
+                    dbFieldCmdArch: cmdRecord(pList.items[index]).arch := self.value;
+                    dbFieldCmduURL: cmdRecord(pList.items[index]).uURL := self.value;
+                end;
+            end;
+        end;
+
+        sDBMgr.updateDBRecord(self.tRecord, self.pRecord, self.field, self.value);
     end;
 
     procedure tTaskRecordDelete.exec;
-    begin
+    var
+        pList:    tList;
+        index:    integer;
+     begin
+        pList := sDBMgr.getSoftwareList;
+        index := pList.IndexOf(self.pRecord);
 
+        if index = -1 then
+        begin
+            sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare record non esistente in DB.', eiError) );
+            exit;
+        end;
+
+        self.pRecord.free;
+        pList.delete(index);
     end;
 
 end.
