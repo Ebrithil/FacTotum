@@ -148,7 +148,7 @@ implementation
             while not(sEventHdlr.isEventListEmpty) do
                 with lvEvents.items.add do
                 begin
-                    event := sEventHdlr.pullEventFromList;
+                    event      := sEventHdlr.pullEventFromList;
 
                     stateIndex := event.eventType;
                     subItems.add(event.eventTime);
@@ -161,6 +161,8 @@ implementation
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
+    var
+        tasku: tTaskRecordUpdate;
     begin
         sEventHdlr          := eventHandler.create;
         sTaskMgr            := taskManager.create;
@@ -175,13 +177,20 @@ implementation
         fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
 
         application.onIdle  := applicationIdleEvents;
+
+        tasku := tTaskRecordUpdate.create;
+        tasku.field := dbFieldSwName;
+        tasku.value := 'Prova';
+        tasku.pRecord := swRecord(sDBMgr.getSoftwareList.First);
+        tasku.tRecord := recordSoftware;
+        sTaskMgr.pushTaskToInput(tasku);
     end;
 
     procedure tfFacTotum.pmInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordInsert;
     begin
-        taskInsert := tTaskRecordInsert.create;
+        taskInsert         := tTaskRecordInsert.create;
         taskInsert.tRecord := recordSoftware;
         taskInsert.pRecord := swRecord.create;
         sTaskMgr.pushTaskToInput(taskInsert);

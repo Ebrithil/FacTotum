@@ -11,7 +11,7 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
-    dbStringsIndex = ( DBNamePath, dbTableCommands, dbTableSoftware, dbFieldSwGUID, dbFieldSwName, dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd, dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL );
+    dbStringsIndex    = ( DBNamePath, dbTableCommands, dbTableSoftware, dbFieldSwGUID, dbFieldSwName, dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd, dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL );
 
     DBRecord = class
         rType: string;
@@ -50,7 +50,7 @@ type
     tTaskRecordUpdate = class(tTaskRecordOP)
         public
             field: dbStringsIndex;
-            value: variant;
+            value: string;
 
             procedure exec; override;
     end;
@@ -70,8 +70,8 @@ type
             procedure    rebuildDBStructure;
             procedure    insertRecordInDB(software: swRecord); overload;
             procedure    insertRecordInDB(command: cmdRecord); overload;
-            procedure    updateRecordInDB(software: swRecord; field: dbStringsIndex; value: variant); overload;
-            procedure    updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: variant); overload;
+            procedure    updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string); overload;
+            procedure    updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string); overload;
             procedure    deleteRecordFromDB(software: swRecord); overload;
             procedure    deleteRecordFromDB(command: cmdRecord); overload;
             function     query(qString: string): boolean;
@@ -82,27 +82,27 @@ type
             destructor  Destroy; override;
             procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
             procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
-            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: variant);
+            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
             function    wasUpdated: boolean;
             function    getSoftwareList: tList;
     end;
 
 const
     dbStrings: array[dbStringsIndex] of string = (
-    'FacTotum.db',
-    // Database related strings
-    'commands',
-    'software',
-    'guid',
-    'name',
-    'guid',
-    'swid',
-    'prty',
-    'name',
-    'cmmd',
-    'vers',
-    'arch',
-    'uurl' );
+        'FacTotum.db',
+        // Database related strings
+        'commands',
+        'software',
+        'guid',
+        'name',
+        'guid',
+        'swid',
+        'prty',
+        'name',
+        'cmmd',
+        'vers',
+        'arch',
+        'uurl' );
 
 var
     sDBMgr: DBManager;
@@ -386,7 +386,7 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.updateRecordInDB(software: swRecord; field: dbStringsIndex; value: variant);
+    procedure DBManager.updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string);
     var
         query: string;
     begin
@@ -398,15 +398,16 @@ implementation
           // Update
           dbStrings[dbTableSoftware],
           // Set
-          dbStrings[field], string(value),
+          dbStrings[field], value,
           // Where
-          dbStrings[dbFieldSwGUID], software.guid
+          dbStrings[dbFieldSwGUID], intToStr(software.guid)
           ]
         );
+        ShowMessage(query);
         self.query(query);
     end;
 
-    procedure DBManager.updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: variant);
+    procedure DBManager.updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string);
     var
         query: string;
     begin
@@ -467,7 +468,9 @@ implementation
         case tRecord of
             recordSoftware: self.insertRecordInDB( swRecord(pRecord) );
             recordCommand:  self.insertRecordInDB( cmdRecord(pRecord) );
-        end
+        end;
+
+        m_updated := true;
     end;
 
     procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
@@ -478,7 +481,7 @@ implementation
         end
     end;
 
-    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: variant);
+    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
     begin
         case tRecord of
             recordSoftware: self.updateRecordInDB( swRecord(pRecord), field, value );
@@ -510,12 +513,12 @@ implementation
             recordSoftware:
             begin
                 pList.add(self.pRecord);
-                sDBMgr.InsertRecordInDB( swRecord(self.pRecord) );
+                sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
             end;
             recordCommand:
             begin
                 swRecord( pList.items[pList.indexOf(self.pRecord)] ).commands.add(self.pRecord);
-                sDBMgr.insertRecordInDB( cmdRecord(self.pRecord) );
+                sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
             end;
         end;
     end;
@@ -523,6 +526,7 @@ implementation
     procedure tTaskRecordUpdate.exec;
     var
         pList:    tList;
+        i,
         index:    integer;
      begin
         pList := sDBMgr.getSoftwareList;
@@ -538,20 +542,20 @@ implementation
             recordSoftware:
             begin
                 case self.field of
-                    dbFieldSwGUID: swRecord( pList.items[index] ).guid := self.value;
+                    dbFieldSwGUID: swRecord( pList.items[index] ).guid := strToInt(self.value);
                     dbFieldSwName: swRecord( pList.items[index] ).name := self.value;
                 end;
             end;
             recordCommand:
             begin
                 case self.field of
-                    dbFieldCmdGUID: cmdRecord( pList.items[index] ).guid := self.value;
-                    dbFieldCmdSwID: cmdRecord( pList.items[index] ).swid := self.value;
-                    dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := self.value;
+                    dbFieldCmdGUID: cmdRecord( pList.items[index] ).guid := strToInt(self.value);
+                    dbFieldCmdSwID: cmdRecord( pList.items[index] ).swid := strToInt(self.value);
+                    dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := strToInt(self.value);
                     dbFieldCmdName: cmdRecord( pList.items[index] ).name := self.value;
                     dbFieldCmdCmmd: cmdRecord( pList.items[index] ).cmmd := self.value;
                     dbFieldCmdVers: cmdRecord( pList.items[index] ).vers := self.value;
-                    dbFieldCmdArch: cmdRecord( pList.items[index] ).arch := self.value;
+                    dbFieldCmdArch: cmdRecord( pList.items[index] ).arch := strToInt(self.value);
                     dbFieldCmduURL: cmdRecord( pList.items[index] ).uURL := self.value;
                 end;
             end;
@@ -573,6 +577,8 @@ implementation
             sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare record non esistente in DB.', eiError) );
             exit;
         end;
+
+        sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
 
         self.pRecord.free;
         pList.delete(index);
