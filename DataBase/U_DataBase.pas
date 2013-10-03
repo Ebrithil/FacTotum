@@ -425,7 +425,7 @@ implementation
           // Update
           dbStrings[dbTableCommands],
           // Set
-          dbStrings[field], string(value),
+          dbStrings[field], value,
           // Where
           dbStrings[dbFieldCmdGUID], command.guid
           ]
@@ -483,7 +483,7 @@ implementation
                     self.insertRecordInDB( cmdRecord(swRecord(pRecord).commands[i]) );
                 end;
             end;
-            recordCommand:  self.insertRecordInDB( cmdRecord(pRecord) );
+            recordCommand: self.insertRecordInDB( cmdRecord(pRecord) );
         end;
 
         m_updated := true;
@@ -548,7 +548,6 @@ implementation
             begin
                 pList.add(self.pRecord);
                 sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
-                // TODO: Creazione command figlio. Non può esistere un software senza command.
             end;
             recordCommand:
             begin
@@ -556,7 +555,6 @@ implementation
                     if swRecord(pList.items[i]).guid = cmdRecord(self.pRecord).swid then
                     begin
                         swRecord(pList.items[i]).commands.add(self.pRecord);
-                        cmdRecord(self.pRecord).name := '<Nuovo Comando>';
                         break;
                     end;
 
@@ -583,7 +581,6 @@ implementation
             recordCommand:
             begin
                 case self.field of
-                    dbFieldCmdGUID: cmdRecord( pList.items[index] ).guid := strToInt(self.value);
                     dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := strToInt(self.value);
                     dbFieldCmdName: cmdRecord( pList.items[index] ).name := self.value;
                     dbFieldCmdCmmd: cmdRecord( pList.items[index] ).cmmd := self.value;
@@ -600,24 +597,36 @@ implementation
     procedure tTaskRecordDelete.exec;
     var
         pList: tList;
-        index: integer;
+        i:     integer;
      begin
         pList := sDBMgr.getSoftwareList;
 
         if self.tRecord = recordCommand then
         begin
-            index := cmdRecord(self.pRecord).swid;
-            swRecord( pList.items[index] ).commands.remove(self.pRecord);
+            for i := 0 to pred(pList.count) do
+                if swRecord( pList.items[i] ).guid = cmdRecord(self.pRecord).swid then
+                begin
+                    swRecord( pList.items[i] ).commands.remove(self.pRecord);
+                    break;
+                end;
 
-            if swRecord( pList.items[cmdRecord(self.pRecord).swid] ).commands.count = 0 then
+            if swRecord( pList.items[i] ).commands.count = 0 then
             begin
-                sDBMgr.deleteDBRecord(recordSoftware, pList.items[index]);
-                swRecord(pList.items[index]).free;
-                pList.delete(index);
+                sDBMgr.deleteDBRecord( recordSoftware, pList.items[i] );
+                swRecord( pList.items[i] ).free;
+                pList.delete(i);
             end;
         end
         else
+        begin
+            for i := 0 to pred( swRecord(self.pRecord).commands.count ) do
+            begin
+                sDBMgr.deleteDBRecord( recordCommand, swRecord(self.pRecord).commands.first );
+                cmdRecord( swRecord(self.pRecord).commands.first ).free;
+                swRecord(self.pRecord).commands.remove( swRecord(self.pRecord).commands.first );
+            end;
             pList.remove(self.pRecord);
+        end;
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
         FreeAndNil(self.pRecord);

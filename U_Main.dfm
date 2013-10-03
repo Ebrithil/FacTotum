@@ -319,6 +319,10 @@ object fFacTotum: TfFacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -373,7 +377,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C0101050008029C0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802A00120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1410,10 +1414,10 @@ object fFacTotum: TfFacTotum
       ShortCut = 16457
       OnClick = pmInsertClick
     end
-    object pmSwDelete: TMenuItem
+    object pmDelete: TMenuItem
       Caption = 'Elimina Software'
       ShortCut = 8238
-      OnClick = pmSwDeleteClick
+      OnClick = pmDeleteClick
     end
     object pmSetMainCmd: TMenuItem
       Caption = 'Rendi Comando Principale'
@@ -1427,7 +1431,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01A00110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C01A40110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000

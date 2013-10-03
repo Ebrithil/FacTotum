@@ -16,9 +16,6 @@ Coordinates=374,56,90,36
 [pmSoftware]
 Coordinates=144,1,91,36
 
-[pmSwDelete]
-Coordinates=374,1,136,36
-
 [pcTabs]
 Coordinates=97,10,46,36
 
@@ -42,4 +39,7 @@ Coordinates=374,111,97,36
 
 [pmInsert]
 Coordinates=101,174,131,36
+
+[pmDelete]
+Coordinates=374,1,136,36
 

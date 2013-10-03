@@ -23,7 +23,7 @@ type
         leCmdInfo: TLabeledEdit;
         pmSoftware: TPopupMenu;
         pmInsert: TMenuItem;
-        pmSwDelete: TMenuItem;
+        pmDelete: TMenuItem;
         clbDownload: TCheckListBox;
         lDownloadInfo: TLabel;
         pbDownload: TProgressBar;
@@ -48,7 +48,7 @@ type
         procedure pmInsertClick(Sender: TObject);
         procedure tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure pmSoftwarePopup(Sender: TObject);
-        procedure pmSwDeleteClick(Sender: TObject);
+        procedure pmDeleteClick(Sender: TObject);
     end;
 
 const
@@ -183,38 +183,57 @@ implementation
         taskInsert: tTaskRecordInsert;
         command:    cmdRecord;
     begin
-        taskInsert := tTaskRecordInsert.create;
+        taskInsert   := tTaskRecordInsert.create;
+
+        command      := cmdRecord.create;
 
         if assigned(tvSoftware.selected) and assigned(tvSoftware.selected.parent) then
         begin
             taskInsert.tRecord := recordCommand;
-            command            := cmdRecord.create;
             taskInsert.pRecord := command;
             command.swid       := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).guid;
+            command.prty       := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).commands.count;
         end
         else
         begin
             taskInsert.tRecord                    := recordSoftware;
             taskInsert.pRecord                    := swRecord.create;
-            swRecord(taskInsert.pRecord).commands := tList.create;
-            command                               := cmdRecord.create;
-            command.name                          := '<Nuovo Comando>';
             swRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
+            swRecord(taskInsert.pRecord).commands := tList.create;
+            command.prty                          := 0;
             swRecord(taskInsert.pRecord).commands.add(command);
         end;
+
+        command.arch := byte(archNone);
+        command.name := '<Nuovo Comando>';
+        command.vers := '';
+        command.cmmd := '<Comando>';
+        command.uURL := '';
 
         sTaskMgr.pushTaskToInput(taskInsert);
     end;
 
     procedure tfFacTotum.pmSoftwarePopup(Sender: TObject);
     begin
-        if assigned(tvSoftware.selected) and assigned(tvSoftware.selected.parent) then
-            pmInsert.caption := 'Inserisci Comando'
-        else
-            pmInsert.caption := 'Inserisci Software'
+        pmDelete.enabled := false;
+
+        if assigned(tvSoftware.selected) then
+        begin
+            if assigned(tvSoftware.selected.parent) then
+            begin
+                pmInsert.caption := 'Inserisci comando';
+                pmDelete.caption := 'Elimina comando';
+            end
+            else
+            begin
+                pmInsert.caption := 'Inserisci software';
+                pmDelete.caption := 'Elimina software';
+            end;
+            pmDelete.enabled := true;
+        end;
     end;
 
-    procedure tfFacTotum.pmSwDeleteClick(sender: tObject);
+    procedure tfFacTotum.pmDeleteClick(sender: tObject);
     var
         taskDelete: tTaskRecordDelete;
     begin
