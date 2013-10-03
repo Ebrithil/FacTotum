@@ -45,10 +45,13 @@ type
         procedure refreshSoftwareList;
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
-        procedure pmInsertClick(Sender: TObject);
-        procedure tvSoftwareMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-        procedure pmSoftwarePopup(Sender: TObject);
-        procedure pmDeleteClick(Sender: TObject);
+        procedure pmInsertClick(sender: tObject);
+        procedure tvSoftwareMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+        procedure pmSoftwarePopup(sender: tObject);
+        procedure pmDeleteClick(sender: tObject);
+        procedure leCmdInfoExit(sender: tObject);
+    procedure leVersionExit(Sender: TObject);
+    procedure leVersionKeyPress(Sender: TObject; var Key: Char);
     end;
 
 const
@@ -101,9 +104,22 @@ implementation
         i:        integer;
         node:     tTreeNode;
         swRec:    swRecord;
+        parent,
+        selected: integer;
     begin
         if not sDBMgr.wasUpdated then
             exit;
+
+        if assigned(tvSoftware.selected) and assigned(tvSoftware.selected.parent) then
+        begin
+            parent   := tvSoftware.selected.parent.index;
+            selected := tvSoftware.selected.index;
+        end
+        else
+        begin
+            parent   := -1;
+            selected := -1;
+        end;
 
         tvSoftware.items.clear;
 
@@ -124,6 +140,12 @@ implementation
             for j := 0 to pred(swRec.commands.count) do
                 tvSoftware.items.addChild( node, cmdRecord(swRec.commands[j]).name );
         end;
+
+        if selected > -1 then
+            if parent > -1  then
+                tvSoftware.selected := tvSoftware.items[parent].item[selected]
+            else
+                tvSoftware.selected := tvSoftware.items[selected];
     end;
 
     procedure tfFacTotum.tvSoftwareMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; X, Y: integer);
@@ -178,6 +200,65 @@ implementation
         self.refreshSoftwareList;
     end;
 
+    procedure tfFacTotum.leCmdInfoExit(sender: tObject);
+    var
+        taskUpdate: tTaskRecordUpdate;
+        swIndex:    integer;
+    begin
+        if trim(leCmdInfo.text).length > 0 then
+        begin
+            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
+
+            taskUpdate         := tTaskRecordUpdate.create;
+            taskUpdate.field   := dbFieldCmdCmmd;
+            taskUpdate.value   := trim(leCmdInfo.text);
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+
+            leCmdInfo.color := $0080FF80; // Verde
+        end
+        else
+            leCmdInfo.color := $008080FF; // Rosso
+    end;
+
+    procedure tfFacTotum.leVersionExit(sender: tObject);
+    var
+        taskUpdate: tTaskRecordUpdate;
+        swIndex:    integer;
+    begin
+        if length(leVersion.text) > 0 then
+            leVersion.color := $0080FF80 // Verde
+        else
+        begin
+            leVersion.color := $0080FFFF; // Giallo
+            exit;
+        end;
+
+        if not (leVersion.text[length(leVersion.text)] = '.') then
+        begin
+            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
+
+            taskUpdate         := tTaskRecordUpdate.create;
+            taskUpdate.field   := dbFieldCmdVers;
+            taskUpdate.value   := trim(leVersion.text);
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+        end
+        else
+            leVersion.color := $008080FF; // Rosso
+    end;
+
+    procedure tfFacTotum.leVersionKeyPress(Sender: TObject; var Key: Char);
+    begin
+        if ( not charInSet(key, ['0'..'9', '.', #8]) ) or
+           ( (key = '.') and ((length(leVersion.text) = 0) or (leVersion.text[length(leVersion.text)] = '.') or (leVersion.SelLength > 0)) ) then
+            key := #0;
+    end;
+
     procedure tfFacTotum.pmInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordInsert;
@@ -191,8 +272,8 @@ implementation
         begin
             taskInsert.tRecord := recordCommand;
             taskInsert.pRecord := command;
-            command.swid       := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).guid;
-            command.prty       := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).commands.count;
+            command.swid       := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
+            command.prty       := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).commands.count;
         end
         else
         begin

@@ -161,6 +161,8 @@ object fFacTotum: TfFacTotum
         LabelSpacing = 0
         ParentFont = False
         TabOrder = 1
+        StyleElements = [seFont, seBorder]
+        OnExit = leCmdInfoExit
       end
       object leVersion: TLabeledEdit
         Left = 384
@@ -185,8 +187,10 @@ object fFacTotum: TfFacTotum
         Font.Style = []
         LabelSpacing = 0
         ParentFont = False
-        ReadOnly = True
         TabOrder = 2
+        StyleElements = [seFont, seBorder]
+        OnExit = leVersionExit
+        OnKeyPress = leVersionKeyPress
       end
       object leUrl: TLabeledEdit
         Left = 3
@@ -212,6 +216,7 @@ object fFacTotum: TfFacTotum
         LabelSpacing = 0
         ParentFont = False
         TabOrder = 3
+        StyleElements = [seFont, seBorder]
       end
       object rgCompConfig: TRadioGroup
         Left = 295
@@ -243,6 +248,10 @@ object fFacTotum: TfFacTotum
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object lDownloadInfo: TLabel
         Left = 3
         Top = 475
@@ -377,7 +386,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802A00120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802A40120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1431,7 +1440,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01A40110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C01A80110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000

@@ -263,10 +263,17 @@ implementation
         query:   string;
         cmdRec:  cmdRecord;
         sqlData: tDataSet;
+        i:       byte;
     begin
         if assigned(m_software) then
         begin
-            result := swRecord(self.getSoftwareList.items[swID]).commands;
+            result := nil;
+            for i := 0 to m_software.count do
+                if swRecord( m_software.items[i] ).guid = swID then
+                begin
+                    result := swRecord(self.getSoftwareList.items[i]).commands;
+                    break;
+                end;
             exit;
         end;
 
@@ -536,6 +543,7 @@ implementation
 //------------------------------------------------------------------------------
 // End Implementation of TDatabase Class
 
+    // TODO: Controlla di aver rimosso tutta la PARANOIA.
     procedure tTaskRecordInsert.exec;
     var
         pList: tList;
@@ -565,35 +573,30 @@ implementation
 
     procedure tTaskRecordUpdate.exec;
     var
-        pList:    tList;
-        index:    integer;
+        pList: tList;
+        i:     integer;
      begin
         pList := sDBMgr.getSoftwareList;
-        index := pList.IndexOf(self.pRecord);
 
         case self.tRecord of
             recordSoftware:
-            begin
                 case self.field of
-                    dbFieldSwName: swRecord( pList.items[index] ).name := self.value;
+                    dbFieldSwName: swRecord(self.pRecord).name := self.value;
                 end;
-            end;
             recordCommand:
-            begin
                 case self.field of
-                    dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := strToInt(self.value);
-                    dbFieldCmdName: cmdRecord( pList.items[index] ).name := self.value;
-                    dbFieldCmdCmmd: cmdRecord( pList.items[index] ).cmmd := self.value;
-                    dbFieldCmdVers: cmdRecord( pList.items[index] ).vers := self.value;
-                    dbFieldCmdArch: cmdRecord( pList.items[index] ).arch := strToInt(self.value);
-                    dbFieldCmduURL: cmdRecord( pList.items[index] ).uURL := self.value;
+                    dbFieldCmdPrty: cmdRecord(self.pRecord).prty := strToInt(self.value);
+                    dbFieldCmdName: cmdRecord(self.pRecord).name := self.value;
+                    dbFieldCmdCmmd: cmdRecord(self.pRecord).cmmd := self.value;
+                    dbFieldCmdVers: cmdRecord(self.pRecord).vers := self.value;
+                    dbFieldCmdArch: cmdRecord(self.pRecord).arch := strToInt(self.value);
+                    dbFieldCmduURL: cmdRecord(self.pRecord).uURL := self.value;
                 end;
-            end;
         end;
-
         sDBMgr.updateDBRecord(self.tRecord, self.pRecord, self.field, self.value);
     end;
 
+    // TODO: Controlla di aver rimosso tutta la PARANOIA.
     procedure tTaskRecordDelete.exec;
     var
         pList: tList;
