@@ -181,18 +181,26 @@ implementation
     procedure tfFacTotum.pmInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordInsert;
+        command:    cmdRecord;
     begin
         taskInsert := tTaskRecordInsert.create;
 
-        if assigned(tvSoftware.selected.parent) then
+        if assigned(tvSoftware.selected) and assigned(tvSoftware.selected.parent) then
         begin
             taskInsert.tRecord := recordCommand;
-            taskInsert.pRecord := cmdRecord.create;
+            command            := cmdRecord.create;
+            taskInsert.pRecord := command;
+            command.swid       := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).guid;
         end
         else
         begin
-            taskInsert.tRecord := recordSoftware;
-            taskInsert.pRecord := swRecord.create;
+            taskInsert.tRecord                    := recordSoftware;
+            taskInsert.pRecord                    := swRecord.create;
+            swRecord(taskInsert.pRecord).commands := tList.create;
+            command                               := cmdRecord.create;
+            command.name                          := '<Nuovo Comando>';
+            swRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
+            swRecord(taskInsert.pRecord).commands.add(command);
         end;
 
         sTaskMgr.pushTaskToInput(taskInsert);
@@ -200,13 +208,13 @@ implementation
 
     procedure tfFacTotum.pmSoftwarePopup(Sender: TObject);
     begin
-        if assigned(tvSoftware.selected.parent) then
+        if assigned(tvSoftware.selected) and assigned(tvSoftware.selected.parent) then
             pmInsert.caption := 'Inserisci Comando'
         else
             pmInsert.caption := 'Inserisci Software'
     end;
 
-    procedure tfFacTotum.pmSwDeleteClick(Sender: TObject);
+    procedure tfFacTotum.pmSwDeleteClick(sender: tObject);
     var
         taskDelete: tTaskRecordDelete;
     begin
@@ -214,13 +222,13 @@ implementation
 
         if assigned(tvSoftware.selected.parent) then
         begin
-            taskDelete.tRecord := recordSoftware;
-            taskDelete.pRecord := DBRecord(sDBMgr.getSoftwareList.items[tvSoftware.Selected.Index]);
+            taskDelete.tRecord := recordCommand;
+            taskDelete.pRecord := swRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index]).commands.items[tvSoftware.selected.Index];
         end
         else
         begin
-            taskDelete.tRecord := recordCommand;
-            // taskDelete.pRecord := // TODO: trova il command selezionato nella lista
+            taskDelete.tRecord := recordSoftware;
+            taskDelete.pRecord := DBRecord(sDBMgr.getSoftwareList.items[tvSoftware.selected.index]);
         end;
 
         sTaskMgr.pushTaskToInput(taskDelete);

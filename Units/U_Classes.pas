@@ -352,12 +352,7 @@ implementation
         srcDoc2.write( pSafeArray(tVarData(V).vArray) );
         srcDoc2.close;
 
-        try // TODO: Serve questo try?
-            result := srcDoc2 as iHTMLDocument3;
-        except
-            on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
-        end;
+        result := srcDoc2 as iHTMLDocument3;
     end;
 
     function updateParser.getDirectDownloadLink(swLink: string): string;

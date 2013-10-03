@@ -4,7 +4,7 @@ interface
 
 uses
     System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DBXSqlite,
-    System.Classes, winapi.windows, System.SyncObjs,
+    System.Classes, winapi.windows, System.SyncObjs, System.Types,
 
     U_Classes;
 
@@ -21,7 +21,7 @@ type
         name:     string;
         commands: tList;
 
-        function hasValidCommands: boolean;
+        function    hasValidCommands: boolean;
     end;
 
     cmdRecord = class(DBRecord)
@@ -75,7 +75,7 @@ type
             procedure    deleteRecordFromDB(command: cmdRecord); overload;
             function     query(qString: string): boolean;
             function     queryRes(qString: string): tDataSet;
-            function     getCommandList(const swID: integer): tList;
+            function     getLastInsertedRecordID: integer;
         public
             constructor create;
             destructor  Destroy; override;
@@ -84,6 +84,7 @@ type
             procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
             function    wasUpdated: boolean;
             function    getSoftwareList: tList;
+            function    getCommandList(const swID: integer): tList;
     end;
 
 const
@@ -263,6 +264,12 @@ implementation
         cmdRec:  cmdRecord;
         sqlData: tDataSet;
     begin
+        if assigned(m_software) then
+        begin
+            result := swRecord(self.getSoftwareList.items[swID]).commands;
+            exit;
+        end;
+
         result  := tList.create;
 
         query := format(
@@ -323,8 +330,8 @@ implementation
           dbStrings[dbTableSoftware]
           ]
         );
-        sqlData     := self.queryRes( query );
-        m_software  := tList.create;
+        sqlData := self.queryRes(query);
+        result  := tList.create;
 
         sqlData.first;
         while not(sqlData.eof) do
@@ -339,11 +346,11 @@ implementation
             end;
 
             sqlData.next;
-            m_software.add(swRec);
+            result.add(swRec);
         end;
 
         sqlData.free;
-        result := m_software;
+        m_software := result;
     end;
 
     procedure DBManager.insertRecordInDB(software: swRecord);
@@ -451,10 +458,10 @@ implementation
         query := format(
           'DELETE '
         + 'FROM %s '
-        + 'WHERE %s = ''%d;''',
+        + 'WHERE %s = ''%d'';',
           [
           // From
-          dbStrings[dbTableSoftware],
+          dbStrings[dbTableCommands],
           // Where
           dbStrings[dbFieldCmdGUID], command.guid
           ]
@@ -463,9 +470,19 @@ implementation
     end;
 
     procedure DBManager.insertDBRecord(tRecord: recordType; pRecord: DBRecord);
+    var
+        i: byte;
     begin
         case tRecord of
-            recordSoftware: self.insertRecordInDB( swRecord(pRecord) );
+            recordSoftware:
+            begin
+                self.insertRecordInDB( swRecord(pRecord) );
+                for i := 0 to pred( swRecord(pRecord).commands.count ) do
+                begin
+                    cmdRecord(swRecord(pRecord).commands[i]).swid := self.getLastInsertedRecordID;
+                    self.insertRecordInDB( cmdRecord(swRecord(pRecord).commands[i]) );
+                end;
+            end;
             recordCommand:  self.insertRecordInDB( cmdRecord(pRecord) );
         end;
 
@@ -504,12 +521,25 @@ implementation
             result := false;
     end;
 
+    function DBManager.getLastInsertedRecordID: integer;
+    var
+        query:   string;
+        sqlData: tDataSet;
+    begin
+        query := 'SELECT LAST_INSERT_ROWID();';
+        sqlData := self.queryRes(query);
+
+        sqlData.first;
+        result := sqlData.fields[0].value;
+    end;
+
 //------------------------------------------------------------------------------
 // End Implementation of TDatabase Class
 
     procedure tTaskRecordInsert.exec;
     var
         pList: tList;
+        i:     integer;
     begin
         pList := sDBMgr.getSoftwareList;
 
@@ -522,7 +552,14 @@ implementation
             end;
             recordCommand:
             begin
-                swRecord( pList.items[pList.indexOf(self.pRecord)] ).commands.add(self.pRecord);
+                for i := 0 to pred(pList.count) do
+                    if swRecord(pList.items[i]).guid = cmdRecord(self.pRecord).swid then
+                    begin
+                        swRecord(pList.items[i]).commands.add(self.pRecord);
+                        cmdRecord(self.pRecord).name := '<Nuovo Comando>';
+                        break;
+                    end;
+
                 sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
             end;
         end;
@@ -540,7 +577,6 @@ implementation
             recordSoftware:
             begin
                 case self.field of
-                    dbFieldSwGUID: swRecord( pList.items[index] ).guid := strToInt(self.value);
                     dbFieldSwName: swRecord( pList.items[index] ).name := self.value;
                 end;
             end;
@@ -548,7 +584,6 @@ implementation
             begin
                 case self.field of
                     dbFieldCmdGUID: cmdRecord( pList.items[index] ).guid := strToInt(self.value);
-                    dbFieldCmdSwID: cmdRecord( pList.items[index] ).swid := strToInt(self.value);
                     dbFieldCmdPrty: cmdRecord( pList.items[index] ).prty := strToInt(self.value);
                     dbFieldCmdName: cmdRecord( pList.items[index] ).name := self.value;
                     dbFieldCmdCmmd: cmdRecord( pList.items[index] ).cmmd := self.value;
@@ -564,17 +599,28 @@ implementation
 
     procedure tTaskRecordDelete.exec;
     var
-        pList:    tList;
-        index:    integer;
+        pList: tList;
+        index: integer;
      begin
-        // TODO: Se il record è l'ultimo command di un software elimina il software padre. Non può esistere un software senza command.
         pList := sDBMgr.getSoftwareList;
-        index := pList.IndexOf(self.pRecord);
+
+        if self.tRecord = recordCommand then
+        begin
+            index := cmdRecord(self.pRecord).swid;
+            swRecord( pList.items[index] ).commands.remove(self.pRecord);
+
+            if swRecord( pList.items[cmdRecord(self.pRecord).swid] ).commands.count = 0 then
+            begin
+                sDBMgr.deleteDBRecord(recordSoftware, pList.items[index]);
+                swRecord(pList.items[index]).free;
+                pList.delete(index);
+            end;
+        end
+        else
+            pList.remove(self.pRecord);
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
-
-        DBRecord(pList.items[index]).free;
-        pList.delete(index);
+        FreeAndNil(self.pRecord);
     end;
 
 end.
