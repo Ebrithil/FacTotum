@@ -59,10 +59,9 @@ type
         procedure leUrlInfoKeyPress(sender: tObject; var key: char);
         procedure rgCompConfigExit(sender: tObject);
         procedure bBrowseClick(sender: tObject);
-        procedure leVerInfoKeyDown(Sender: TObject; var Key: Word;
-          Shift: TShiftState);
-        procedure leVerInfoContextPopup(Sender: TObject; MousePos: TPoint;
-          var Handled: Boolean);
+        procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
+        procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
+        procedure tvSoftwareEdited(sender: tObject; node: tTreeNode; var s: string);
     end;
 
 const
@@ -179,6 +178,33 @@ implementation
         taskUpdate.tRecord := recordCommand;
         taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
 
+        sTaskMgr.pushTaskToInput(taskUpdate);
+    end;
+
+    procedure tfFacTotum.tvSoftwareEdited(sender: tObject; node: tTreeNode; var s: string);
+    var
+        taskUpdate: tTaskRecordUpdate;
+        swIndex:    integer;
+    begin
+        taskUpdate         := tTaskRecordUpdate.create;
+
+        if node.hasChildren then
+        // E' un software
+        begin
+            taskUpdate.field   := dbFieldSwName;
+            taskUpdate.tRecord := recordSoftware;
+            taskUpdate.pRecord := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.index] );
+        end
+        else
+        // E' un comando
+        begin
+            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
+
+            taskUpdate.field   := dbFieldCmdName;
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
+        end;
+        taskUpdate.value       := trim(s);
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
