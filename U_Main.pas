@@ -25,7 +25,6 @@ type
         pmSoftware: TPopupMenu;
         pmInsert: TMenuItem;
         pmDelete: TMenuItem;
-        clbDownload: TCheckListBox;
         lDownloadInfo: TLabel;
         pbDownload: TProgressBar;
         leVerInfo: TLabeledEdit;
@@ -40,11 +39,11 @@ type
         bClear: TButton;
         ilEvents: TImageList;
         bBrowse: TButton;
+        lvUpdate: TListView;
 
         procedure formCreate(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
         procedure bClearClick(sender: tObject);
-        procedure refreshSoftwareList;
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
         procedure pmInsertClick(sender: tObject);
@@ -62,6 +61,10 @@ type
         procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
         procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
         procedure tvSoftwareEdited(sender: tObject; node: tTreeNode; var s: string);
+        procedure refreshConfigureSoftwareList;
+        procedure sendUpdateSoftwareList;
+        procedure refreshUpdateSoftwareList;
+    procedure bUpdateClick(Sender: TObject);
     end;
 
 const
@@ -112,7 +115,7 @@ implementation
         sTaskMgr.free;
     end;
 
-    procedure tfFacTotum.refreshSoftwareList;
+    procedure tfFacTotum.refreshConfigureSoftwareList;
     var
         software: tList;
         j,
@@ -238,7 +241,8 @@ implementation
                     event.free;
                 end;
 
-        self.refreshSoftwareList;
+         self.refreshConfigureSoftwareList;
+         self.refreshUpdateSoftwareList;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
@@ -257,7 +261,8 @@ implementation
 
         application.onIdle  := applicationIdleEvents;
 
-        self.refreshSoftwareList;
+        self.refreshConfigureSoftwareList;
+        self.sendUpdateSoftwareList;
     end;
 
     procedure tfFacTotum.leCmdInfoExit(sender: tObject);
@@ -516,6 +521,48 @@ implementation
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
         tLog.imageIndex := tImageIndex(tiEvents);
+    end;
+
+    procedure tfFacTotum.bUpdateClick(Sender: TObject);
+    begin
+        self.sendUpdateSoftwareList;
+    end;
+
+    procedure tfFactotum.sendUpdateSoftwareList;
+    var
+        sList,
+        cList:   tList;
+        taskVer: tTaskGetVer;
+        i,
+        j:       integer;
+    begin
+        sList := sDBMgr.getSoftwareList;
+        for i := 0 to pred(sList.count) do
+        begin
+            cList := swRecord( sList.items[i] ).commands;
+            for j := 0 to pred(cList.count) do
+            begin
+                taskVer     := tTaskGetVer.create;
+                taskVer.URL := cmdRecord( cList.items[j] ).uURL;
+                sTaskMgr.pushTaskToInput(taskVer);
+            end;
+        end;
+    end;
+
+    // TODO: Riscrivere questa funzione e refreshConfigureSoftwareList come exec di task in uscita (=> risolve implicitamente il problema del refresh della lista ad ogni query)
+    procedure tfFacTotum.refreshUpdateSoftwareList;
+    var
+        taskVer: tTaskGetVer;
+    begin
+        try
+            taskVer := tTaskGetVer(sTaskMgr.pullTaskFromOutput);
+
+            if not assigned(taskVer) then
+                exit;
+
+        finally
+
+        end;
     end;
 end.
 

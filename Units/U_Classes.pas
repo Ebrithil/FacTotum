@@ -36,6 +36,8 @@ type
             procedure exec; virtual; abstract;
     end;
 
+    // TODO: Decidi se i task in uscita saranno classe a parte, derivati di tTask o stessi task con metodi ereditati diversi da exec.
+
     tTaskGetVer = class(tTask) // Task per verificare la versione del programma da scaricare
         public
             URL:     string;
@@ -78,8 +80,6 @@ type
             destructor  Destroy; override;
 
             procedure pushTaskToInput(taskToAdd: tTask);
-            function  pullTaskFromInput: tTask;
-            procedure pushTaskToOutput(taskToAdd: tTask);
             function  pullTaskFromOutput: tTask;
 
         protected
@@ -89,6 +89,8 @@ type
 
             procedure pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
             function  pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
+            procedure pushTaskToOutput(taskToAdd: tTask);
+            function  pullTaskFromInput: tTask;
     end;
 
     updateParser = class // Wrapper di funzioni ed helper per parsare l'html
@@ -346,6 +348,7 @@ implementation
         V:       oleVariant;
         srcDoc2: iHTMLDocument2;
     begin
+        coInitialize(nil);
         srcDoc2 := coHTMLDocument.create as iHTMLDocument2;
         V := varArrayCreate([0, 0], varVariant);
         V[0] := srcCode;

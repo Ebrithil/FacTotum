@@ -22,7 +22,7 @@ object fFacTotum: TfFacTotum
     Top = 0
     Width = 513
     Height = 635
-    ActivePage = tInstaller
+    ActivePage = tUpdate
     Align = alCustom
     DoubleBuffered = False
     Font.Charset = ANSI_CHARSET
@@ -239,6 +239,7 @@ object fFacTotum: TfFacTotum
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
+        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -309,28 +310,6 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object clbDownload: TCheckListBox
-        Left = 2
-        Top = 3
-        Width = 499
-        Height = 467
-        Align = alCustom
-        BiDiMode = bdLeftToRight
-        Columns = 2
-        DragMode = dmAutomatic
-        Flat = False
-        Font.Charset = ANSI_CHARSET
-        Font.Color = clBlue
-        Font.Height = -16
-        Font.Name = 'Eras Light ITC'
-        Font.Style = []
-        HeaderColor = clBlack
-        HeaderBackgroundColor = clDefault
-        ItemHeight = 20
-        ParentBiDiMode = False
-        ParentFont = False
-        TabOrder = 0
-      end
       object pbDownload: TProgressBar
         Left = 3
         Top = 500
@@ -339,7 +318,7 @@ object fFacTotum: TfFacTotum
         Smooth = True
         BarColor = clLime
         Step = 1
-        TabOrder = 1
+        TabOrder = 0
         StyleElements = [seFont, seBorder]
       end
       object bUpdate: TButton
@@ -348,7 +327,59 @@ object fFacTotum: TfFacTotum
         Width = 499
         Height = 40
         Caption = 'Aggiorna'
+        TabOrder = 1
+        OnClick = bUpdateClick
+      end
+      object lvUpdate: TListView
+        Left = 2
+        Top = 3
+        Width = 499
+        Height = 467
+        Columns = <
+          item
+            MaxWidth = 41
+            MinWidth = 41
+            Width = 41
+          end
+          item
+            Caption = ' Software'
+            Width = 110
+          end
+          item
+            Caption = ' V. A.'
+            Width = 80
+          end
+          item
+            Caption = ' U. V.'
+            Width = 80
+          end
+          item
+            Caption = ' Avanzamento'
+            Width = 139
+          end
+          item
+            Alignment = taCenter
+            Width = 45
+          end>
+        ColumnClick = False
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        Items.ItemData = {
+          05A30000000100000000000000FFFFFFFFFFFFFFFF05000000FFFFFFFF000000
+          00000F4D006F007A0069006C006C0061002000460069007200650066006F0078
+          00605ED80D0A320034002E00300036002E003400330032003400A063D80D0A32
+          0034002E00300036002E003400330032003400785FD80D0C500072006F006700
+          670072006500730073004200610072002060D80D043100300030002500F064D8
+          0DFFFFFFFFFFFFFFFFFFFF}
+        ReadOnly = True
+        RowSelect = True
+        ParentFont = False
+        StateImages = ilEvents
         TabOrder = 2
+        ViewStyle = vsReport
       end
     end
     object tLog: TTabSheet
@@ -408,7 +439,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802B40120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802C00120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1462,7 +1493,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01B80110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C01C40110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000

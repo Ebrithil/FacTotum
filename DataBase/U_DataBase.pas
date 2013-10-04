@@ -571,12 +571,7 @@ implementation
     end;
 
     procedure tTaskRecordUpdate.exec;
-    var
-        pList: tList;
-        i:     integer;
-     begin
-        pList := sDBMgr.getSoftwareList;
-
+    begin
         case self.tRecord of
             recordSoftware:
                 case self.field of
