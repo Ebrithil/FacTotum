@@ -27,8 +27,8 @@ type
         clbDownload: TCheckListBox;
         lDownloadInfo: TLabel;
         pbDownload: TProgressBar;
-        leVersion: TLabeledEdit;
-        leUrl: TLabeledEdit;
+        leVerInfo: TLabeledEdit;
+        leUrlInfo: TLabeledEdit;
         pmSetMainCmd: TMenuItem;
         lUpdateProg: TLabel;
         tLog: TTabSheet;
@@ -38,6 +38,7 @@ type
         lvEvents: TListView;
         bClear: TButton;
         ilEvents: TImageList;
+        bBrowse: TButton;
 
         procedure formCreate(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
@@ -50,8 +51,13 @@ type
         procedure pmSoftwarePopup(sender: tObject);
         procedure pmDeleteClick(sender: tObject);
         procedure leCmdInfoExit(sender: tObject);
-    procedure leVersionExit(Sender: TObject);
-    procedure leVersionKeyPress(Sender: TObject; var Key: Char);
+        procedure leVerInfoExit(sender: tObject);
+        procedure leVerInfoKeyPress(sender: tObject; var key: char);
+        procedure leUrlInfoExit(sender: tObject);
+        procedure leCmdInfoKeyPress(sender: tObject; var key: char);
+        procedure leUrlInfoKeyPress(sender: tObject; var key: char);
+        procedure rgCompConfigExit(sender: tObject);
+        procedure bBrowseClick(sender: tObject);
     end;
 
 const
@@ -71,23 +77,27 @@ implementation
     begin
         isChild              := assigned(node.parent);
         leCmdInfo.enabled    := isChild;
-        leVersion.enabled    := isChild;
-        leUrl.enabled        := isChild;
+        leVerInfo.enabled    := isChild;
+        leUrlInfo.enabled    := isChild;
         rgCompConfig.enabled := isChild;
 
         if isChild then
         begin
             cmdRec                 := cmdRecord( swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index] );
             leCmdInfo.text         := cmdRec.cmmd;
-            leVersion.text         := cmdRec.vers;
-            leUrl.text             := cmdRec.uURL;
+            leVerInfo.text         := cmdRec.vers;
+            leUrlInfo.text         := cmdRec.uURL;
             rgCompConfig.itemIndex := cmdRec.arch;
+
+            leCmdInfo.color := tvSoftware.color;
+            leVerInfo.color := tvSoftware.color;
+            leUrlInfo.color := tvSoftware.color;
         end
         else
         begin
-            leUrl.text             := '';
+            leUrlInfo.text         := '';
             leCmdInfo.text         := '';
-            leVersion.text         := '';
+            leVerInfo.text         := '';
             rgCompConfig.itemIndex := -1;
         end;
     end;
@@ -139,6 +149,8 @@ implementation
 
             for j := 0 to pred(swRec.commands.count) do
                 tvSoftware.items.addChild( node, cmdRecord(swRec.commands[j]).name );
+
+            node.expand(true);
         end;
 
         if selected > -1 then
@@ -146,6 +158,22 @@ implementation
                 tvSoftware.selected := tvSoftware.items[parent].item[selected]
             else
                 tvSoftware.selected := tvSoftware.items[selected];
+    end;
+
+    procedure tfFacTotum.rgCompConfigExit(Sender: TObject);
+    var
+        taskUpdate: tTaskRecordUpdate;
+        swIndex:    integer;
+    begin
+        swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
+
+        taskUpdate         := tTaskRecordUpdate.create;
+        taskUpdate.field   := dbFieldCmdArch;
+        taskUpdate.value   := rgCompConfig.itemIndex.toString;
+        taskUpdate.tRecord := recordCommand;
+        taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
+
+        sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
     procedure tfFacTotum.tvSoftwareMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; X, Y: integer);
@@ -205,13 +233,14 @@ implementation
         taskUpdate: tTaskRecordUpdate;
         swIndex:    integer;
     begin
-        if trim(leCmdInfo.text).length > 0 then
+        leCmdInfo.text := trim(leCmdInfo.text);
+        if length(leCmdInfo.text) > 0 then
         begin
             swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
 
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmdCmmd;
-            taskUpdate.value   := trim(leCmdInfo.text);
+            taskUpdate.value   := leCmdInfo.text;
             taskUpdate.tRecord := recordCommand;
             taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
 
@@ -223,40 +252,87 @@ implementation
             leCmdInfo.color := $008080FF; // Rosso
     end;
 
-    procedure tfFacTotum.leVersionExit(sender: tObject);
+    procedure tfFacTotum.leCmdInfoKeyPress(Sender: TObject; var Key: Char);
+    begin
+        if key = #13 then
+        begin
+            selectNext(sender as tWinControl, true, true);
+            key := #0
+        end;
+    end;
+
+    procedure tfFacTotum.leUrlInfoExit(Sender: TObject);
     var
         taskUpdate: tTaskRecordUpdate;
         swIndex:    integer;
     begin
-        if length(leVersion.text) > 0 then
-            leVersion.color := $0080FF80 // Verde
-        else
+        leUrlInfo.text := trim(leUrlInfo.text);
+        if length(leUrlInfo.text) > 0 then
         begin
-            leVersion.color := $0080FFFF; // Giallo
-            exit;
-        end;
+            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
 
-        if not (leVersion.text[length(leVersion.text)] = '.') then
+            taskUpdate         := tTaskRecordUpdate.create;
+            taskUpdate.field   := dbFieldCmduURL;
+            taskUpdate.value   := leUrlInfo.text;
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+
+            leUrlInfo.color := $0080FF80; // Verde
+        end
+        else
+            leUrlInfo.color := $0080FFFF; // Giallo
+    end;
+
+    procedure tfFacTotum.leUrlInfoKeyPress(Sender: TObject; var Key: Char);
+    begin
+        if key = #13 then
+        begin
+            selectNext(sender as tWinControl, true, true);
+            key := #0
+        end;
+    end;
+
+    procedure tfFacTotum.leVerInfoExit(sender: tObject);
+    var
+        taskUpdate: tTaskRecordUpdate;
+        swIndex:    integer;
+    begin
+        leVerInfo.text := trim( leVerInfo.text );
+        if ( leVerInfo.text <> '.' )                         and
+           ( length(leVerInfo.text) > 0 )                    and
+           ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
         begin
             swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvSoftware.selected.parent.index] ).guid;
 
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmdVers;
-            taskUpdate.value   := trim(leVersion.text);
+            taskUpdate.value   := leVerInfo.text;
             taskUpdate.tRecord := recordCommand;
             taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvSoftware.selected.index];
 
             sTaskMgr.pushTaskToInput(taskUpdate);
+
+            leVerInfo.color := $0080FF80 // Verde
         end
         else
-            leVersion.color := $008080FF; // Rosso
+            leVerInfo.color := $0080FFFF; // Giallo
     end;
 
-    procedure tfFacTotum.leVersionKeyPress(Sender: TObject; var Key: Char);
+    procedure tfFacTotum.leVerInfoKeyPress(sender: tObject; var key: char);
     begin
-        if ( not charInSet(key, ['0'..'9', '.', #8]) ) or
-           ( (key = '.') and ((length(leVersion.text) = 0) or (leVersion.text[length(leVersion.text)] = '.') or (leVersion.SelLength > 0)) ) then
-            key := #0;
+        if key = #13 then
+        begin
+            selectNext(sender as tWinControl, true, true);
+            key := #0
+        end
+        else
+            if not( charInSet(key, ['0'..'9', '.', #8]) )           or
+                  ( (key = '.') and ( (length(leVerInfo.text) = 0 ) or
+                  ( leVerInfo.text[length(leVerInfo.text)] = '.' )  or
+                  ( leVerInfo.SelLength > 0) ) )                    then
+                key := #0;
     end;
 
     procedure tfFacTotum.pmInsertClick(Sender: TObject);
@@ -332,6 +408,21 @@ implementation
         end;
 
         sTaskMgr.pushTaskToInput(taskDelete);
+    end;
+
+    procedure tfFacTotum.bBrowseClick(sender: tObject);
+    var
+        odSelectFile: tOpenDialog;
+    begin
+        odSelectFile            := tOpenDialog.create(self);
+        odSelectFile.initialDir := extractFilePath(application.exeName);
+        odSelectFile.options    := [ofFileMustExist];
+        odSelectFile.filter     := 'File Eseguibili|*.exe; *.msi|Tutti i file|*.*';
+
+        if odSelectFile.execute then
+            leCmdInfo.text      := odSelectFile.fileName;
+
+        odSelectFile.free;
     end;
 
     procedure tfFacTotum.bClearClick(sender: tObject);

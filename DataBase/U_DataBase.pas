@@ -494,7 +494,6 @@ implementation
         end;
 
         m_updated := true;
-        FreeAndNil(m_software);
     end;
 
     procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);

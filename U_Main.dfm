@@ -115,7 +115,13 @@ object fFacTotum: TfFacTotum
     end
     object tConfiguration: TTabSheet
       Caption = 'Configura'
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -19
+      Font.Name = 'Eras Medium ITC'
+      Font.Style = []
       ImageIndex = 1
+      ParentFont = False
       object tvSoftware: TTreeView
         Left = 2
         Top = 3
@@ -139,22 +145,24 @@ object fFacTotum: TfFacTotum
       end
       object leCmdInfo: TLabeledEdit
         Left = 3
-        Top = 501
-        Width = 366
+        Top = 500
+        Width = 345
         Height = 27
-        EditLabel.Width = 71
-        EditLabel.Height = 19
+        EditLabel.Width = 82
+        EditLabel.Height = 22
         EditLabel.Caption = 'Comando'
+        EditLabel.Color = clBtnFace
         EditLabel.Font.Charset = ANSI_CHARSET
         EditLabel.Font.Color = clWindowText
-        EditLabel.Font.Height = -16
+        EditLabel.Font.Height = -19
         EditLabel.Font.Name = 'Eras Medium ITC'
         EditLabel.Font.Style = []
+        EditLabel.ParentColor = False
         EditLabel.ParentFont = False
         EditLabel.Transparent = True
         Enabled = False
         Font.Charset = ANSI_CHARSET
-        Font.Color = clWindowText
+        Font.Color = clBlack
         Font.Height = -16
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
@@ -163,10 +171,11 @@ object fFacTotum: TfFacTotum
         TabOrder = 1
         StyleElements = [seFont, seBorder]
         OnExit = leCmdInfoExit
+        OnKeyPress = leCmdInfoKeyPress
       end
-      object leVersion: TLabeledEdit
+      object leVerInfo: TLabeledEdit
         Left = 384
-        Top = 501
+        Top = 500
         Width = 117
         Height = 27
         EditLabel.Width = 64
@@ -181,18 +190,18 @@ object fFacTotum: TfFacTotum
         EditLabel.Transparent = True
         Enabled = False
         Font.Charset = ANSI_CHARSET
-        Font.Color = clWindowText
+        Font.Color = clBlack
         Font.Height = -16
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
         LabelSpacing = 0
         ParentFont = False
-        TabOrder = 2
+        TabOrder = 3
         StyleElements = [seFont, seBorder]
-        OnExit = leVersionExit
-        OnKeyPress = leVersionKeyPress
+        OnExit = leVerInfoExit
+        OnKeyPress = leVerInfoKeyPress
       end
-      object leUrl: TLabeledEdit
+      object leUrlInfo: TLabeledEdit
         Left = 3
         Top = 550
         Width = 286
@@ -209,14 +218,16 @@ object fFacTotum: TfFacTotum
         EditLabel.Transparent = True
         Enabled = False
         Font.Charset = ANSI_CHARSET
-        Font.Color = clWindowText
+        Font.Color = clBlack
         Font.Height = -16
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
         LabelSpacing = 0
         ParentFont = False
-        TabOrder = 3
+        TabOrder = 4
         StyleElements = [seFont, seBorder]
+        OnExit = leUrlInfoExit
+        OnKeyPress = leUrlInfoKeyPress
       end
       object rgCompConfig: TRadioGroup
         Left = 295
@@ -225,7 +236,6 @@ object fFacTotum: TfFacTotum
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
-        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -241,17 +251,29 @@ object fFacTotum: TfFacTotum
         ParentBackground = False
         ParentColor = False
         ParentFont = False
-        TabOrder = 4
-        StyleElements = [seClient]
+        TabOrder = 5
+        TabStop = True
+        OnExit = rgCompConfigExit
+      end
+      object bBrowse: TButton
+        Left = 351
+        Top = 499
+        Width = 27
+        Height = 29
+        Caption = '...'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -19
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 2
+        OnClick = bBrowseClick
       end
     end
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object lDownloadInfo: TLabel
         Left = 3
         Top = 475
@@ -328,10 +350,6 @@ object fFacTotum: TfFacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -386,7 +404,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802A40120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802AC0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1440,7 +1458,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010103004C01A80110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010103004C01B00110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000001000000030000
       0005000000080000000B0000000F000000120000001500000017000000190000
