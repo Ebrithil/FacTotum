@@ -198,7 +198,9 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 3
         StyleElements = [seFont, seBorder]
+        OnContextPopup = leVerInfoContextPopup
         OnExit = leVerInfoExit
+        OnKeyDown = leVerInfoKeyDown
         OnKeyPress = leVerInfoKeyPress
       end
       object leUrlInfo: TLabeledEdit
@@ -261,6 +263,7 @@ object fFacTotum: TfFacTotum
         Width = 27
         Height = 29
         Caption = '...'
+        Enabled = False
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -19

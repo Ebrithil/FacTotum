@@ -5,6 +5,7 @@ interface
 uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
     vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
+    system.types,
 
     U_DataBase, U_Functions, U_Classes;
 
@@ -58,6 +59,10 @@ type
         procedure leUrlInfoKeyPress(sender: tObject; var key: char);
         procedure rgCompConfigExit(sender: tObject);
         procedure bBrowseClick(sender: tObject);
+        procedure leVerInfoKeyDown(Sender: TObject; var Key: Word;
+          Shift: TShiftState);
+        procedure leVerInfoContextPopup(Sender: TObject; MousePos: TPoint;
+          var Handled: Boolean);
     end;
 
 const
@@ -76,6 +81,7 @@ implementation
         cmdRec:  cmdRecord;
     begin
         isChild              := assigned(node.parent);
+        bBrowse.enabled      := isChild;
         leCmdInfo.enabled    := isChild;
         leVerInfo.enabled    := isChild;
         leUrlInfo.enabled    := isChild;
@@ -294,6 +300,12 @@ implementation
         end;
     end;
 
+    procedure tfFacTotum.leVerInfoContextPopup(Sender: TObject; MousePos: TPoint;
+      var Handled: Boolean);
+    begin
+        handled := true;
+    end;
+
     procedure tfFacTotum.leVerInfoExit(sender: tObject);
     var
         taskUpdate: tTaskRecordUpdate;
@@ -320,19 +332,67 @@ implementation
             leVerInfo.color := $0080FFFF; // Giallo
     end;
 
-    procedure tfFacTotum.leVerInfoKeyPress(sender: tObject; var key: char);
+    procedure tfFacTotum.leVerInfoKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     begin
+        // Disabilito l'utilizzo di alcuni tasti
+        if key in [46] then
+            key := 0;
+    end;
+
+    procedure tfFacTotum.leVerInfoKeyPress(sender: tObject; var key: char);
+    var
+        chrBef, chrAft: char;
+    begin
+        // Alla pressione del tastio Invio si attiva il tasto Tab
         if key = #13 then
         begin
             selectNext(sender as tWinControl, true, true);
-            key := #0
-        end
-        else
-            if not( charInSet(key, ['0'..'9', '.', #8]) )           or
-                  ( (key = '.') and ( (length(leVerInfo.text) = 0 ) or
-                  ( leVerInfo.text[length(leVerInfo.text)] = '.' )  or
-                  ( leVerInfo.SelLength > 0) ) )                    then
+            key := #0;
+            exit;
+        end;
+        // Limito i tasti utilizzabili
+        if not( charInSet(key, ['0'..'9', '.', #8]) ) then
+        begin
+            key := #0;
+            exit;
+        end;
+
+        chrBef := #0;
+        chrAft := #0;
+        // Se possibile, ricavo i caratteri all'inizio e alla fine della selezione
+        if (leVerInfo.selStart > 0) then
+            chrBef := leVerInfo.text[leVerInfo.selStart];
+        if (leVerInfo.selStart + leVerInfo.selLength) < length(leVerInfo.text) then
+            chrAft := leVerInfo.text[succ(leVerInfo.selStart + leVerInfo.selLength)];
+
+        // Il primo carattere non può essere un punto
+        if ( (leVerInfo.selStart = 0)  and (key = '.') )             or
+           ( (leVerInfo.selStart = 0)  and (leVerInfo.selLength > 0) and (chrAft = '.') and (key = #8) ) or
+           ( (leVerInfo.selStart <= 1) and (leVerInfo.selLength = 0) and (chrAft = '.') and (key = #8) ) then
+        begin
+            key := #0;
+            exit;
+        end;
+        // Non possono esserci due punti attaccati
+        if ( ( (chrBef = '.') or (chrAft = '.') ) and (key = '.') ) then
+        begin
+            key := #0;
+            exit;
+        end;
+        // Cancellando una selezione, non posso unire due punti
+        if ( (chrBef = '.') and (chrAft = '.') and (key = #8) ) then
+        begin
+            key := #0;
+            exit;
+        end;
+        // Cancellando, non posso unire due punti
+        if ( (key = #8) and (pred(leVerInfo.selStart) > 0) ) then
+            if ( (leVerInfo.text[pred(leVerInfo.selStart)] = '.') and (chrAft = '.') ) then
+            begin
                 key := #0;
+                exit;
+            end;
     end;
 
     procedure tfFacTotum.pmInsertClick(Sender: TObject);
