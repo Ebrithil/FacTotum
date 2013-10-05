@@ -59,6 +59,29 @@ type
             procedure exec; override;
     end;
 
+    tTaskGetVer = class(tTask) // Task per verificare la versione del programma da scaricare
+        public
+            cmdRec: cmdRecord;
+
+            procedure exec; override;
+    end;
+
+    tTaskSetVer = class(tTaskOutput)
+        public
+            cmdRec:      cmdRecord;
+            new_version: string;
+
+            procedure exec(); override;
+    end;
+
+    tTaskConfUpdate = class(tTaskOutput)
+        public
+            tRecord: recordType;
+            pRecord: DBRecord;
+
+            procedure exec(); override;
+    end;
+
     DBManager = class
         protected
             m_connector: tSQLConnection;
@@ -627,6 +650,40 @@ implementation
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
         FreeAndNil(self.pRecord);
+    end;
+
+    procedure tTaskGetVer.exec;
+    var
+        new_version: string;
+        returnTask:  tTaskSetVer;
+    begin
+        new_version := sUpdateParser.getLastStableVerFromURL(self.cmdRec.uURL);
+
+        if self.cmdRec.vers = new_version then
+            exit;
+
+        returnTask             := tTaskSetVer.create;
+        returnTask.cmdRec      := self.cmdRec;
+        returnTask.new_version := new_version;
+
+        sTaskMgr.pushTaskToOutput(returnTask);
+    end;
+
+    procedure tTaskSetVer.exec();
+    begin
+        with sLvUpdate.items.add do
+        begin
+            caption := '';
+            subitems.add(self.cmdRec.name);
+            subitems.add(self.cmdRec.vers);
+            subitems.add(self.new_version);
+            imageIndex := tImageIndex(eiDotYellow);
+        end;
+    end;
+
+    procedure tTaskConfUpdate.exec();
+    begin
+
     end;
 
 end.

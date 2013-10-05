@@ -11,7 +11,8 @@ uses
 
 type
     tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiEvtErr);
-    tEventImage = (eiNoImg = -1, eiInfo, eiAlert, eiError);
+    tEventImage = (eiNoImg = -1, eiInfo, eiAlert, eiError, eiDotGreen, eiDotYellow, eiDotRed);
+    tStatus     = (initializing, processing, completed, failed);
 
     // Array for Results
     ArrayReturn = Array[0..2] of String;
@@ -36,16 +37,6 @@ type
             procedure exec; virtual; abstract;
     end;
 
-    // TODO: Decidi se i task in uscita saranno classe a parte, derivati di tTask o stessi task con metodi ereditati diversi da exec.
-
-    tTaskGetVer = class(tTask) // Task per verificare la versione del programma da scaricare
-        public
-            URL:     string;
-            version: string;
-
-            procedure exec; override;
-    end;
-
     tTaskDownload = class(tTask) // Task per scaricare l'installer
         public
             URL:        string;
@@ -62,13 +53,16 @@ type
             procedure exec; override;
     end;
 
-    tStatus = (initializing, processing, completed, failed);
+    tTaskOutput = class(tTask)
+    end;
 
-    tTaskReport = class(tTask) // Task per comunicare al thread principale lo stato di un download
+    tTaskReport = class(tTaskOutput)
         public
             id:     word;
             status: tStatus;
             param:  integer; // Percentuale completamento in caso 'status = processing' o codice errore in caso 'status = failed'
+
+            procedure exec(); override;
     end;
 
     tThreads = Array of thread;
@@ -79,8 +73,10 @@ type
             constructor create(const threadsCount: byte); overload;
             destructor  Destroy; override;
 
+            function  pullTaskFromInput: tTask;
             procedure pushTaskToInput(taskToAdd: tTask);
-            function  pullTaskFromOutput: tTask;
+            function  pullTaskFromOutput: tTaskOutput;
+            procedure pushTaskToOutput(taskToAdd: tTaskOutput);
 
         protected
             m_threadPool: tThreads;
@@ -89,8 +85,6 @@ type
 
             procedure pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
             function  pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
-            procedure pushTaskToOutput(taskToAdd: tTask);
-            function  pullTaskFromInput: tTask;
     end;
 
     updateParser = class // Wrapper di funzioni ed helper per parsare l'html
@@ -151,6 +145,8 @@ var
     sFileMgr:      fileManager;
     sEventHdlr:    eventHandler;
 
+    sLvUpdate:     tListView;
+
 implementation
 
 // Implementation of
@@ -190,16 +186,6 @@ implementation
 
     // Implementazioni tTask
 
-    procedure tTaskGetVer.exec;
-    var
-        returnTask: tTaskGetVer;
-    begin
-        returnTask := tTaskGetVer.create;
-        returnTask.URL := self.URL;
-        returnTask.version := sUpdateParser.getLastStableVerFromURL(returnTask.URL);
-        sTaskMgr.pushTaskToOutput(returnTask);
-    end;
-
     procedure tTaskDownload.exec;
     begin
         self.dataStream := sDownloadMgr.downloadLastStableVersion(self.URL)
@@ -208,6 +194,13 @@ implementation
     procedure tTaskFlush.exec;
     begin
         sFileMgr.saveDataStreamToFile(self.fileName, self.dataStream)
+    end;
+
+    // tTaskOutput
+
+    procedure tTaskReport.exec();
+    begin
+
     end;
 
     // taskManager
@@ -260,14 +253,14 @@ implementation
         result := self.pullTaskFromQueue(m_inputTasks, m_inputMutex)
     end;
 
-    procedure taskManager.pushTaskToOutput(taskToAdd: tTask);
+    procedure taskManager.pushTaskToOutput(taskToAdd: tTaskOutput);
     begin
         self.pushTaskToQueue(taskToAdd, m_outputTasks, m_outputMutex)
     end;
 
-    function taskManager.pullTaskFromOutput(): tTask;
+    function taskManager.pullTaskFromOutput(): tTaskOutput;
     begin
-        result := self.pullTaskFromQueue(m_outputTasks, m_outputMutex)
+        result := self.pullTaskFromQueue(m_outputTasks, m_outputMutex) as tTaskOutput
     end;
 
     procedure taskManager.pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);

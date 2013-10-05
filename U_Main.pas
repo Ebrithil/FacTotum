@@ -37,7 +37,7 @@ type
         bUpdate: TButton;
         lvEvents: TListView;
         bClear: TButton;
-        ilEvents: TImageList;
+        ilTasks: TImageList;
         bBrowse: TButton;
         lvUpdate: TListView;
 
@@ -61,10 +61,10 @@ type
         procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
         procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
         procedure tvSoftwareEdited(sender: tObject; node: tTreeNode; var s: string);
+        procedure bUpdateClick(Sender: TObject);
+
         procedure refreshConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
-        procedure refreshUpdateSoftwareList;
-    procedure bUpdateClick(Sender: TObject);
     end;
 
 const
@@ -223,8 +223,10 @@ implementation
 
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
     var
-        event:  tEvent;
+        taskOut: tTaskOutput;
+        event:   tEvent;
     begin
+        // TODO: Riscrivere anche la gestione degli eventi come task
         if (sEventHdlr.getErrorCache) then
             tLog.imageIndex := tImageIndex(tiEvtErr);
 
@@ -241,8 +243,17 @@ implementation
                     event.free;
                 end;
 
-         self.refreshConfigureSoftwareList;
-         self.refreshUpdateSoftwareList;
+        taskOut := sTaskMgr.pullTaskFromOutput;
+
+        if not assigned(taskOut) then
+            exit;
+
+        while( assigned(taskOut) ) do
+        begin
+            taskOut.exec();
+            taskOut.free;
+            taskOut := sTaskMgr.pullTaskFromOutput;
+        end;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
@@ -258,6 +269,8 @@ implementation
         fFacTotum.top       := (Screen.Height - Height) div 2;
 
         fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
+
+        sLvUpdate           := lvUpdate;
 
         application.onIdle  := applicationIdleEvents;
 
@@ -536,33 +549,19 @@ implementation
         i,
         j:       integer;
     begin
+        lvUpdate.clear;
         sList := sDBMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
             cList := swRecord( sList.items[i] ).commands;
             for j := 0 to pred(cList.count) do
             begin
-                taskVer     := tTaskGetVer.create;
-                taskVer.URL := cmdRecord( cList.items[j] ).uURL;
+                taskVer        := tTaskGetVer.create;
+                taskVer.cmdRec := cmdRecord( cList.items[j] );
                 sTaskMgr.pushTaskToInput(taskVer);
             end;
         end;
     end;
 
-    // TODO: Riscrivere questa funzione e refreshConfigureSoftwareList come exec di task in uscita (=> risolve implicitamente il problema del refresh della lista ad ogni query)
-    procedure tfFacTotum.refreshUpdateSoftwareList;
-    var
-        taskVer: tTaskGetVer;
-    begin
-        try
-            taskVer := tTaskGetVer(sTaskMgr.pullTaskFromOutput);
-
-            if not assigned(taskVer) then
-                exit;
-
-        finally
-
-        end;
-    end;
-end.
+    end.
 
