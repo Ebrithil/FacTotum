@@ -424,9 +424,7 @@ implementation
             begin
                 result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                 break;
-            end
-            else
-                sEventHdlr.pushEventToList( tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo) );
+            end;
         end;
 
         // altrimenti passo alle precedenti

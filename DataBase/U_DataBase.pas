@@ -670,15 +670,18 @@ implementation
     end;
 
     procedure tTaskSetVer.exec();
+    var
+        i: integer;
     begin
-        with sLvUpdate.items.add do
-        begin
-            caption := '';
-            subitems.add(self.cmdRec.name);
-            subitems.add(self.cmdRec.vers);
-            subitems.add(self.new_version);
-            imageIndex := tImageIndex(eiDotYellow);
-        end;
+        for i := 0 to pred(sLvUpdate.items.count) do
+            if ( sLvUpdate.items[i].subItems[0] = self.cmdRec.name ) then // TODO: Servirà qualcosa di meglio...
+                if sLvUpdate.items[i].subItems[1] = self.new_version then
+                    sLvUpdate.items[i].imageIndex := tImageIndex(eiDotGreen)
+                else
+                begin
+                    sLvUpdate.items[i].subItems.add(self.new_version);
+                    sLvUpdate.items[i].imageIndex := tImageIndex(eiDotRed);
+                end;
     end;
 
     procedure tTaskConfUpdate.exec();

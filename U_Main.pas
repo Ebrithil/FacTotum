@@ -65,6 +65,7 @@ type
 
         procedure refreshConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
+        procedure fillUpdateSoftwareList;
     end;
 
 const
@@ -275,6 +276,7 @@ implementation
         application.onIdle  := applicationIdleEvents;
 
         self.refreshConfigureSoftwareList;
+        self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
     end;
 
@@ -549,7 +551,6 @@ implementation
         i,
         j:       integer;
     begin
-        lvUpdate.clear;
         sList := sDBMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
@@ -559,6 +560,36 @@ implementation
                 taskVer        := tTaskGetVer.create;
                 taskVer.cmdRec := cmdRecord( cList.items[j] );
                 sTaskMgr.pushTaskToInput(taskVer);
+            end;
+        end;
+    end;
+
+    procedure tfFactotum.fillUpdateSoftwareList;
+    var
+      sList,
+      cList:  tList;
+      cmdRec: cmdRecord;
+      i,
+      j:      integer;
+    begin
+        sList := sDBMgr.getSoftwareList;
+        for i := 0 to pred(sList.count) do
+        begin
+            cList := swRecord( sList.items[i] ).commands;
+            for j := 0 to pred(cList.count) do
+            begin
+                cmdRec  := cList.items[j];
+
+                if (cmdRec.uURL = '') or (cmdRec.vers = '') then
+                    continue;
+
+                with lvUpdate.items.add do
+                begin
+                    caption := '';
+                    subItems.add( cmdRec.name );
+                    subItems.add( cmdRec.vers );
+                    imageIndex := tImageIndex(eiDotYellow);
+                end;
             end;
         end;
     end;
