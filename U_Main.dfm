@@ -407,12 +407,12 @@ object fFacTotum: TfFacTotum
       Caption = 'Eventi'
       ImageIndex = 3
       object lEventsProg: TLabel
-        Left = 453
+        Left = 475
         Top = 555
-        Width = 48
+        Width = 26
         Height = 22
         Alignment = taRightJustify
-        Caption = '100%'
+        Caption = '0%'
         Font.Charset = ANSI_CHARSET
         Font.Color = clRed
         Font.Height = -19

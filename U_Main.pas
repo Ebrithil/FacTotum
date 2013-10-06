@@ -238,7 +238,7 @@ implementation
 
         pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
 
-        lEventsProg.caption := intToStr(pbEvents.position);
+        lEventsProg.caption := intToStr(pbEvents.position) + '%';
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
