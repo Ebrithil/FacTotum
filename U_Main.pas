@@ -524,6 +524,8 @@ implementation
 
     procedure tfFacTotum.bUpdateClick(Sender: TObject);
     begin
+        lvUpdate.clear;
+        self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
     end;
 
