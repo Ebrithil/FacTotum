@@ -65,7 +65,7 @@ type
         procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
         procedure bUpdateClick(sender: tObject);
 
-        procedure refreshConfigureSoftwareList;
+        procedure fillConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
         procedure fillUpdateSoftwareList;
     end;
@@ -94,7 +94,7 @@ implementation
 
         if isChild then
         begin
-            cmdRec               := cmdRecord( swRecord(sDBMgr.getSoftwareList.items[node.parent.index]).commands[node.index] );
+            cmdRec               := node.data;
             leCmdInfo.text       := cmdRec.cmmd;
             leVerInfo.text       := cmdRec.vers;
             leUrlInfo.text       := cmdRec.uURL;
@@ -118,30 +118,14 @@ implementation
         sTaskMgr.free;
     end;
 
-    procedure tfFacTotum.refreshConfigureSoftwareList;
+    procedure tfFacTotum.fillConfigureSoftwareList;
     var
         software: tList;
         j,
         i:        integer;
         node:     tTreeNode;
         swRec:    swRecord;
-        parent,
-        selected: integer;
     begin
-        if not sDBMgr.wasUpdated then
-            exit;
-
-        if assigned(tvConfig.selected) and assigned(tvConfig.selected.parent) then
-        begin
-            parent   := tvConfig.selected.parent.index;
-            selected := tvConfig.selected.index;
-        end
-        else
-        begin
-            parent   := -1;
-            selected := -1;
-        end;
-
         tvConfig.items.clear;
 
         software := sDBMgr.getSoftwareList;
@@ -153,22 +137,17 @@ implementation
             if swRec.hasValidCommands then
                 clbInstall.items.add(swRec.name);
 
-            node := tvConfig.items.add(nil, swRec.name);
+            node      := tvConfig.items.add(nil, swRec.name);
+            node.data := swRec;
 
             if not assigned(swRec.commands) then
                 continue;
 
             for j := 0 to pred(swRec.commands.count) do
-                tvConfig.items.addChild( node, cmdRecord(swRec.commands[j]).name );
+                tvConfig.items.addChild( node, cmdRecord(swRec.commands[j]).name ).data := cmdRecord(swRec.commands[j]);
 
             node.expand(true);
         end;
-
-        if selected > -1 then
-            if parent > -1  then
-                tvConfig.selected := tvConfig.items[parent].item[selected]
-            else
-                tvConfig.selected := tvConfig.items[selected];
     end;
 
     procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
@@ -190,27 +169,23 @@ implementation
     procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
     var
         taskUpdate: tTaskRecordUpdate;
-        swIndex:    integer;
     begin
-        taskUpdate         := tTaskRecordUpdate.create;
+        taskUpdate := tTaskRecordUpdate.create;
 
         if node.hasChildren then
         // E' un software
         begin
             taskUpdate.field   := dbFieldSwName;
             taskUpdate.tRecord := recordSoftware;
-            taskUpdate.pRecord := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.index] );
         end
         else
         // E' un comando
         begin
-            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
-
             taskUpdate.field   := dbFieldCmdName;
             taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvConfig.selected.index];
         end;
-        taskUpdate.value       := trim(s);
+        taskUpdate.pRecord := tvConfig.selected.data;
+        taskUpdate.value   := trim(s);
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
@@ -237,7 +212,7 @@ implementation
             while not(sEventHdlr.isEventListEmpty) do
                 with lvEvents.items.add do
                 begin
-                    event      := sEventHdlr.pullEventFromList;
+                    event := sEventHdlr.pullEventFromList;
 
                     stateIndex := event.eventType;
                     subItems.add(event.eventTime);
@@ -277,7 +252,7 @@ implementation
 
         application.onIdle  := applicationIdleEvents;
 
-        self.refreshConfigureSoftwareList;
+        self.fillConfigureSoftwareList;
         self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
     end;
@@ -290,7 +265,7 @@ implementation
         leCmdInfo.text := trim(leCmdInfo.text);
         if length(leCmdInfo.text) > 0 then
         begin
-            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
+            swIndex            := swRecord(tvConfig.selected.parent.data).guid;
 
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmdCmmd;
@@ -318,18 +293,15 @@ implementation
     procedure tfFacTotum.leUrlInfoExit(Sender: TObject);
     var
         taskUpdate: tTaskRecordUpdate;
-        swIndex:    integer;
     begin
         leUrlInfo.text := trim(leUrlInfo.text);
         if length(leUrlInfo.text) > 0 then
         begin
-            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
-
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmduURL;
             taskUpdate.value   := leUrlInfo.text;
             taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvConfig.selected.index];
+            taskUpdate.pRecord := tvConfig.selected.data;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -357,20 +329,17 @@ implementation
     procedure tfFacTotum.leVerInfoExit(sender: tObject);
     var
         taskUpdate: tTaskRecordUpdate;
-        swIndex:    integer;
     begin
         leVerInfo.text := trim( leVerInfo.text );
         if ( leVerInfo.text <> '.' )                         and
            ( length(leVerInfo.text) > 0 )                    and
            ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
         begin
-            swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
-
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmdVers;
             taskUpdate.value   := leVerInfo.text;
             taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvConfig.selected.index];
+            taskUpdate.pRecord := tvConfig.selected.data;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -447,6 +416,7 @@ implementation
     var
         taskInsert: tTaskRecordInsert;
         command:    cmdRecord;
+        node:       tTreeNode;
     begin
         taskInsert   := tTaskRecordInsert.create;
 
@@ -456,8 +426,9 @@ implementation
         begin
             taskInsert.tRecord := recordCommand;
             taskInsert.pRecord := command;
-            command.swid       := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
-            command.prty       := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).commands.count;
+            command.swid       := swRecord(tvConfig.selected.parent.data).guid;
+            command.prty       := swRecord(tvConfig.selected.parent.data).commands.count;
+            tvConfig.items.addChild(tvConfig.selected.parent, '<Nuovo Comando>').data := command;
         end
         else
         begin
@@ -467,6 +438,11 @@ implementation
             swRecord(taskInsert.pRecord).commands := tList.create;
             command.prty                          := 0;
             swRecord(taskInsert.pRecord).commands.add(command);
+            node                                                  := tvConfig.items.add(nil, '<Nuovo Software>');
+            node.data                                             := taskInsert.pRecord;
+            tvConfig.items.addChild(node, '<Nuovo Comando>').data := command;
+
+            node.expand(true);
         end;
 
         command.arch := byte(archNone);
@@ -507,12 +483,18 @@ implementation
         if assigned(tvConfig.selected.parent) then
         begin
             taskDelete.tRecord := recordCommand;
-            taskDelete.pRecord := swRecord(sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index]).commands.items[tvConfig.selected.Index];
+            taskDelete.pRecord := tvConfig.selected.data;
+
+            if tvConfig.selected.parent.count = 1 then
+                tvConfig.items.delete(tvConfig.selected.parent)
+            else
+                tvConfig.items.delete(tvConfig.selected);
         end
         else
         begin
             taskDelete.tRecord := recordSoftware;
-            taskDelete.pRecord := DBRecord(sDBMgr.getSoftwareList.items[tvConfig.selected.index]);
+            taskDelete.pRecord := tvConfig.selected.data;
+            tvConfig.items.delete(tvConfig.selected);
         end;
 
         sTaskMgr.pushTaskToInput(taskDelete);
@@ -559,6 +541,9 @@ implementation
             cList := swRecord( sList.items[i] ).commands;
             for j := 0 to pred(cList.count) do
             begin
+                if (cmdRecord( cList.items[j] ).uURL = '') or (cmdRecord( cList.items[j] ).vers = '') then // TODO: Controlla meglio che l'url sia valido
+                    continue;
+
                 taskVer        := tTaskGetVer.create;
                 taskVer.cmdRec := cmdRecord( cList.items[j] );
                 sTaskMgr.pushTaskToInput(taskVer);
@@ -582,7 +567,7 @@ implementation
             begin
                 cmdRec  := cList.items[j];
 
-                if (cmdRec.uURL = '') or (cmdRec.vers = '') then
+                if (cmdRec.uURL = '') or (cmdRec.vers = '') then // TODO: Controlla meglio che l'url sia valido
                     continue;
 
                 with lvUpdate.items.add do

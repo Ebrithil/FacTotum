@@ -509,11 +509,17 @@ implementation
                 self.insertRecordInDB( swRecord(pRecord) );
                 for i := 0 to pred( swRecord(pRecord).commands.count ) do
                 begin
+                    swRecord(pRecord).guid := self.getLastInsertedRecordID;
                     cmdRecord(swRecord(pRecord).commands[i]).swid := self.getLastInsertedRecordID;
                     self.insertRecordInDB( cmdRecord(swRecord(pRecord).commands[i]) );
+                    cmdRecord(swRecord(pRecord).commands[i]).guid := self.getLastInsertedRecordID;
                 end;
             end;
-            recordCommand: self.insertRecordInDB( cmdRecord(pRecord) );
+            recordCommand:
+            begin
+                self.insertRecordInDB( cmdRecord(pRecord) );
+                cmdRecord(pRecord).guid := self.getLastInsertedRecordID;
+            end;
         end;
 
         m_updated := true;
