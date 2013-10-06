@@ -74,14 +74,6 @@ type
             procedure exec(); override;
     end;
 
-    tTaskConfUpdate = class(tTaskOutput)
-        public
-            tRecord: recordType;
-            pRecord: DBRecord;
-
-            procedure exec(); override;
-    end;
-
     DBManager = class
         protected
             m_connector: tSQLConnection;
@@ -665,9 +657,6 @@ implementation
     begin
         new_version := sUpdateParser.getLastStableVerFromURL(self.cmdRec.uURL);
 
-        if self.cmdRec.vers = new_version then
-            exit;
-
         returnTask             := tTaskSetVer.create;
         returnTask.cmdRec      := self.cmdRec;
         returnTask.new_version := new_version;
@@ -681,18 +670,13 @@ implementation
     begin
         for i := 0 to pred(sLvUpdate.items.count) do
             if ( sLvUpdate.items[i].subItems[0] = self.cmdRec.name ) then // TODO: Servirà qualcosa di meglio...
+            begin
                 if sLvUpdate.items[i].subItems[1] = self.new_version then
                     sLvUpdate.items[i].imageIndex := tImageIndex(eiDotGreen)
                 else
-                begin
-                    sLvUpdate.items[i].subItems.add(self.new_version);
                     sLvUpdate.items[i].imageIndex := tImageIndex(eiDotRed);
-                end;
-    end;
-
-    procedure tTaskConfUpdate.exec();
-    begin
-
+                sLvUpdate.items[i].subItems.add(self.new_version);
+            end;
     end;
 
 end.

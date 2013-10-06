@@ -92,6 +92,10 @@ implementation
         leUrlInfo.enabled  := isChild;
         rgArchInfo.enabled := isChild;
 
+        leCmdInfo.color := tvConfig.color;
+        leVerInfo.color := tvConfig.color;
+        leUrlInfo.color := tvConfig.color;
+
         if isChild then
         begin
             cmdRec               := node.data;
@@ -99,10 +103,6 @@ implementation
             leVerInfo.text       := cmdRec.vers;
             leUrlInfo.text       := cmdRec.uURL;
             rgArchInfo.itemIndex := cmdRec.arch;
-
-            leCmdInfo.color := tvConfig.color;
-            leVerInfo.color := tvConfig.color;
-            leUrlInfo.color := tvConfig.color;
         end
         else
         begin

@@ -415,6 +415,12 @@ implementation
 
         srcElem := srcCode.getElementById('dlboxinner') as iHTMLElement2;
 
+        if not assigned(srcElem) then
+        begin
+            result := 'N/D';
+            exit;
+        end;
+
         // verifico se l'ultima versione e' stabile
         srcTags := srcElem.getElementsByTagName('b');
         for i := 0 to pred(srcTags.length) do
