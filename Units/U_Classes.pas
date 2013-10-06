@@ -25,11 +25,13 @@ type
     end;
 
     thread = class(tThread)
+        protected
+            working:  boolean;
+            procedure Execute; override;
+
         public
             constructor create; reintroduce;
-
-        protected
-            procedure Execute; override;
+            property    isWorking: boolean read working;
     end;
 
     tTask = class // Ogni classe derivata da TTask implementa il metodo virtuale 'exec' che permette l'esecuzione, da parte del thread, del compito assegnatogli
@@ -73,6 +75,8 @@ type
             constructor create(const threadsCount: byte); overload;
             destructor  Destroy; override;
 
+            function  getBusyThreadsCount: byte;
+            function  getThreadsCount: byte;
             function  pullTaskFromInput: tTask;
             procedure pushTaskToInput(taskToAdd: tTask);
             function  pullTaskFromOutput: tTaskOutput;
@@ -156,6 +160,7 @@ implementation
 
     constructor thread.create;
     begin
+        self.working := false;
         inherited create(false);
     end;
 
@@ -165,6 +170,8 @@ implementation
     begin
         while not(self.terminated) do
         begin
+            self.working := false;
+
             if not( assigned(sTaskMgr) ) then
             begin
                 sleep(defaultThreadPoolSleepTime);
@@ -179,7 +186,9 @@ implementation
                 continue;
             end;
 
-            task.exec; // TODO: Verifica che non faccia crashare qualora exec non fosse overridden
+            self.working := true;
+
+            task.exec;
             task.free;
         end;
     end;
@@ -241,6 +250,21 @@ implementation
 
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create();
+    end;
+
+    function taskManager.getBusyThreadsCount: byte;
+    var
+        i: byte;
+    begin
+        result := 0;
+        for i := 0 to pred( length(self.m_threadPool) ) do
+            if self.m_threadPool[i].isWorking then
+                inc(result);
+    end;
+
+    function taskManager.getThreadsCount: byte;
+    begin
+        result := length(m_threadPool);
     end;
 
     procedure taskManager.pushTaskToInput(taskToAdd: tTask);

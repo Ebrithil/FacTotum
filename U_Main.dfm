@@ -406,11 +406,42 @@ object fFacTotum: TfFacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
+      object lEventsProg: TLabel
+        Left = 453
+        Top = 555
+        Width = 48
+        Height = 22
+        Alignment = taRightJustify
+        Caption = '100%'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clRed
+        Font.Height = -19
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        ParentFont = False
+        StyleElements = [seClient, seBorder]
+      end
+      object lEvents: TLabel
+        Left = 3
+        Top = 521
+        Width = 165
+        Height = 22
+        Caption = 'Utilizzo Threadpool:'
+        Color = clBlack
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clRed
+        Font.Height = -19
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        ParentColor = False
+        ParentFont = False
+        StyleElements = [seClient, seBorder]
+      end
       object lvEvents: TListView
         Left = 2
         Top = 3
         Width = 499
-        Height = 536
+        Height = 512
         Columns = <
           item
             MaxWidth = 41
@@ -442,12 +473,23 @@ object fFacTotum: TfFacTotum
       end
       object bEmpty: TButton
         Left = 2
-        Top = 546
-        Width = 499
-        Height = 40
+        Top = 545
+        Width = 100
+        Height = 42
         Caption = 'Svuota'
         TabOrder = 1
         OnClick = bEmptyClick
+      end
+      object pbEvents: TProgressBar
+        Left = 108
+        Top = 546
+        Width = 341
+        Height = 40
+        Smooth = True
+        BarColor = clLime
+        Step = 1
+        TabOrder = 2
+        StyleElements = [seFont, seBorder]
       end
     end
   end
@@ -460,7 +502,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802D40120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802D80120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1514,7 +1556,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010106004C01E40110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106004C01E80110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000030E11460C3B478D18768FC723ADCFF023ADCFF018768FC70C3B478D030E

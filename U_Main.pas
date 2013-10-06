@@ -42,6 +42,9 @@ type
         lvUpdate: TListView;
         pbSwInst: TProgressBar;
         lSwInstProg: TLabel;
+        pbEvents: TProgressBar;
+        lEventsProg: TLabel;
+        lEvents: TLabel;
 
         procedure formCreate(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
@@ -232,6 +235,10 @@ implementation
             taskOut.free;
             taskOut := sTaskMgr.pullTaskFromOutput;
         end;
+
+        pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
+
+        lEventsProg.caption := intToStr(pbEvents.position);
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
