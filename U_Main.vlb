@@ -19,27 +19,27 @@ Coordinates=144,1,91,36
 [pcTabs]
 Coordinates=97,10,46,36
 
-[tvSoftware]
-Coordinates=374,166,89,36
-
 [leCmdInfo]
 Coordinates=240,1,86,58
-
-[rgCompConfig]
-Coordinates=221,78,115,58
-
-[pbProgress]
-Coordinates=112,38,90,58
-
-[lInstallInfo]
-Coordinates=240,155,84,58
-
-[clbSoftware]
-Coordinates=374,111,97,36
 
 [pmInsert]
 Coordinates=101,174,131,36
 
 [pmDelete]
 Coordinates=374,1,136,36
+
+[clbInstall]
+Coordinates=374,111,97,36
+
+[lInstall]
+Coordinates=240,155,84,58
+
+[tvConfig]
+Coordinates=374,166,89,36
+
+[rgArchInfo]
+Coordinates=221,78,115,58
+
+[pbCmdInst]
+Coordinates=112,38,90,58
 

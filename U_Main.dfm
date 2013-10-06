@@ -22,7 +22,7 @@ object fFacTotum: TfFacTotum
     Top = 0
     Width = 513
     Height = 635
-    ActivePage = tUpdate
+    ActivePage = tInstaller
     Align = alCustom
     DoubleBuffered = False
     Font.Charset = ANSI_CHARSET
@@ -39,9 +39,9 @@ object fFacTotum: TfFacTotum
       Caption = 'Installa'
       DoubleBuffered = False
       ParentDoubleBuffered = False
-      object lInstallInfo: TLabel
+      object lInstall: TLabel
         Left = 3
-        Top = 475
+        Top = 521
         Width = 114
         Height = 22
         Caption = 'Installazione...'
@@ -55,27 +55,43 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object lSetupProg: TLabel
-        Left = 455
-        Top = 509
-        Width = 46
-        Height = 22
+      object lCmdInstProg: TLabel
+        Left = 461
+        Top = 546
+        Width = 40
+        Height = 19
         Alignment = taRightJustify
         AutoSize = False
         Caption = '100%'
         Font.Charset = ANSI_CHARSET
         Font.Color = clRed
-        Font.Height = -19
+        Font.Height = -16
         Font.Name = 'Eras Medium ITC'
         Font.Style = []
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object clbSoftware: TCheckListBox
+      object lSwInstProg: TLabel
+        Left = 461
+        Top = 567
+        Width = 40
+        Height = 19
+        Alignment = taRightJustify
+        AutoSize = False
+        Caption = '100%'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clRed
+        Font.Height = -16
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        ParentFont = False
+        StyleElements = [seClient, seBorder]
+      end
+      object clbInstall: TCheckListBox
         Left = 2
         Top = 3
         Width = 499
-        Height = 467
+        Height = 512
         Align = alCustom
         BiDiMode = bdLeftToRight
         Columns = 2
@@ -93,11 +109,11 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 1
       end
-      object pbProgress: TProgressBar
-        Left = 3
-        Top = 500
-        Width = 446
-        Height = 40
+      object pbCmdInst: TProgressBar
+        Left = 108
+        Top = 546
+        Width = 348
+        Height = 19
         Smooth = True
         BarColor = clLime
         Step = 1
@@ -106,11 +122,22 @@ object fFacTotum: TfFacTotum
       end
       object bInstall: TButton
         Left = 2
-        Top = 546
-        Width = 499
-        Height = 40
+        Top = 545
+        Width = 100
+        Height = 42
         Caption = 'Installa'
         TabOrder = 2
+      end
+      object pbSwInst: TProgressBar
+        Left = 108
+        Top = 567
+        Width = 348
+        Height = 19
+        Smooth = True
+        BarColor = clLime
+        Step = 1
+        TabOrder = 3
+        StyleElements = [seFont, seBorder]
       end
     end
     object tConfiguration: TTabSheet
@@ -122,7 +149,7 @@ object fFacTotum: TfFacTotum
       Font.Style = []
       ImageIndex = 1
       ParentFont = False
-      object tvSoftware: TTreeView
+      object tvConfig: TTreeView
         Left = 2
         Top = 3
         Width = 499
@@ -141,8 +168,8 @@ object fFacTotum: TfFacTotum
         ShowHint = False
         TabOrder = 0
         OnChange = configureUpdateOnTreeSelect
-        OnEdited = tvSoftwareEdited
-        OnMouseDown = tvSoftwareMouseDown
+        OnEdited = tvConfigEdited
+        OnMouseDown = tvConfigMouseDown
       end
       object leCmdInfo: TLabeledEdit
         Left = 3
@@ -232,14 +259,13 @@ object fFacTotum: TfFacTotum
         OnExit = leUrlInfoExit
         OnKeyPress = leUrlInfoKeyPress
       end
-      object rgCompConfig: TRadioGroup
+      object rgArchInfo: TRadioGroup
         Left = 295
         Top = 534
         Width = 206
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
-        Color = clBtnFace
         Columns = 4
         Font.Charset = ANSI_CHARSET
         Font.Color = clBlack
@@ -257,7 +283,7 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 5
         TabStop = True
-        OnExit = rgCompConfigExit
+        OnExit = rgArchInfoExit
       end
       object bBrowse: TButton
         Left = 351
@@ -279,9 +305,9 @@ object fFacTotum: TfFacTotum
     object tUpdate: TTabSheet
       Caption = 'Aggiorna'
       ImageIndex = 2
-      object lDownloadInfo: TLabel
+      object lUpdate: TLabel
         Left = 3
-        Top = 475
+        Top = 521
         Width = 144
         Height = 22
         Caption = 'Aggiornamento...'
@@ -297,7 +323,7 @@ object fFacTotum: TfFacTotum
       end
       object lUpdateProg: TLabel
         Left = 453
-        Top = 509
+        Top = 555
         Width = 48
         Height = 22
         Alignment = taRightJustify
@@ -310,10 +336,10 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         StyleElements = [seClient, seBorder]
       end
-      object pbDownload: TProgressBar
-        Left = 3
-        Top = 500
-        Width = 446
+      object pbUpdate: TProgressBar
+        Left = 108
+        Top = 546
+        Width = 341
         Height = 40
         Smooth = True
         BarColor = clLime
@@ -323,9 +349,9 @@ object fFacTotum: TfFacTotum
       end
       object bUpdate: TButton
         Left = 2
-        Top = 546
-        Width = 499
-        Height = 40
+        Top = 545
+        Width = 100
+        Height = 42
         Caption = 'Aggiorna'
         TabOrder = 1
         OnClick = bUpdateClick
@@ -334,7 +360,7 @@ object fFacTotum: TfFacTotum
         Left = 2
         Top = 3
         Width = 499
-        Height = 467
+        Height = 512
         Columns = <
           item
             MaxWidth = 41
@@ -379,10 +405,6 @@ object fFacTotum: TfFacTotum
     object tLog: TTabSheet
       Caption = 'Eventi'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object lvEvents: TListView
         Left = 2
         Top = 3
@@ -417,14 +439,14 @@ object fFacTotum: TfFacTotum
         TabOrder = 0
         ViewStyle = vsReport
       end
-      object bClear: TButton
+      object bEmpty: TButton
         Left = 2
         Top = 546
         Width = 499
         Height = 40
         Caption = 'Svuota'
         TabOrder = 1
-        OnClick = bClearClick
+        OnClick = bEmptyClick
       end
     end
   end
@@ -437,7 +459,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802CC0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802D00120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1491,7 +1513,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010106004C01DC0110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106004C01E00110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000030E11460C3B478D18768FC723ADCFF023ADCFF018768FC70C3B478D030E
