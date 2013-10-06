@@ -330,10 +330,7 @@ implementation
            ansiContainsText(version, 'rc')    or
            ansiContainsText(version, 'dev')   or
           (self.getVersionFromFileName(version) = 'N/D') then
-        begin
             result := false;
-            sEventHdlr.pushEventToList(tEvent.create('Versione ' + version + ' non accettabile.', eiInfo));
-        end;
     end;
 
     function updateParser.srcToIHTMLDocument3(srcCode: string): iHTMLDocument3;

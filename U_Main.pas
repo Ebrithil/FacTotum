@@ -574,6 +574,7 @@ implementation
 
                 with lvUpdate.items.add do
                 begin
+                    data    := cmdRec;
                     caption := '';
                     subItems.add( cmdRec.name );
                     subItems.add( cmdRec.vers );
