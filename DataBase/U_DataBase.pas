@@ -5,6 +5,7 @@ interface
 uses
     System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DBXSqlite,
     System.Classes, winapi.windows, System.SyncObjs, System.Types,
+    IdGlobal, IdHash, IdHashSHA, IdHashMessageDigest, ShellAPI,
 
     U_Classes;
 
@@ -25,8 +26,7 @@ type
         guid:     integer;
         name:     string;
         commands: tList;
-
-        function    hasValidCommands: boolean;
+        function  hasValidCommands: boolean;
     end;
 
     cmdRecord = class(DBRecord)
@@ -39,6 +39,24 @@ type
         vers,
         uURL,
         hash: string;
+    end;
+
+    fileManager = class
+       protected
+           m_hasher:   tIdHash;
+           stpFolder:  string;
+           procedure   addSetupToArchive(fileName: string); overload;
+           function    getFileHash(fileName: string): string;
+           function    getArchivePathFor(cmdGuid: integer): string;
+           function    isArchived(cmdGuid: integer): boolean; overload;
+           function    isArchived(fileHash: string): boolean; overload;
+       public
+           constructor create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
+           destructor  Destroy; override;
+           procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
+           procedure   runCommand(cmd: string);
+           procedure   addSetupToArchive(filename: string; folderName: string = ''); overload;
+           procedure   removeSetupFromArchive(archivedName: string);
     end;
 
     tTaskRecordOP = class(tTask)
@@ -97,6 +115,7 @@ type
             function     query(qString: string): boolean;
             function     queryRes(qString: string): tDataSet;
             function     getLastInsertedRecordID: integer;
+            function     getCommandList(const swID: integer): tList;
         public
             constructor create;
             destructor  Destroy; override;
@@ -105,7 +124,8 @@ type
             procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
             function    wasUpdated: boolean;
             function    getSoftwareList: tList;
-            function    getCommandList(const swID: integer): tList;
+            function    getSoftwareRec(guid: integer): swRecord;
+            function    getCommandRec(guid: integer):  cmdRecord;
     end;
 
 const
@@ -127,7 +147,8 @@ const
         'hash' );
 
 var
-    sDBMgr: DBManager;
+    sDBMgr:   DBManager;
+    sFileMgr: fileManager;
 
 implementation
 
@@ -342,6 +363,21 @@ implementation
         sqlData.free;
     end;
 
+    function DBManager.getCommandRec(guid: integer): cmdRecord;
+    var
+        i,j:    word;
+        swList: tList;
+    begin
+        swList := self.getSoftwareList;
+        for i := 0 to pred(swList.count) do
+            for j := 0 to pred( swRecord(swList.items[i]).commands.count ) do
+            begin
+                result := cmdRecord( swRecord(swList.items[i]).commands.items[j] );
+                if result.guid = guid then
+                    exit;
+            end;
+    end;
+
     function DBManager.getSoftwareList: tList;
     var
         query:   string;
@@ -383,6 +419,20 @@ implementation
 
         sqlData.free;
         m_software := result;
+    end;
+
+    function DBManager.getSoftwareRec(guid: integer): swRecord;
+    var
+        i:      word;
+        swList: tList;
+    begin
+        swList := self.getSoftwareList;
+        for i := 0 to pred(swList.count) do
+            begin
+                result := swList.items[i];
+                if result.guid = guid then
+                    exit;
+            end;
     end;
 
     procedure DBManager.insertRecordInDB(software: swRecord);
@@ -657,7 +707,7 @@ implementation
         end;
 
         sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
-        FreeAndNil(self.pRecord);
+        freeAndNil(self.pRecord);
     end;
 
     procedure tTaskGetVer.exec;
@@ -687,6 +737,120 @@ implementation
                     sLvUpdate.items[i].imageIndex := tImageIndex(eiDotRed);
                 sLvUpdate.items[i].subItems.add(self.new_version);
             end;
+    end;
+
+    // fileManager
+
+    constructor fileManager.create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
+    begin
+        self.stpFolder := stpFolder;
+        if not( directoryExists(self.stpFolder) ) then
+        begin
+            sEventHdlr.pushEventToList( tEvent.create('Cartella d''installazione non esistente.', eiAlert) );
+            sEventHdlr.pushEventToList( tEvent.create('La cartella verrà ricreata.', eiAlert) );
+            if not( createDir(self.stpFolder) ) then
+                sEventHdlr.pushEventToList( tEvent.create('Impossibile creare la cartella d''installazione.', eiError) )
+        end;
+
+        if useSha1 then
+            m_hasher := tIdHashSHA1.create
+        else
+            m_hasher := tIdHashMessageDigest5.create;
+    end;
+
+    destructor fileManager.Destroy;
+    begin
+        m_hasher.free;
+    end;
+
+    function fileManager.getFileHash(fileName: string): string;
+    var
+        msFile: tMemoryStream;
+    begin
+        msFile := tMemoryStream.create;
+        msFile.loadFromFile(fileName);
+
+        result := ansiLowerCase( self.m_hasher.hashStreamAsHex(msFile) );
+
+        msFile.free;
+    end;
+
+    procedure fileManager.saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
+    begin
+        dataStream.saveToFile(fileName)
+    end;
+
+    procedure fileManager.runCommand(cmd: string);
+    begin
+        // TODO
+    end;
+
+    procedure fileManager.addSetupToArchive(fileName: string);
+    var
+      soFileOperation: tSHFileOpStruct;
+    begin
+        // Trovare la unit per usare secureZeroMemory
+        zeroMemory( @soFileOperation, sizeOf(soFileOperation) );
+        with soFileOperation do
+        begin
+            wFunc  := FO_COPY;
+            fFlags := FOF_FILESONLY;
+            pFrom  := pChar(fileName + #0);
+            pTo    := pChar( self.stpFolder + self.getFileHash(fileName) );
+        end;
+    end;
+
+    procedure fileManager.addSetupToArchive(fileName: string; folderName: string = '');
+    var
+      soFileOperation: tSHFileOpStruct;
+    begin
+        if folderName = '' then
+            self.addSetupToArchive(fileName)
+        else
+        begin
+            // Trovare la unit per usare secureZeroMemory
+            zeroMemory( @soFileOperation, sizeOf(soFileOperation) );
+            with soFileOperation do
+            begin
+                wFunc  := FO_COPY;
+                fFlags := FOF_FILESONLY;
+                // SICURAMENTE non funziona, da capire meglio le destinazioni ed i flag giusti
+                pFrom  := pChar(folderName + #0);
+                pTo    := pChar( self.stpFolder + self.getFileHash(fileName) );
+            end;
+        end
+    end;
+
+    procedure fileManager.removeSetupFromArchive(archivedName: string);
+    begin
+        if not( removeDir(self.stpFolder + archivedName) ) then
+            sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare la cartella d''installazione ' + archivedName + '.', eiError) )
+    end;
+
+    function fileManager.getArchivePathFor(cmdGuid: integer): string;
+    begin
+        result := self.stpFolder + cmdRecord( sDBMgr.getCommandRec(cmdGuid) ).hash;
+    end;
+
+    function fileManager.isArchived(cmdGuid: integer): boolean;
+    begin
+        result := directoryExists( self.getArchivePathFor(cmdGuid) );
+    end;
+
+    function fileManager.isArchived(fileHash: string): boolean;
+    var
+        i, j:   byte;
+        swList: tList;
+    begin
+        result := false;
+        swList := sdbMgr.getSoftwareList;
+        for i := 0 to pred(swList.count) do
+            for j := 0 to pred( swRecord(swList.items[i]).commands.count ) do
+                if cmdRecord( swRecord(swList.items[i]).commands.items[j] ).hash = fileHash then
+                begin
+                    result := true;
+                    exit;
+                end;
     end;
 
 end.

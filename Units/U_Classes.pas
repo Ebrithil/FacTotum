@@ -5,7 +5,7 @@ interface
 uses
     System.UITypes, System.Classes, System.SyncObjs, System.Variants, System.SysUtils,
     Vcl.ComCtrls, IdHTTP, System.Types, MSHTML, Vcl.Dialogs, ActiveX, System.StrUtils,
-    ShellAPI, Windows, Forms,
+    ShellAPI, Windows,
 
     U_Functions;
 
@@ -13,16 +13,6 @@ type
     tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiEvtErr);
     tEventImage = (eiNoImg = -1, eiInfo, eiAlert, eiError, eiDotGreen, eiDotYellow, eiDotRed);
     tStatus     = (initializing, processing, completed, failed);
-
-    // Array for Results
-    ArrayReturn = Array[0..2] of String;
-
-    // Custom Node for Config
-    tSoftwareTreeNode = class(tTreeNode)
-        public
-            softwareID, commandID, order, compatibility, mainCommand: integer;
-            software, version, description, command, URL:             string;
-    end;
 
     thread = class(tThread)
         protected
@@ -64,7 +54,7 @@ type
             status: tStatus;
             param:  integer; // Percentuale completamento in caso 'status = processing' o codice errore in caso 'status = failed'
 
-            procedure exec(); override;
+            procedure exec; override;
     end;
 
     tThreads = Array of thread;
@@ -86,7 +76,6 @@ type
             m_threadPool: tThreads;
             m_inputMutex, m_outputMutex: tMutex;
             m_inputTasks, m_outputTasks: tList;
-
             procedure pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
             function  pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
     end;
@@ -108,17 +97,6 @@ type
         public
             function downloadLastStableVersion(URL: string): tMemoryStream;
             function downloadPageSource(URL: string): string;
-    end;
-
-    fileManager = class
-           public
-               procedure saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
-               procedure runCommand(cmd: string);
-               procedure addSetupToArchive(path: string);
-               procedure removeSetupFromArchive(archivedName: string);
-           protected
-               function getArchivePathFor(cmdGuid: integer): string;
-               function isArchived(cmdGuid: integer): boolean;
     end;
 
     tEvent = class
@@ -151,7 +129,6 @@ var
     sTaskMgr:      taskManager;
     sUpdateParser: updateParser;
     sDownloadMgr:  downloadManager;
-    sFileMgr:      fileManager;
     sEventHdlr:    eventHandler;
 
     sLvUpdate:     tListView;
@@ -207,7 +184,7 @@ implementation
 
     procedure tTaskFlush.exec;
     begin
-        sFileMgr.saveDataStreamToFile(self.fileName, self.dataStream)
+        //sFileMgr.saveDataStreamToFile(self.fileName, self.dataStream)
     end;
 
     // tTaskOutput
@@ -567,49 +544,12 @@ implementation
         end;
     end;
 
-    // fileManager
-
-    procedure fileManager.saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
-    begin
-        dataStream.saveToFile(fileName)
-    end;
-
-    procedure saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
-    begin
-
-    end;
-
-    procedure fileManager.runCommand(cmd: string);
-    begin
-
-    end;
-
-    procedure fileManager.addSetupToArchive(path: string);
-    begin
-
-    end;
-
-    procedure fileManager.removeSetupFromArchive(archivedName: string);
-    begin
-
-    end;
-
-    function fileManager.getArchivePathFor(cmdGuid: integer): string;
-    begin
-
-    end;
-
-    function fileManager.isArchived(cmdGuid: integer): boolean;
-    begin
-        result := false;
-    end;
-
     // eventHandler
 
     constructor tEvent.create(eDesc: string; eType: tEventImage);
     begin
         self.eventType := tImageIndex(eType);
-        self.eventTime := FormatDateTime('hh:nn:ss', now);
+        self.eventTime := formatDateTime('hh:nn:ss', now);
         self.eventDesc := eDesc;
     end;
 

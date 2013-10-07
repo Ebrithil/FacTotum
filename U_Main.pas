@@ -156,15 +156,12 @@ implementation
     procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
     var
         taskUpdate: tTaskRecordUpdate;
-        swIndex:    integer;
     begin
-        swIndex            := swRecord( sDBMgr.getSoftwareList.items[tvConfig.selected.parent.index] ).guid;
-
         taskUpdate         := tTaskRecordUpdate.create;
         taskUpdate.field   := dbFieldCmdArch;
         taskUpdate.value   := rgArchInfo.itemIndex.toString;
         taskUpdate.tRecord := recordCommand;
-        taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvConfig.selected.index];
+        taskUpdate.pRecord := tvConfig.selected.data;
 
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
@@ -267,18 +264,15 @@ implementation
     procedure tfFacTotum.leCmdInfoExit(sender: tObject);
     var
         taskUpdate: tTaskRecordUpdate;
-        swIndex:    integer;
     begin
         leCmdInfo.text := trim(leCmdInfo.text);
         if length(leCmdInfo.text) > 0 then
         begin
-            swIndex            := swRecord(tvConfig.selected.parent.data).guid;
-
             taskUpdate         := tTaskRecordUpdate.create;
             taskUpdate.field   := dbFieldCmdCmmd;
             taskUpdate.value   := leCmdInfo.text;
             taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := sDBMgr.getCommandList(swIndex).items[tvConfig.selected.index];
+            taskUpdate.pRecord := tvConfig.selected.data;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
 
