@@ -457,6 +457,7 @@ implementation
         command.vers := '';
         command.cmmd := '<Comando>';
         command.uURL := '';
+        command.hash := '';
 
         sTaskMgr.pushTaskToInput(taskInsert);
     end;

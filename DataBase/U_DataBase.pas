@@ -11,7 +11,12 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
-    dbStringsIndex    = ( DBNamePath, dbTableCommands, dbTableSoftware, dbFieldSwGUID, dbFieldSwName, dbFieldCmdGUID, dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName, dbFieldCmdCmmd, dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL );
+    dbStringsIndex    = ( DBNamePath,
+                          dbTableCommands, dbTableSoftware,
+                          dbFieldSwGUID,   dbFieldSwName,
+                          dbFieldCmdGUID,  dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName,
+                          dbFieldCmdCmmd,  dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
+                          dbFieldCmdHash );
 
     DBRecord = class
     end;
@@ -32,7 +37,8 @@ type
         name,
         cmmd,
         vers,
-        uURL: string;
+        uURL,
+        hash: string;
     end;
 
     tTaskRecordOP = class(tTask)
@@ -117,7 +123,8 @@ const
         'cmmd',
         'vers',
         'arch',
-        'uurl' );
+        'uurl',
+        'hash' );
 
 var
     sDBMgr: DBManager;
@@ -255,6 +262,7 @@ implementation
           + '%s VARCHAR(25) NULL, '
           + '%s TEXT NOT NULL, '
           + '%s TEXT NULL, '
+          + '%s VARCHAR(40) NULL, '
           + 'CONSTRAINT u_command UNIQUE(%s, %s, %s, %s), '
           + 'FOREIGN KEY(%s) REFERENCES %s(%s) ON DELETE CASCADE ON UPDATE CASCADE '
           + ');',
@@ -264,6 +272,7 @@ implementation
           // Table columns
           dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch],
           dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdCmmd], dbStrings[dbFieldCmduURL],
+          dbStrings[dbFieldCmdHash],
           // Table constraints
           dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmdName],
           // Table foreign keys
@@ -324,6 +333,7 @@ implementation
                 cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
                 vers := sqlData.fieldByName( dbStrings[dbFieldCmdVers] ).value;
                 uURL := sqlData.fieldByName( dbStrings[dbFieldCmduURL] ).value;
+                hash := sqlData.fieldByName( dbStrings[dbFieldCmdHash] ).value;
             end;
             sqlData.next;
             result.add(cmdRec);
@@ -399,17 +409,17 @@ implementation
         query: string;
     begin
         query := format(
-          'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s) '
-        + 'VALUES (''%d'', ''%u'', ''%s'', ''%s'', ''%s'', ''%u'', ''%s'');',
+          'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s) '
+        + 'VALUES (''%d'', ''%u'', ''%s'', ''%s'', ''%s'', ''%u'', ''%s'', ''%s'');',
           [
           // Table
           dbStrings[dbTableCommands],
           // Columns
           dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdCmmd],
-          dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmduURL],
+          dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmduURL], dbStrings[dbFieldCmdHash],
           // Values
           command.swid, command.prty, command.name, command.cmmd,
-          command.vers, command.arch, command.uURL
+          command.vers, command.arch, command.uURL, command.hash
           ]
         );
         self.query(query);
