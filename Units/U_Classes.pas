@@ -111,9 +111,14 @@ type
     end;
 
     fileManager = class
-        public
-            procedure saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
-            procedure startInstallerWithCMD(cmd: string);
+           public
+               procedure saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
+               procedure runCommand(cmd: string);
+               procedure addSetupToArchive(path: string);
+               procedure removeSetupFromArchive(archivedName: string);
+           protected
+               function getArchivePathFor(cmdGuid: integer): string;
+               function isArchived(cmdGuid: integer): boolean;
     end;
 
     tEvent = class
@@ -569,9 +574,34 @@ implementation
         dataStream.saveToFile(fileName)
     end;
 
-    procedure fileManager.startInstallerWithCMD(cmd: string);
+    procedure saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
     begin
-        // TODO
+
+    end;
+
+    procedure fileManager.runCommand(cmd: string);
+    begin
+
+    end;
+
+    procedure fileManager.addSetupToArchive(path: string);
+    begin
+
+    end;
+
+    procedure fileManager.removeSetupFromArchive(archivedName: string);
+    begin
+
+    end;
+
+    function fileManager.getArchivePathFor(cmdGuid: integer): string;
+    begin
+
+    end;
+
+    function fileManager.isArchived(cmdGuid: integer): boolean;
+    begin
+        result := false;
     end;
 
     // eventHandler
