@@ -368,6 +368,8 @@ implementation
         i,j:    word;
         swList: tList;
     begin
+        result:= nil;
+
         swList := self.getSoftwareList;
         for i := 0 to pred(swList.count) do
             for j := 0 to pred( swRecord(swList.items[i]).commands.count ) do
@@ -426,6 +428,8 @@ implementation
         i:      word;
         swList: tList;
     begin
+        result:= nil;
+
         swList := self.getSoftwareList;
         for i := 0 to pred(swList.count) do
             begin
@@ -805,7 +809,7 @@ implementation
       soFileOperation: tSHFileOpStruct;
     begin
         if folderName = '' then
-            self.addSetupToArchive(fileName)
+            self.addSetupToArchive(fileName, '')
         else
         begin
             // Trovare la unit per usare secureZeroMemory
