@@ -7,9 +7,11 @@ uses
     vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
     system.types,
 
-    U_DataBase, U_Functions, U_Classes;
+    U_DataBase, U_Functions, U_Threads, U_OutputTasks, U_Events, U_Parser, U_Download, U_Files;
 
 type
+    tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiEvtErr);
+
     tfFacTotum = class(tForm)
         pcTabs: TPageControl;
         tInstaller: TTabSheet;
