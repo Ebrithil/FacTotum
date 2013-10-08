@@ -12,8 +12,7 @@ uses
 type
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
-    dbStringsIndex    = ( DBNamePath,
-                          dbTableCommands, dbTableSoftware,
+    dbStringsIndex    = ( dbTableCommands, dbTableSoftware,
                           dbFieldSwGUID,   dbFieldSwName,
                           dbFieldCmdGUID,  dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName,
                           dbFieldCmdCmmd,  dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
@@ -82,24 +81,25 @@ type
 
     DBManager = class
         protected
-            m_connector: tSQLConnection;
-            m_software:  tList;
-            m_updated:   boolean;
-            procedure    connect;
-            procedure    disconnect;
-            procedure    rebuildDBStructure;
-            procedure    insertRecordInDB(software: swRecord); overload;
-            procedure    insertRecordInDB(command: cmdRecord); overload;
-            procedure    updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string); overload;
-            procedure    updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string); overload;
-            procedure    deleteRecordFromDB(software: swRecord); overload;
-            procedure    deleteRecordFromDB(command: cmdRecord); overload;
-            function     query(qString: string): boolean;
-            function     queryRes(qString: string): tDataSet;
-            function     getLastInsertedRecordID: integer;
-            function     getCommandList(const swID: integer): tList;
+            m_connector:  tSQLConnection;
+            m_software:   tList;
+            m_updated:    boolean;
+            m_DBNamePath: string;
+            procedure     connect;
+            procedure     disconnect;
+            procedure     rebuildDBStructure;
+            procedure     insertRecordInDB(software: swRecord); overload;
+            procedure     insertRecordInDB(command: cmdRecord); overload;
+            procedure     updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string); overload;
+            procedure     updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string); overload;
+            procedure     deleteRecordFromDB(software: swRecord); overload;
+            procedure     deleteRecordFromDB(command: cmdRecord); overload;
+            function      query(qString: string): boolean;
+            function      queryRes(qString: string): tDataSet;
+            function      getLastInsertedRecordID: integer;
+            function      getCommandList(const swID: integer): tList;
         public
-            constructor create;
+            constructor create(DBNamePath: string = 'FacTotum.db');
             destructor  Destroy; override;
             procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
             procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
@@ -112,7 +112,6 @@ type
 
 const
     dbStrings: array[dbStringsIndex] of string = (
-        'FacTotum.db',
         // Database related strings
         'commands',
         'software',
@@ -155,10 +154,11 @@ implementation
 // Start Implementation of TDatabase Class
 //------------------------------------------------------------------------------
 
-    constructor DBManager.create;
+    constructor DBManager.create(DBNamePath: string = 'FacTotum.db');
     begin
         m_connector   := tSQLConnection.create(nil);
         m_updated     := true;
+        m_DBNamePath  := DBNamePath;
 
         m_connector.connectionName := 'SQLITECONNECTION';
         m_connector.driverName     := 'Sqlite';
@@ -166,7 +166,7 @@ implementation
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
-        m_connector.params.add('Database=' + dbStrings[DBNamePath]);
+        m_connector.params.add('Database=' + m_DBNamePath);
         m_connector.params.add('FailIfMissing=False');
 
         self.connect;
@@ -180,7 +180,7 @@ implementation
 
     procedure DBManager.connect;
     begin
-        if not( fileExists(dbStrings[DBNamePath]) ) then
+        if not( fileExists(m_DBNamePath) ) then
         begin
              sEventHdlr.pushEventToList( tEvent.create('DataBase non trovato.', eiAlert) );
              sEventHdlr.pushEventToList( tEvent.create('Il DataBase verrà ricreato.', eiAlert) );
