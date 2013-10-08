@@ -73,7 +73,6 @@ type
         procedure fillConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
         procedure fillUpdateSoftwareList;
-        procedure bInstallClick(Sender: TObject);
     end;
 
 const
@@ -569,11 +568,6 @@ implementation
         lvEvents.items.clear;
         sEventHdlr.clearErrorCache;
         tLog.imageIndex := tImageIndex(tiEvents);
-    end;
-
-    procedure tfFacTotum.bInstallClick(Sender: TObject);
-    begin
-        sFileMgr.addSetupToArchive(handle, 'C:\Users\Massimo\Desktop\depends22_x64\depends.exe', 'C:\Users\Massimo\Desktop\depends22_x64');
     end;
 
     procedure tfFacTotum.bUpdateClick(Sender: TObject);
