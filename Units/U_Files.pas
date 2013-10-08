@@ -10,19 +10,18 @@ uses
 type
     fileManager = class
        protected
-           m_hasher:   tIdHash;
-           stpFolder:  string;
-           procedure   addSetupToArchive(fileName: string); overload;
-           function    getFileHash(fileName: string): string;
-           function    getArchivePathFor(cmdGuid: integer): string;
-           function    isArchived(cmdGuid: integer): boolean; overload;
-           function    isArchived(fileHash: string): boolean; overload;
+           m_hasher:    tIdHash;
+           m_stpFolder: string;
+           function     getFileHash(fileName: string): string;
+           function     getArchivePathFor(cmdGuid: integer): string;
+           function     isArchived(cmdGuid: integer): boolean; overload;
+           function     isArchived(fileHash: string): boolean; overload;
        public
            constructor create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
            destructor  Destroy; override;
            procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
            procedure   runCommand(cmd: string);
-           procedure   addSetupToArchive(filename: string; folderName: string = ''); overload;
+           procedure   addSetupToArchive(handle: tHandle; fileName: string; folderName: string = ''); overload;
            procedure   removeSetupFromArchive(archivedName: string);
     end;
 
@@ -41,12 +40,12 @@ implementation
 
     constructor fileManager.create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
     begin
-        self.stpFolder := stpFolder;
-        if not( directoryExists(self.stpFolder) ) then
+        self.m_stpFolder := stpFolder;
+        if not( directoryExists(self.m_stpFolder) ) then
         begin
             sEventHdlr.pushEventToList( tEvent.create('Cartella d''installazione non esistente.', eiAlert) );
             sEventHdlr.pushEventToList( tEvent.create('La cartella verrà ricreata.', eiAlert) );
-            if not( createDir(self.stpFolder) ) then
+            if not( createDir(self.m_stpFolder) ) then
                 sEventHdlr.pushEventToList( tEvent.create('Impossibile creare la cartella d''installazione.', eiError) )
         end;
 
@@ -83,51 +82,41 @@ implementation
         // TODO
     end;
 
-    procedure fileManager.addSetupToArchive(fileName: string);
+    procedure fileManager.addSetupToArchive(handle: tHandle; fileName: string; folderName: string = '');
     var
       soFileOperation: tSHFileOpStruct;
+      errorCode:       integer;
     begin
-        // Trovare la unit per usare secureZeroMemory
-        zeroMemory( @soFileOperation, sizeOf(soFileOperation) );
+        // usas FillChar
+        fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
         with soFileOperation do
         begin
+            Wnd    := handle;
             wFunc  := FO_COPY;
-            fFlags := FOF_FILESONLY;
-            pFrom  := pChar(fileName + #0);
-            pTo    := pChar( self.stpFolder + self.getFileHash(fileName) );
-        end;
-    end;
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS;
 
-    procedure fileManager.addSetupToArchive(fileName: string; folderName: string = '');
-    var
-      soFileOperation: tSHFileOpStruct;
-    begin
-        if folderName = '' then
-            self.addSetupToArchive(fileName, '')
-        else
-        begin
-            // Trovare la unit per usare secureZeroMemory
-            zeroMemory( @soFileOperation, sizeOf(soFileOperation) );
-            with soFileOperation do
-            begin
-                wFunc  := FO_COPY;
-                fFlags := FOF_FILESONLY;
-                // SICURAMENTE non funziona, da capire meglio le destinazioni ed i flag giusti
-                pFrom  := pChar(folderName + #0);
-                pTo    := pChar( self.stpFolder + self.getFileHash(fileName) );
-            end;
-        end
+            if folderName = '' then
+                pFrom := pchar(fileName + #0)
+            else
+                pFrom := pchar(folderName + #0);
+
+            pTo := pchar(self.m_stpFolder + self.getFileHash(fileName) + #0);
+        end;
+        errorCode := SHFileOperation(soFileOperation);
+
+        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            sEventHdlr.pushEventToList(tEvent.create('Errore durante la copia del file 0x' + intToHex(errorCode, 8) + '.', eiInfo));
     end;
 
     procedure fileManager.removeSetupFromArchive(archivedName: string);
     begin
-        if not( removeDir(self.stpFolder + archivedName) ) then
+        if not( removeDir(self.m_stpFolder + archivedName) ) then
             sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare la cartella d''installazione ' + archivedName + '.', eiError) )
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;
     begin
-        result := self.stpFolder + cmdRecord( sDBMgr.getCommandRec(cmdGuid) ).hash;
+        result := self.m_stpFolder + cmdRecord( sDBMgr.getCommandRec(cmdGuid) ).hash;
     end;
 
     function fileManager.isArchived(cmdGuid: integer): boolean;
