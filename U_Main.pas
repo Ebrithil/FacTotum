@@ -10,7 +10,7 @@ interface
 uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
     vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
-    system.types, ShellAPI, FileCtrl, Vcl.Graphics,
+    system.types, ShellAPI, FileCtrl, Vcl.Graphics, StrUtils,
 
     U_DataBase, U_Functions, U_Threads, U_OutputTasks, U_Events, U_Parser, U_Download, U_Files;
 
@@ -533,17 +533,19 @@ implementation
 
         if tOSVersion.major >= 6 then
         begin
-            odSelectCombo               := tFileOpenDialog.create(self);
-            odSelectCombo.title         := 'Seleziona la cartella d''installazione';
-            odSelectCombo.options       := [fdoPickFolders, fdoPathMustExist];
-            odSelectCombo.defaultFolder := getCurrentDir;
-            odSelectCombo.okButtonLabel := 'Seleziona';
+            odSelectCombo                   := tFileOpenDialog.create(self);
+            odSelectCombo.title             := 'Seleziona la cartella d''installazione';
+            odSelectCombo.options           := [fdoPickFolders, fdoPathMustExist];
+            odSelectCombo.defaultFolder     := getCurrentDir;
+            odSelectCombo.okButtonLabel     := 'Seleziona';
 
             if odSelectCombo.execute then
-               selectedFolder          := odSelectCombo.fileName;
+               selectedFolder               := odSelectCombo.fileName;
 
-            odSelectCombo.title         := 'Seleziona il file d''installazione';
-            odSelectCombo.options       := [fdoAllNonStorageItems, fdoFileMustExist];
+            odSelectCombo.title             := 'Seleziona il file d''installazione';
+            odSelectCombo.options           := [fdoAllNonStorageItems, fdoFileMustExist];
+            if selectedFolder <> '' then
+                odSelectCombo.defaultFolder := selectedFolder;
             with odSelectCombo.fileTypes.add do
             begin
                displayName := 'File eseguibili';
@@ -564,11 +566,13 @@ implementation
         begin
             selectDirectory('Seleziona la cartella d''installazione', getEnvironmentVariable('SYSTEMDRIVE') + '\', selectedFolder);
 
-            odSelectFile            := tOpenDialog.create(self);
-            odSelectFile.title      := 'Seleziona il file d''installazione';
-            odSelectFile.initialDir := getCurrentDir;
-            odSelectFile.options    := [ofFileMustExist];
-            odSelectFile.filter     := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
+            odSelectFile                := tOpenDialog.create(self);
+            odSelectFile.title          := 'Seleziona il file d''installazione';
+            odSelectFile.filter         := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
+            odSelectFile.options        := [ofFileMustExist];
+            odSelectFile.initialDir     := getCurrentDir;
+            if selectedFolder <> '' then
+                odSelectFile.initialDir := selectedFolder;
 
             if odSelectFile.execute then
                selectedFile        := odSelectFile.fileName;
@@ -577,7 +581,13 @@ implementation
         end;
 
         if selectedFile <> '' then
-           sFileMgr.addSetupToArchive(handle, selectedFile, selectedFolder);
+        begin
+            sFileMgr.addSetupToArchive(handle, tvConfig.selected.data, selectedFile, selectedFolder);
+            if selectedFolder <> '' then
+                leCmdInfo.text := ansiReplaceStr(selectedFile, selectedFolder, '.')
+            else
+                leCmdInfo.text := extractFileName(selectedFile);
+        end;
     end;
 
     procedure tfFacTotum.bEmptyClick(sender: tObject);

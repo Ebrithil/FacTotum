@@ -182,19 +182,19 @@ implementation
     begin
         if not( fileExists(m_DBNamePath) ) then
         begin
-             sEventHdlr.pushEventToList( tEvent.create('DataBase non trovato.', eiAlert) );
-             sEventHdlr.pushEventToList( tEvent.create('Il DataBase verrà ricreato.', eiAlert) );
+             sEventHdlr.pushEventToList( 'DataBase non trovato.', eiAlert );
+             sEventHdlr.pushEventToList( 'Il DataBase verrà ricreato.', eiAlert );
         end;
 
         //setDllDirectory('.\dll');
         try
             try
                 m_connector.open;
-                sEventHdlr.pushEventToList( tEvent.create('Effettuata connessione al DataBase.', eiInfo) );
+                sEventHdlr.pushEventToList( 'Effettuata connessione al DataBase.', eiInfo );
                 self.rebuildDBStructure;
             except
                 on e: exception do
-                    sEventHdlr.pushEventToList( tEvent.create(e.ClassName + ': ' + e.Message, eiError) );
+                    sEventHdlr.pushEventToList( e.ClassName + ': ' + e.Message, eiError );
             end;
         finally
             //setDllDirectory('');
@@ -205,10 +205,10 @@ implementation
     begin
         try
             m_connector.close;
-            sEventHdlr.pushEventToList( tEvent.create('Terminata connessione al DataBase.', eiInfo) );
+            sEventHdlr.pushEventToList( 'Terminata connessione al DataBase.', eiInfo );
         except
             on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
+                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
         end;
     end;
 
@@ -220,7 +220,7 @@ implementation
             result:= true;
         except
             on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
+                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
         end;
     end;
 
@@ -231,7 +231,7 @@ implementation
             self.m_connector.execute(qString, nil, result);
         except
             on e: exception do
-                sEventHdlr.pushEventToList( tEvent.create(e.className + ': ' + e.message, eiError) );
+                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
         end;
     end;
 

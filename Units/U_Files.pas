@@ -5,7 +5,7 @@ interface
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
 
-    U_Events, U_DataBase, U_InputTasks;
+    U_Events, U_DataBase, U_Threads, U_InputTasks;
 
 type
     fileManager = class
@@ -21,7 +21,7 @@ type
            destructor  Destroy; override;
            procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
            procedure   runCommand(cmd: string);
-           procedure   addSetupToArchive(handle: tHandle; fileName: string; folderName: string = ''); overload;
+           procedure   addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''); overload;
            procedure   removeSetupFromArchive(archivedName: string);
     end;
 
@@ -43,10 +43,10 @@ implementation
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
         begin
-            sEventHdlr.pushEventToList( tEvent.create('Cartella d''installazione non esistente.', eiAlert) );
-            sEventHdlr.pushEventToList( tEvent.create('La cartella verrà ricreata.', eiAlert) );
+            sEventHdlr.pushEventToList( 'Cartella d''installazione non esistente.', eiAlert );
+            sEventHdlr.pushEventToList( 'La cartella verrà ricreata.', eiAlert );
             if not( createDir(self.m_stpFolder) ) then
-                sEventHdlr.pushEventToList( tEvent.create('Impossibile creare la cartella d''installazione.', eiError) )
+                sEventHdlr.pushEventToList( 'Impossibile creare la cartella d''installazione.', eiError )
         end;
 
         if useSha1 then
@@ -82,13 +82,16 @@ implementation
         // TODO
     end;
 
-    procedure fileManager.addSetupToArchive(handle: tHandle; fileName: string; folderName: string = '');
+    procedure fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = '');
     var
       soFileOperation: tSHFileOpStruct;
+      taskUpdate:      tTaskRecordUpdate;
       errorCode:       integer;
+      tempHash:        string;
     begin
         // usas FillChar
         fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
+        tempHash := self.getFileHash(fileName);
         with soFileOperation do
         begin
             Wnd    := handle;
@@ -100,18 +103,28 @@ implementation
             else
                 pFrom := pchar(folderName + #0);
 
-            pTo := pchar(self.m_stpFolder + self.getFileHash(fileName) + #0);
+            pTo := pchar(self.m_stpFolder + tempHash + #0);
         end;
         errorCode := SHFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            sEventHdlr.pushEventToList(tEvent.create('Errore durante la copia del file 0x' + intToHex(errorCode, 8) + '.', eiInfo));
+            sEventHdlr.pushEventToList('Errore durante la copia del percorso 0x' + intToHex(errorCode, 8) + '.', eiError)
+        else
+        begin
+            taskUpdate         := tTaskRecordUpdate.create;
+            taskUpdate.field   := dbFieldCmdHash;
+            taskUpdate.value   := tempHash;
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := cmdRec;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+        end;
     end;
 
     procedure fileManager.removeSetupFromArchive(archivedName: string);
     begin
         if not( removeDir(self.m_stpFolder + archivedName) ) then
-            sEventHdlr.pushEventToList( tEvent.create('Impossibile eliminare la cartella d''installazione ' + archivedName + '.', eiError) )
+            sEventHdlr.pushEventToList( 'Impossibile eliminare la cartella d''installazione ' + archivedName + '.', eiError )
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;

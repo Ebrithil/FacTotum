@@ -116,7 +116,7 @@ implementation
 
         setLength(m_threadPool, threadsCount);
 
-        sEventHdlr.pushEventToList(tEvent.create('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', eiInfo));
+        sEventHdlr.pushEventToList('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', eiInfo);
 
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create();

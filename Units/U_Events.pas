@@ -18,7 +18,7 @@ type
     eventHandler = class
         public
             constructor create;
-            procedure   pushEventToList(event: tEvent);
+            procedure   pushEventToList(event: string; eType: tEventImage); overload;
             function    pullEventFromList: tEvent;
             function    isEventListEmpty:  boolean;
             function    getErrorCache:     boolean;
@@ -27,6 +27,7 @@ type
             m_eventMutex:     tMutex;
             m_eventList:      tList;
             m_containsErrors: boolean;
+            procedure   pushEventToList(event: tEvent); overload;
     end;
 
 var
@@ -55,6 +56,11 @@ implementation
 
         if event.eventType = tImageIndex(eiError) then
             m_containsErrors := true;
+    end;
+
+    procedure eventHandler.pushEventToList(event: string; eType: tEventImage);
+    begin
+        self.pushEventToList( tEvent.create(event, eType) );
     end;
 
     function eventHandler.pullEventFromList: tEvent;

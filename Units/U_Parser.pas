@@ -57,7 +57,7 @@ implementation
                 end;
         end;
         result := 'N/D';
-        sEventHdlr.pushEventToList(tEvent.create('Impossibile ottenere la versione del software: ' + swName, eiError));
+        sEventHdlr.pushEventToList('Impossibile ottenere la versione del software: ' + swName, eiError);
         swParts.free;
     end;
 
@@ -184,13 +184,13 @@ implementation
                     break;
                 end
                 else
-                    sEventHdlr.pushEventToList( tEvent.create('Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo) );
+                    sEventHdlr.pushEventToList( 'Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo );
             end;
         end;
 
         if (result = '') then
         begin
-            sEventHdlr.pushEventToList( tEvent.create('Nessuna versione accettabile trovata.', eiAlert) );
+            sEventHdlr.pushEventToList( 'Nessuna versione accettabile trovata.', eiAlert );
             result := 'N/D';
         end;
     end;
