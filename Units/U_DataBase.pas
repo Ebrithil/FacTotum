@@ -64,9 +64,10 @@ type
             procedure exec; override;
     end;
 
-    tTaskGetVer = class(tTask) // Task per verificare la versione del programma da scaricare
+    tTaskGetVer = class(tTask)
         public
-            cmdRec: cmdRecord;
+            cmdRec:      cmdRecord;
+            returnValue: string;
 
             procedure exec; override;
     end;

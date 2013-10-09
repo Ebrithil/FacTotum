@@ -4,8 +4,9 @@ interface
 
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
+    vcl.extCtrls, System.StrUtils,
 
-    U_Events, U_DataBase, U_Threads, U_InputTasks;
+    U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks;
 
 type
     fileManager = class
@@ -17,7 +18,7 @@ type
            function     isArchived(cmdGuid: integer): boolean; overload;
            function     isArchived(fileHash: string): boolean; overload;
        public
-           constructor create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
+           constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
            procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
            procedure   runCommand(cmd: string);
@@ -25,10 +26,22 @@ type
            procedure   removeSetupFromArchive(archivedName: string);
     end;
 
-    tTaskFlush = class(tTask) // Task per scrivere il MemoryStream su file
+    tTaskAddToArchive = class(tTask)
         public
+            formHandle: tHandle;
+            cmdRec:     cmdRecord;
             fileName:   string;
-            dataStream: tMemoryStream;
+            folderName: string;
+            pReturn:    tLabeledEdit;
+
+            procedure exec; override;
+    end;
+
+    tTaskAddedToArchive = class(tTaskOutput)
+        public
+            selectedFile:   string;
+            selectedFolder: string;
+            pReturn:        tLabeledEdit;
 
             procedure exec; override;
     end;
@@ -38,7 +51,7 @@ var
 
 implementation
 
-    constructor fileManager.create(useSha1: boolean = false; stpFolder: string = '.\Setup\');
+    constructor fileManager.create(useSha1: boolean = false; stpFolder: string = 'Setup\');
     begin
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
@@ -153,9 +166,24 @@ implementation
                 end;
     end;
 
-    procedure tTaskFlush.exec;
+    procedure tTaskAddToArchive.exec;
+    var
+        taskAdded: tTaskAddedToArchive;
     begin
-        //sFileMgr.saveDataStreamToFile(self.fileName, self.dataStream)
+        sFileMgr.addSetupToArchive(self.formHandle, self.cmdRec, self.fileName, self.folderName);
+
+        taskAdded                := tTaskAddedToArchive.create;
+        taskAdded.selectedFile   := self.fileName;
+        taskAdded.selectedFolder := self.folderName;
+        taskAdded.pReturn        := self.pReturn;
+    end;
+
+    procedure tTaskAddedToArchive.exec;
+    begin
+        if self.selectedFolder <> '' then
+            self.pReturn.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
+        else
+            self.pReturn.text := extractFileName(selectedFile);
     end;
 
 end.

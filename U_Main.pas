@@ -10,7 +10,7 @@ interface
 uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
     vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
-    system.types, ShellAPI, FileCtrl, Vcl.Graphics, StrUtils,
+    system.types, ShellAPI, FileCtrl, Vcl.Graphics, System.StrUtils,
 
     U_DataBase, U_Functions, U_Threads, U_OutputTasks, U_Events, U_Parser, U_Download, U_Files;
 
@@ -238,7 +238,7 @@ implementation
 
         while( assigned(taskOut) ) do
         begin
-            taskOut.exec();
+            taskOut.exec;
             taskOut.free;
             taskOut := sTaskMgr.pullTaskFromOutput;
         end;
@@ -527,6 +527,7 @@ implementation
         odSelectCombo:  tFileOpenDialog;
         selectedFolder,
         selectedFile:   string;
+        taskAdd:        tTaskAddToArchive;
    begin
         selectedFile   := '';
         selectedFolder := '';
@@ -582,9 +583,16 @@ implementation
 
         if selectedFile <> '' then
         begin
-            sFileMgr.addSetupToArchive(handle, tvConfig.selected.data, selectedFile, selectedFolder);
+            taskAdd            := tTaskAddToArchive.create;
+            taskAdd.formHandle := handle;
+            taskAdd.cmdRec     := tvConfig.selected.data;
+            taskAdd.fileName   := selectedFile;
+            taskAdd.folderName := selectedFolder;
+
+            sTaskMgr.pushTaskToInput(taskAdd);
+
             if selectedFolder <> '' then
-                leCmdInfo.text := ansiReplaceStr(selectedFile, selectedFolder, '.')
+                leCmdInfo.text := ansiReplaceStr(selectedFile, selectedFolder + '\', '')
             else
                 leCmdInfo.text := extractFileName(selectedFile);
         end;
