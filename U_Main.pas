@@ -1,11 +1,16 @@
 unit U_Main;
 
+{$HINTS ON}
+{$WARNINGS ON}
+{$WARN UNIT_PLATFORM OFF}
+{$WARN SYMBOL_PLATFORM OFF}
+
 interface
 
 uses
     vcl.controls, vcl.forms, vcl.comCtrls, vcl.stdCtrls, vcl.checkLst, vcl.imgList,
     vcl.extCtrls, vcl.menus, system.sysutils, system.classes, system.uiTypes, dialogs,
-    system.types, ShellAPI, FileCtrl,
+    system.types, ShellAPI, FileCtrl, Vcl.Graphics,
 
     U_DataBase, U_Functions, U_Threads, U_OutputTasks, U_Events, U_Parser, U_Download, U_Files;
 
@@ -97,9 +102,9 @@ implementation
         leUrlInfo.enabled  := isChild;
         rgArchInfo.enabled := isChild;
 
-        leCmdInfo.color := tvConfig.color;
-        leVerInfo.color := tvConfig.color;
-        leUrlInfo.color := tvConfig.color;
+        leCmdInfo.color := clWhite;
+        leVerInfo.color := clWhite;
+        leUrlInfo.color := clWhite;
 
         if isChild then
         begin
@@ -159,13 +164,16 @@ implementation
     var
         taskUpdate: tTaskRecordUpdate;
     begin
-        taskUpdate         := tTaskRecordUpdate.create;
-        taskUpdate.field   := dbFieldCmdArch;
-        taskUpdate.value   := rgArchInfo.itemIndex.toString;
-        taskUpdate.tRecord := recordCommand;
-        taskUpdate.pRecord := tvConfig.selected.data;
+        if cmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
+        begin
+            taskUpdate         := tTaskRecordUpdate.create;
+            taskUpdate.field   := dbFieldCmdArch;
+            taskUpdate.value   := rgArchInfo.itemIndex.toString;
+            taskUpdate.tRecord := recordCommand;
+            taskUpdate.pRecord := tvConfig.selected.data;
 
-        sTaskMgr.pushTaskToInput(taskUpdate);
+            sTaskMgr.pushTaskToInput(taskUpdate);
+        end;
     end;
 
     procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
@@ -268,20 +276,23 @@ implementation
         taskUpdate: tTaskRecordUpdate;
     begin
         leCmdInfo.text := trim(leCmdInfo.text);
-        if length(leCmdInfo.text) > 0 then
-        begin
-            taskUpdate         := tTaskRecordUpdate.create;
-            taskUpdate.field   := dbFieldCmdCmmd;
-            taskUpdate.value   := leCmdInfo.text;
-            taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := tvConfig.selected.data;
+        if cmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
+            if length(leCmdInfo.text) > 0 then
+            begin
+                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate.field   := dbFieldCmdCmmd;
+                taskUpdate.value   := leCmdInfo.text;
+                taskUpdate.tRecord := recordCommand;
+                taskUpdate.pRecord := tvConfig.selected.data;
 
-            sTaskMgr.pushTaskToInput(taskUpdate);
+                sTaskMgr.pushTaskToInput(taskUpdate);
 
-            leCmdInfo.color := $0080FF80; // Verde
-        end
+                leCmdInfo.color := $0080FF80; // Verde
+            end
+            else
+                leCmdInfo.color := $008080FF  // Rosso
         else
-            leCmdInfo.color := $008080FF; // Rosso
+            leCmdInfo.color := clWhite;
     end;
 
     procedure tfFacTotum.leCmdInfoKeyPress(Sender: TObject; var Key: Char);
@@ -298,20 +309,23 @@ implementation
         taskUpdate: tTaskRecordUpdate;
     begin
         leUrlInfo.text := trim(leUrlInfo.text);
-        if length(leUrlInfo.text) > 0 then
-        begin
-            taskUpdate         := tTaskRecordUpdate.create;
-            taskUpdate.field   := dbFieldCmduURL;
-            taskUpdate.value   := leUrlInfo.text;
-            taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := tvConfig.selected.data;
+        if cmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
+            if length(leUrlInfo.text) > 0 then
+            begin
+                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate.field   := dbFieldCmduURL;
+                taskUpdate.value   := leUrlInfo.text;
+                taskUpdate.tRecord := recordCommand;
+                taskUpdate.pRecord := tvConfig.selected.data;
 
-            sTaskMgr.pushTaskToInput(taskUpdate);
+                sTaskMgr.pushTaskToInput(taskUpdate);
 
-            leUrlInfo.color := $0080FF80; // Verde
-        end
+                leUrlInfo.color := $0080FF80; // Verde
+            end
+            else
+                leUrlInfo.color := $0080FFFF  // Giallo
         else
-            leUrlInfo.color := $0080FFFF; // Giallo
+            leUrlInfo.color := clWhite;
     end;
 
     procedure tfFacTotum.leUrlInfoKeyPress(Sender: TObject; var Key: Char);
@@ -334,22 +348,25 @@ implementation
         taskUpdate: tTaskRecordUpdate;
     begin
         leVerInfo.text := trim( leVerInfo.text );
-        if ( leVerInfo.text <> '.' )                         and
-           ( length(leVerInfo.text) > 0 )                    and
-           ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
-        begin
-            taskUpdate         := tTaskRecordUpdate.create;
-            taskUpdate.field   := dbFieldCmdVers;
-            taskUpdate.value   := leVerInfo.text;
-            taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := tvConfig.selected.data;
+        if cmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
+            if ( leVerInfo.text <> '.' )                         and
+               ( length(leVerInfo.text) > 0 )                    and
+               ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
+            begin
+                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate.field   := dbFieldCmdVers;
+                taskUpdate.value   := leVerInfo.text;
+                taskUpdate.tRecord := recordCommand;
+                taskUpdate.pRecord := tvConfig.selected.data;
 
-            sTaskMgr.pushTaskToInput(taskUpdate);
+                sTaskMgr.pushTaskToInput(taskUpdate);
 
-            leVerInfo.color := $0080FF80 // Verde
-        end
+                leVerInfo.color := $0080FF80 // Verde
+            end
+            else
+                leVerInfo.color := $0080FFFF // Giallo
         else
-            leVerInfo.color := $0080FFFF; // Giallo
+            leVerInfo.color := clWhite;
     end;
 
     procedure tfFacTotum.leVerInfoKeyDown(Sender: TObject; var Key: Word;
