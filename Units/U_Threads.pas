@@ -116,10 +116,10 @@ implementation
 
         setLength(m_threadPool, threadsCount);
 
-        sEventHdlr.pushEventToList('Inizializzazione ThreadPool (' + IntToStr(threadsCount) + ' threads).', eiInfo);
-
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create();
+
+        sEventHdlr.pushEventToList('ThreadPool inizializzata a ' + IntToStr(threadsCount) + ' threads.', eiInfo);
     end;
 
     function taskManager.getBusyThreadsCount: byte;

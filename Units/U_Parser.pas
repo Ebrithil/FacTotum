@@ -57,7 +57,7 @@ implementation
                 end;
         end;
         result := 'N/D';
-        sEventHdlr.pushEventToList('Impossibile ottenere la versione del software: ' + swName, eiError);
+        sEventHdlr.pushEventToList('Impossibile ricavare la versione del software: ' + swName, eiError);
         swParts.free;
     end;
 
@@ -172,7 +172,7 @@ implementation
         end;
 
         // altrimenti passo alle precedenti
-        if (result = '') then
+        if result = '' then
         begin
             srcTags := srcElem.getElementsByTagName('a');
             for i := 0 to pred(srcTags.length) do
@@ -184,13 +184,13 @@ implementation
                     break;
                 end
                 else
-                    sEventHdlr.pushEventToList( 'Versione non accettabile: ' + srcTagE.innerText + '.', eiInfo );
+                    sEventHdlr.pushEventToList('Versione del software non accettabile: ' + srcTagE.innerText + '.', eiAlert);
             end;
         end;
 
-        if (result = '') then
+        if result = '' then
         begin
-            sEventHdlr.pushEventToList( 'Nessuna versione accettabile trovata.', eiAlert );
+            sEventHdlr.pushEventToList( 'Nessuna versione accettabile del software trovata.', eiError );
             result := 'N/D';
         end;
     end;

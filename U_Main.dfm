@@ -443,19 +443,19 @@ object fFacTotum: TfFacTotum
         Height = 512
         Columns = <
           item
-            MaxWidth = 41
-            MinWidth = 41
-            Width = 41
+            MaxWidth = 25
+            MinWidth = 25
+            Width = 25
           end
           item
-            Caption = 'Ora'
+            Caption = ' Ora'
             MaxWidth = 80
             MinWidth = 80
             Width = 80
           end
           item
             AutoSize = True
-            Caption = 'Descrizione'
+            Caption = ' Descrizione'
           end>
         ColumnClick = False
         Font.Charset = ANSI_CHARSET
@@ -501,7 +501,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010105000802EC0120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010105000802F00120002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1555,7 +1555,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 127
     Bitmap = {
-      494C010106004C01FC0110001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106004C01000210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000030E11460C3B478D18768FC723ADCFF023ADCFF018768FC70C3B478D030E

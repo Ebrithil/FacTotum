@@ -23,7 +23,7 @@ type
            procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
            procedure   runCommand(cmd: string);
            procedure   addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''); overload;
-           procedure   removeSetupFromArchive(archivedName: string);
+           procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
     end;
 
     tTaskAddToArchive = class(tTask)
@@ -56,10 +56,10 @@ implementation
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
         begin
-            sEventHdlr.pushEventToList( 'Cartella d''installazione non esistente.', eiAlert );
-            sEventHdlr.pushEventToList( 'La cartella verrà ricreata.', eiAlert );
+            sEventHdlr.pushEventToList('Cartella d''installazione non trovata.', eiAlert);
+            sEventHdlr.pushEventToList('La cartella verra'' ricreata.', eiAlert);
             if not( createDir(self.m_stpFolder) ) then
-                sEventHdlr.pushEventToList( 'Impossibile creare la cartella d''installazione.', eiError )
+                sEventHdlr.pushEventToList('Impossibile creare la cartella d''installazione.', eiError)
         end;
 
         if useSha1 then
@@ -97,19 +97,18 @@ implementation
 
     procedure fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = '');
     var
-      soFileOperation: tSHFileOpStruct;
-      taskUpdate:      tTaskRecordUpdate;
-      errorCode:       integer;
-      tempHash:        string;
+        soFileOperation: tSHFileOpStruct;
+        taskUpdate:      tTaskRecordUpdate;
+        errorCode:       integer;
+        tempHash:        string;
     begin
         // usas FillChar
         fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
         tempHash := self.getFileHash(fileName);
         with soFileOperation do
         begin
-            Wnd    := handle;
+            wnd    := handle;
             wFunc  := FO_COPY;
-            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS;
 
             if folderName = '' then
                 pFrom := pchar(fileName + #0)
@@ -117,11 +116,12 @@ implementation
                 pFrom := pchar(folderName + #0);
 
             pTo := pchar(self.m_stpFolder + tempHash + #0);
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS;
         end;
         errorCode := SHFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            sEventHdlr.pushEventToList('Errore durante la copia del percorso 0x' + intToHex(errorCode, 8) + '.', eiError)
+            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + ']', eiError)
         else
         begin
             taskUpdate         := tTaskRecordUpdate.create;
@@ -134,10 +134,24 @@ implementation
         end;
     end;
 
-    procedure fileManager.removeSetupFromArchive(archivedName: string);
+    procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
+    var
+        soFileOperation: tSHFileOpStruct;
+        errorCode:       integer;
     begin
-        if not( removeDir(self.m_stpFolder + archivedName) ) then
-            sEventHdlr.pushEventToList( 'Impossibile eliminare la cartella d''installazione ' + archivedName + '.', eiError )
+        // usas FillChar
+        fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
+        with soFileOperation do
+        begin
+            wnd    := handle;
+            wFunc  := FO_COPY;
+            pFrom := pchar(folderName + #0);
+            fFlags := FOF_NOCONFIRMATION or FOF_SIMPLEPROGRESS;
+        end;
+        errorCode := SHFileOperation(soFileOperation);
+
+        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eliminare [' + soFileOperation.pFrom + ']', eiError);
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;

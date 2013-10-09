@@ -183,19 +183,19 @@ implementation
     begin
         if not( fileExists(m_DBNamePath) ) then
         begin
-             sEventHdlr.pushEventToList( 'DataBase non trovato.', eiAlert );
-             sEventHdlr.pushEventToList( 'Il DataBase verrà ricreato.', eiAlert );
+             sEventHdlr.pushEventToList('DataBase non trovato.', eiAlert);
+             sEventHdlr.pushEventToList('Il DataBase verra'' ricreato.', eiAlert);
         end;
 
         //setDllDirectory('.\dll');
         try
             try
                 m_connector.open;
-                sEventHdlr.pushEventToList( 'Effettuata connessione al DataBase.', eiInfo );
+                sEventHdlr.pushEventToList('Stabilita connessione al DataBase.', eiInfo);
                 self.rebuildDBStructure;
             except
                 on e: exception do
-                    sEventHdlr.pushEventToList( e.ClassName + ': ' + e.Message, eiError );
+                    sEventHdlr.pushEventToList('Impossibile connettersi al DataBase: ' + e.Message, eiError);
             end;
         finally
             //setDllDirectory('');
@@ -206,10 +206,10 @@ implementation
     begin
         try
             m_connector.close;
-            sEventHdlr.pushEventToList( 'Terminata connessione al DataBase.', eiInfo );
+            sEventHdlr.pushEventToList('Terminata connessione al DataBase.', eiInfo);
         except
             on e: exception do
-                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
+                sEventHdlr.pushEventToList('Impossibile disconnettersi dal DataBase: ' + e.message, eiError);
         end;
     end;
 
@@ -221,7 +221,7 @@ implementation
             result:= true;
         except
             on e: exception do
-                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
+                sEventHdlr.pushEventToList('Impossibile eseguire la Query: ' + e.message, eiError);
         end;
     end;
 
@@ -232,7 +232,7 @@ implementation
             self.m_connector.execute(qString, nil, result);
         except
             on e: exception do
-                sEventHdlr.pushEventToList( e.className + ': ' + e.message, eiError );
+                sEventHdlr.pushEventToList('Impossibile eseguire la Query: ' + e.message, eiError);
         end;
     end;
 

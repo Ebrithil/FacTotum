@@ -535,18 +535,10 @@ implementation
         if tOSVersion.major >= 6 then
         begin
             odSelectCombo                   := tFileOpenDialog.create(self);
-            odSelectCombo.title             := 'Seleziona la cartella d''installazione';
-            odSelectCombo.options           := [fdoPickFolders, fdoPathMustExist];
-            odSelectCombo.defaultFolder     := getCurrentDir;
-            odSelectCombo.okButtonLabel     := 'Seleziona';
-
-            if odSelectCombo.execute then
-               selectedFolder               := odSelectCombo.fileName;
-
             odSelectCombo.title             := 'Seleziona il file d''installazione';
             odSelectCombo.options           := [fdoAllNonStorageItems, fdoFileMustExist];
-            if selectedFolder <> '' then
-                odSelectCombo.defaultFolder := selectedFolder;
+            odSelectCombo.defaultFolder     := getCurrentDir;
+            odSelectCombo.okButtonLabel     := 'Seleziona';
             with odSelectCombo.fileTypes.add do
             begin
                displayName := 'File eseguibili';
@@ -559,24 +551,34 @@ implementation
             end;
 
             if odSelectCombo.execute then
-               selectedFile            := odSelectCombo.fileName;
+                selectedFile                := odSelectCombo.fileName;
+
+            if messageDlg('Vuoi aggiungere una cartella d''installazione?', mtConfirmation, mbYesNo, 0) = mrYes then
+            begin
+                odSelectCombo.title         := 'Seleziona la cartella d''installazione';
+                odSelectCombo.options       := [fdoPickFolders, fdoPathMustExist];
+                odSelectCombo.defaultFolder := extractFileName(selectedFile);
+                odSelectCombo.fileTypes.clear;
+
+                if odSelectCombo.execute then
+                   selectedFolder           := odSelectCombo.fileName;
+            end;
 
             odSelectCombo.free;
         end
         else
         begin
-            selectDirectory('Seleziona la cartella d''installazione', getEnvironmentVariable('SYSTEMDRIVE') + '\', selectedFolder);
-
-            odSelectFile                := tOpenDialog.create(self);
-            odSelectFile.title          := 'Seleziona il file d''installazione';
-            odSelectFile.filter         := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
-            odSelectFile.options        := [ofFileMustExist];
-            odSelectFile.initialDir     := getCurrentDir;
-            if selectedFolder <> '' then
-                odSelectFile.initialDir := selectedFolder;
+            odSelectFile            := tOpenDialog.create(self);
+            odSelectFile.title      := 'Seleziona il file d''installazione';
+            odSelectFile.filter     := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
+            odSelectFile.options    := [ofFileMustExist];
+            odSelectFile.initialDir := getCurrentDir;
 
             if odSelectFile.execute then
-               selectedFile        := odSelectFile.fileName;
+               selectedFile         := odSelectFile.fileName;
+
+            if messageDlg('Vuoi aggiungere una cartella d''installazione?', mtConfirmation, mbYesNo, 0) = mrYes then
+                selectDirectory('Seleziona la cartella d''installazione', getEnvironmentVariable('SYSTEMDRIVE') + '\', selectedFolder);
 
             odSelectFile.free;
         end;
@@ -591,10 +593,13 @@ implementation
 
             sTaskMgr.pushTaskToInput(taskAdd);
 
+            // Da controllare, se il task fallisce la parte sotto non deve avvenire!
             if selectedFolder <> '' then
                 leCmdInfo.text := ansiReplaceStr(selectedFile, selectedFolder + '\', '')
             else
                 leCmdInfo.text := extractFileName(selectedFile);
+
+            leCmdInfo.setFocus;
         end;
     end;
 

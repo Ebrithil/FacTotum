@@ -48,7 +48,7 @@ implementation
                     break;
                 except
                     on e: exception do
-                        sEventHdlr.pushEventToList( e.ClassName + ': ' + e.Message, eiError );
+                        sEventHdlr.pushEventToList('Impossibile scaricare il file: ' + e.Message, eiError);
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
@@ -72,7 +72,7 @@ implementation
                     http.disconnect;
                 except
                     on e: exception do
-                        sEventHdlr.pushEventToList( e.ClassName + ': ' + e.Message, eiError );
+                        sEventHdlr.pushEventToList('Impossibile caricare la pagina: ' + e.Message, eiError);
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
