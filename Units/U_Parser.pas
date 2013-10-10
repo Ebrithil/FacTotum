@@ -23,6 +23,7 @@ type
 
 const
     softwareUpdateBaseURL = 'http://www.filehippo.com/';
+    RemoteVersionNotAvailable = 'N/D';
 
 var
     sUpdateParser: updateParser;
@@ -56,7 +57,7 @@ implementation
                     exit;
                 end;
         end;
-        result := 'N/D';
+        result := RemoteVersionNotAvailable;
         sEventHdlr.pushEventToList('Impossibile ricavare la versione del software: ' + swName, eiError);
         swParts.free;
     end;
@@ -70,7 +71,7 @@ implementation
            ansiContainsText(version, 'beta')  or
            ansiContainsText(version, 'rc')    or
            ansiContainsText(version, 'dev')   or
-          (self.getVersionFromFileName(version) = 'N/D') then
+          ( self.getVersionFromFileName(version) = RemoteVersionNotAvailable ) then
             result := false;
     end;
 
@@ -155,7 +156,7 @@ implementation
 
         if not assigned(srcElem) then
         begin
-            result := 'N/D';
+            result := RemoteVersionNotAvailable;
             exit;
         end;
 
@@ -191,7 +192,7 @@ implementation
         if result = '' then
         begin
             sEventHdlr.pushEventToList( 'Nessuna versione accettabile del software trovata.', eiError );
-            result := 'N/D';
+            result := RemoteVersionNotAvailable;
         end;
     end;
 

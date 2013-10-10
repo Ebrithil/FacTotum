@@ -295,7 +295,7 @@ implementation
         query:   string;
         cmdRec:  cmdRecord;
         sqlData: tDataSet;
-        i:       byte;
+        i:       integer;
     begin
         if assigned(m_software) then
         begin
@@ -352,10 +352,11 @@ implementation
 
     function DBManager.getCommandRec(guid: integer): cmdRecord;
     var
-        i,j:    word;
+        i,
+        j:      integer;
         swList: tList;
     begin
-        result:= nil;
+        result := nil;
 
         swList := self.getSoftwareList;
         for i := 0 to pred(swList.count) do
@@ -412,7 +413,7 @@ implementation
 
     function DBManager.getSoftwareRec(guid: integer): swRecord;
     var
-        i:      word;
+        i:      integer;
         swList: tList;
     begin
         result:= nil;
@@ -544,7 +545,7 @@ implementation
 
     procedure DBManager.insertDBRecord(tRecord: recordType; pRecord: DBRecord);
     var
-        i: byte;
+        i: integer;
     begin
         case tRecord of
             recordSoftware:
@@ -724,15 +725,17 @@ implementation
         for i := 0 to pred(self.targetLv.items.count) do
             if ( self.targetLv.items[i].data = self.cmdRec ) then
             begin
-                if self.targetLv.items[i].subItems[integer(lvuSoftware)] = self.new_version then
+                if self.targetLv.items[i].subItems[ integer(lvuSoftware) ] = self.new_version then
                     self.targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
+                else if (self.targetLv.items[i].subItems[ integer(lvuSoftware) ] =  RemoteVersionNotAvailable) then
+                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotYellow)
                 else
                 begin
-                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotYellow);
+                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotRed);
                     self.targetTab.ImageIndex := tImageIndex(tiUpdateNotif);
                 end;
 
-               self.targetLv.items[i].subItems[integer(lvVA)] := self.new_version;
+               self.targetLv.items[i].subItems[ integer(lvVA) ] := self.new_version;
             end;
     end;
 
