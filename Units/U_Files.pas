@@ -20,9 +20,9 @@ type
        public
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
+           function    addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean; overload;
            procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
            procedure   runCommand(cmd: string);
-           procedure   addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''); overload;
            procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
     end;
 
@@ -95,14 +95,13 @@ implementation
         // TODO
     end;
 
-    procedure fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = '');
+    function fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
     var
         soFileOperation: tSHFileOpStruct;
-        taskUpdate:      tTaskRecordUpdate;
         errorCode:       integer;
         tempHash:        string;
     begin
-        // usas FillChar
+        result := false;
         fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
         tempHash := self.getFileHash(fileName);
         with soFileOperation do
@@ -124,13 +123,8 @@ implementation
             sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + ']', eiError)
         else
         begin
-            taskUpdate         := tTaskRecordUpdate.create;
-            taskUpdate.field   := dbFieldCmdHash;
-            taskUpdate.value   := tempHash;
-            taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := cmdRec;
-
-            sTaskMgr.pushTaskToInput(taskUpdate);
+            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);
+            result := true;
         end;
     end;
 
@@ -165,31 +159,23 @@ implementation
     end;
 
     function fileManager.isArchived(fileHash: string): boolean;
-    var
-        i, j:   byte;
-        swList: tList;
     begin
-        result := false;
-        swList := sdbMgr.getSoftwareList;
-        for i := 0 to pred(swList.count) do
-            for j := 0 to pred( swRecord(swList.items[i]).commands.count ) do
-                if cmdRecord( swRecord(swList.items[i]).commands.items[j] ).hash = fileHash then
-                begin
-                    result := true;
-                    exit;
-                end;
+        result := directoryExists(fileHash);
     end;
 
     procedure tTaskAddToArchive.exec;
     var
         taskAdded: tTaskAddedToArchive;
     begin
-        sFileMgr.addSetupToArchive(self.formHandle, self.cmdRec, self.fileName, self.folderName);
+        if (not sFileMgr.addSetupToArchive(self.formHandle, self.cmdRec, self.fileName, self.folderName)) then
+            exit;
 
         taskAdded                := tTaskAddedToArchive.create;
         taskAdded.selectedFile   := self.fileName;
         taskAdded.selectedFolder := self.folderName;
         taskAdded.pReturn        := self.pReturn;
+
+        sTaskMgr.pushTaskToOutput(taskAdded);
     end;
 
     procedure tTaskAddedToArchive.exec;

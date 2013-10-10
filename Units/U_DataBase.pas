@@ -77,7 +77,7 @@ type
             cmdRec:      cmdRecord;
             new_version: string;
 
-            procedure exec(); override;
+            procedure exec; override;
     end;
 
     DBManager = class
@@ -711,7 +711,7 @@ implementation
         sTaskMgr.pushTaskToOutput(returnTask);
     end;
 
-    procedure tTaskSetVer.exec();
+    procedure tTaskSetVer.exec;
     var
         i: integer;
     begin
