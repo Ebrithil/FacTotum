@@ -69,7 +69,7 @@ implementation
                 continue;
             end;
 
-            task := sTaskMgr.pullTaskFromInput();
+            task := sTaskMgr.pullTaskFromInput;
 
             if not( assigned(task) ) then
             begin
@@ -117,7 +117,7 @@ implementation
         setLength(m_threadPool, threadsCount);
 
         for i := 0 to threadsCount - 1 do
-            m_threadPool[i] := thread.create();
+            m_threadPool[i] := thread.create;
 
         sEventHdlr.pushEventToList('ThreadPool inizializzata a ' + IntToStr(threadsCount) + ' threads.', eiInfo);
     end;
@@ -142,7 +142,7 @@ implementation
         self.pushTaskToQueue(taskToAdd, m_inputTasks, m_inputMutex)
     end;
 
-    function taskManager.pullTaskFromInput(): tTask;
+    function taskManager.pullTaskFromInput: tTask;
     begin
         result := self.pullTaskFromQueue(m_inputTasks, m_inputMutex)
     end;
@@ -152,7 +152,7 @@ implementation
         self.pushTaskToQueue(taskToAdd, m_outputTasks, m_outputMutex)
     end;
 
-    function taskManager.pullTaskFromOutput(): tTaskOutput;
+    function taskManager.pullTaskFromOutput: tTaskOutput;
     begin
         result := self.pullTaskFromQueue(m_outputTasks, m_outputMutex) as tTaskOutput
     end;
