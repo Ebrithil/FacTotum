@@ -719,9 +719,9 @@ implementation
             if ( sLvUpdate.items[i].data = self.cmdRec ) then
             begin
                 if sLvUpdate.items[i].subItems[1] = self.new_version then
-                    sLvUpdate.items[i].imageIndex := tImageIndex(eiDotGreen)
+                    sLvUpdate.items[i].stateIndex := tImageIndex(eiDotGreen)
                 else
-                    sLvUpdate.items[i].imageIndex := tImageIndex(eiDotRed);
+                    sLvUpdate.items[i].stateIndex := tImageIndex(eiDotRed);
                 sLvUpdate.items[i].subItems.add(self.new_version);
             end;
     end;

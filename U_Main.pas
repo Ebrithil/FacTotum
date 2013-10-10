@@ -645,6 +645,7 @@ implementation
     var
       sList,
       cList:  tList;
+      swRec:  swRecord;
       cmdRec: cmdRecord;
       i,
       j:      integer;
@@ -652,7 +653,8 @@ implementation
         sList := sDBMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
-            cList := swRecord( sList.items[i] ).commands;
+            swRec := swRecord( sList.items[i] );
+            cList := swRec.commands;
             for j := 0 to pred(cList.count) do
             begin
                 cmdRec  := cList.items[j];
@@ -664,9 +666,9 @@ implementation
                 begin
                     data    := cmdRec;
                     caption := '';
-                    subItems.add( cmdRec.name );
+                    subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) + ']' );
                     subItems.add( cmdRec.vers );
-                    imageIndex := tImageIndex(eiDotYellow);
+                    stateIndex := tImageIndex(eiDotYellow);
                 end;
             end;
         end;
