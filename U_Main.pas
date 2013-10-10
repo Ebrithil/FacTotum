@@ -15,8 +15,6 @@ uses
     U_DataBase, U_Functions, U_Threads, U_OutputTasks, U_Events, U_Parser, U_Download, U_Files;
 
 type
-    tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiEvtErr);
-
     tfFacTotum = class(tForm)
         pcTabs: TPageControl;
         tInstaller: TTabSheet;
@@ -261,8 +259,6 @@ implementation
         fFacTotum.top       := (Screen.Height - Height) div 2;
 
         fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
-
-        sLvUpdate           := lvUpdate;
 
         application.onIdle  := applicationIdleEvents;
 
@@ -613,6 +609,7 @@ implementation
     procedure tfFacTotum.bUpdateClick(Sender: TObject);
     begin
         lvUpdate.clear;
+        tUpdate.ImageIndex := tImageIndex(tiUpdate);
         self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
     end;
@@ -634,8 +631,10 @@ implementation
                 if (cmdRecord( cList.items[j] ).uURL = '') or (cmdRecord( cList.items[j] ).vers = '') then // TODO: Controlla meglio che l'url sia valido
                     continue;
 
-                taskVer        := tTaskGetVer.create;
-                taskVer.cmdRec := cmdRecord( cList.items[j] );
+                taskVer           := tTaskGetVer.create;
+                taskVer.cmdRec    := cmdRecord( cList.items[j] );
+                taskVer.targetTab := tUpdate;
+                taskVer.targetLv  := lvUpdate;
                 sTaskMgr.pushTaskToInput(taskVer);
             end;
         end;

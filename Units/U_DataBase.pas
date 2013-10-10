@@ -10,6 +10,7 @@ uses
     U_InputTasks, U_OutputTasks, U_Parser, U_Events, U_Threads;
 
 type
+    tTabImage = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiUpdateNotif, tiEvtErr);
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
     dbStringsIndex    = ( dbTableCommands, dbTableSoftware,
@@ -68,7 +69,8 @@ type
     tTaskGetVer = class(tTask)
         public
             cmdRec:      cmdRecord;
-            returnValue: string;
+            targetTab:   tTabSheet;
+            targetLv:    tListView;
 
             procedure exec; override;
     end;
@@ -77,6 +79,8 @@ type
         public
             cmdRec:      cmdRecord;
             new_version: string;
+            targetTab:   tTabSheet;
+            targetLv:    tListView;
 
             procedure exec; override;
     end;
@@ -131,7 +135,6 @@ const
 
 var
     sDBMgr: DBManager;
-    sLvUpdate: tListView;
 
 implementation
 
@@ -708,6 +711,8 @@ implementation
         returnTask             := tTaskSetVer.create;
         returnTask.cmdRec      := self.cmdRec;
         returnTask.new_version := new_version;
+        returnTask.targetTab   := self.targetTab;
+        returnTask.targetLv    := self.targetLv;
 
         sTaskMgr.pushTaskToOutput(returnTask);
     end;
@@ -716,15 +721,18 @@ implementation
     var
         i: integer;
     begin
-        for i := 0 to pred(sLvUpdate.items.count) do
-            if ( sLvUpdate.items[i].data = self.cmdRec ) then
+        for i := 0 to pred(self.targetLv.items.count) do
+            if ( self.targetLv.items[i].data = self.cmdRec ) then
             begin
-                if sLvUpdate.items[i].subItems[integer(lvuSoftware)] = self.new_version then
-                    sLvUpdate.items[i].stateIndex := tImageIndex(eiDotGreen)
+                if self.targetLv.items[i].subItems[integer(lvuSoftware)] = self.new_version then
+                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
                 else
-                    sLvUpdate.items[i].stateIndex := tImageIndex(eiDotRed);
+                begin
+                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotYellow);
+                    self.targetTab.ImageIndex := tImageIndex(tiUpdateNotif);
+                end;
 
-               sLvUpdate.items[i].subItems[integer(lvVA)] := self.new_version;
+               self.targetLv.items[i].subItems[integer(lvVA)] := self.new_version;
             end;
     end;
 
