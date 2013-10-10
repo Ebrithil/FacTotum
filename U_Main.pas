@@ -242,7 +242,6 @@ implementation
         end;
 
         pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
-
         lEventsProg.caption := intToStr(pbEvents.position) + '%';
     end;
 
@@ -607,8 +606,14 @@ implementation
     end;
 
     procedure tfFacTotum.bUpdateClick(Sender: TObject);
+    var
+        i: integer;
     begin
         lvUpdate.clear;
+
+        for i := 0 to pred(lvUpdate.controlCount) do
+            lvUpdate.controls[0].free;
+
         tUpdate.ImageIndex := tImageIndex(tiUpdate);
         self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
@@ -628,7 +633,7 @@ implementation
             cList := swRecord( sList.items[i] ).commands;
             for j := 0 to pred(cList.count) do
             begin
-                if (cmdRecord( cList.items[j] ).uURL = '') or (cmdRecord( cList.items[j] ).vers = '') then // TODO: Controlla meglio che l'url sia valido
+                if (cmdRecord( cList.items[j] ).uURL = '') or (cmdRecord( cList.items[j] ).vers = '') then // TODO: Da rimuovere quando sarà previsto l'update manuale
                     continue;
 
                 taskVer           := tTaskGetVer.create;
@@ -643,11 +648,14 @@ implementation
     procedure tfFactotum.fillUpdateSoftwareList;
     var
       sList,
-      cList:  tList;
-      swRec:  swRecord;
-      cmdRec: cmdRecord;
+      cList:   tList;
+      swRec:   swRecord;
+      cmdRec:  cmdRecord;
       i,
-      j:      integer;
+      j,
+      k:       integer;
+      progBar: tProgressBar;
+      progRec: tRect;
     begin
         sList := sDBMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
@@ -658,7 +666,7 @@ implementation
             begin
                 cmdRec  := cList.items[j];
 
-                if (cmdRec.uURL = '') or (cmdRec.vers = '') then // TODO: Controlla meglio che l'url sia valido
+                if (cmdRec.uURL = '') or (cmdRec.vers = '') then // TODO: Da rimuovere quando sarà previsto l'update manuale
                     continue;
 
                 with lvUpdate.items.add do
@@ -668,6 +676,17 @@ implementation
                     subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) + ']' );
                     subItems.add(cmdRec.vers);
                     subItems.add('');
+
+                    progBar        := tProgressBar.create(nil);
+                    progBar.parent := lvUpdate;
+                    progRec        := displayRect(drBounds);
+
+                    for k := 0 to pred( integer(lvProgress) ) do
+                        progRec.left := progRec.left + lvUpdate.columns[k].width;
+
+                    progRec.right      := progRec.left + lvUpdate.columns[ integer(lvProgress) ].width;
+                    progBar.boundsRect := progRec;
+
                     stateIndex := tImageIndex(eiDotYellow);
                 end;
             end;
