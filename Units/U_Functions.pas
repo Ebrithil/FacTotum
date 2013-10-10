@@ -5,8 +5,6 @@ interface
 uses
     winapi.windows, system.strUtils, system.classes, system.sysUtils;
 
-type
-    a = string; // TODO: Trova il modo di sistemare questa cosa.
     function getFmtFileVersion(const fileName: string = ''; const fmt: string = '%d.%d.%d.%d'): string;
     function split(const strBuf: string; const delimiter: string): tStringList;
 
