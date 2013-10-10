@@ -667,7 +667,8 @@ implementation
                     data    := cmdRec;
                     caption := '';
                     subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) + ']' );
-                    subItems.add( cmdRec.vers );
+                    subItems.add(cmdRec.vers);
+                    subItems.add('');
                     stateIndex := tImageIndex(eiDotYellow);
                 end;
             end;

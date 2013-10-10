@@ -4,7 +4,7 @@ interface
 
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
-    vcl.extCtrls, System.StrUtils,
+    vcl.extCtrls, System.StrUtils, vcl.forms,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks;
 
@@ -99,6 +99,7 @@ implementation
     var
         soFileOperation: tSHFileOpStruct;
         errorCode:       integer;
+        tmpTo,
         tempHash:        string;
     begin
         result := false;
@@ -109,18 +110,24 @@ implementation
             wnd    := handle;
             wFunc  := FO_COPY;
 
+            tmpTo := extractFilePath(application.exeName) + self.m_stpFolder + tempHash;
+
             if folderName = '' then
-                pFrom := pchar(fileName + #0)
+            begin
+                pFrom := pchar(fileName + #0);
+                tmpTo := tmpTo + '\' + extractFileName(fileName);
+            end
             else
                 pFrom := pchar(folderName + #0);
 
-            pTo := pchar(self.m_stpFolder + tempHash + #0);
+            pTo := pchar(tmpTo + #0);
+
             fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS;
         end;
         errorCode := SHFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + ']', eiError)
+            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError)
         else
         begin
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);

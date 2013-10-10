@@ -17,6 +17,7 @@ type
                           dbFieldCmdGUID,  dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName,
                           dbFieldCmdCmmd,  dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
                           dbFieldCmdHash );
+    lvUpdateColIndex  = ( lvuSoftware = 1, lvVA, lvUV, lvProgress );
 
     DBRecord = class
     end;
@@ -718,11 +719,12 @@ implementation
         for i := 0 to pred(sLvUpdate.items.count) do
             if ( sLvUpdate.items[i].data = self.cmdRec ) then
             begin
-                if sLvUpdate.items[i].subItems[1] = self.new_version then
+                if sLvUpdate.items[i].subItems[integer(lvuSoftware)] = self.new_version then
                     sLvUpdate.items[i].stateIndex := tImageIndex(eiDotGreen)
                 else
                     sLvUpdate.items[i].stateIndex := tImageIndex(eiDotRed);
-                sLvUpdate.items[i].subItems.add(self.new_version);
+
+               sLvUpdate.items[i].subItems[integer(lvVA)] := self.new_version;
             end;
     end;
 
