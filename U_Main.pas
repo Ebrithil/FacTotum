@@ -255,10 +255,7 @@ implementation
 
         pbUpdate.max        := lvUpdate.items.count;
         pbUpdate.position   := updComp;
-        if pbUpdate.position = pbUpdate.max then
-            lUpdateProg.caption := '100%'
-        else
-            lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
+        lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
