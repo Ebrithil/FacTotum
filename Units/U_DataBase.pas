@@ -69,8 +69,6 @@ type
     tTaskGetVer = class(tTask)
         public
             cmdRec:      cmdRecord;
-            targetTab:   tTabSheet;
-            targetLv:    tListView;
 
             procedure exec; override;
     end;
@@ -79,8 +77,6 @@ type
         public
             cmdRec:      cmdRecord;
             new_version: string;
-            targetTab:   tTabSheet;
-            targetLv:    tListView;
 
             procedure exec; override;
     end;
@@ -709,33 +705,43 @@ implementation
     begin
         new_version := sUpdateParser.getLastStableVerFromURL(self.cmdRec.uURL);
 
-        returnTask             := tTaskSetVer.create;
-        returnTask.cmdRec      := self.cmdRec;
-        returnTask.new_version := new_version;
-        returnTask.targetTab   := self.targetTab;
-        returnTask.targetLv    := self.targetLv;
+        returnTask                 := tTaskSetVer.create;
+        returnTask.cmdRec          := self.cmdRec;
+        returnTask.new_version     := new_version;
+        setLength(returnTask.dummyTargets, 2);
+        returnTask.dummyTargets[0] := self.dummyTargets[0];
+        returnTask.dummyTargets[1] := self.dummyTargets[1];
 
         sTaskMgr.pushTaskToOutput(returnTask);
     end;
 
     procedure tTaskSetVer.exec;
     var
-        i: integer;
+        i:      integer;
+        targetLv: tListView;
+        targetTs: tTabSheet;
     begin
-        for i := 0 to pred(self.targetLv.items.count) do
-            if ( self.targetLv.items[i].data = self.cmdRec ) then
+        if not (self.dummyTargets[0] is tListView) or
+           not (self.dummyTargets[1] is tTabSheet) then
+            exit;
+
+        targetLv := self.dummyTargets[0] as tListView;
+        targetTs := self.dummyTargets[1] as tTabSheet;
+
+        for i := 0 to pred(targetLv.items.count) do
+            if ( targetLv.items[i].data = self.cmdRec ) then
             begin
-                if self.targetLv.items[i].subItems[ integer(lvuSoftware) ] = self.new_version then
-                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
-                else if (self.targetLv.items[i].subItems[ integer(lvuSoftware) ] =  RemoteVersionNotAvailable) then
-                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotYellow)
+                if targetLv.items[i].subItems[ integer(lvuSoftware) ] = self.new_version then
+                    targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
+                else if (targetLv.items[i].subItems[ integer(lvuSoftware) ] =  RemoteVersionNotAvailable) then
+                    targetLv.items[i].stateIndex := tImageIndex(eiDotYellow)
                 else
                 begin
-                    self.targetLv.items[i].stateIndex := tImageIndex(eiDotRed);
-                    self.targetTab.ImageIndex := tImageIndex(tiUpdateNotif);
+                    targetLv.items[i].stateIndex := tImageIndex(eiDotRed);
+                    targetTs.ImageIndex := tImageIndex(tiUpdateNotif);
                 end;
 
-               self.targetLv.items[i].subItems[ integer(lvVA) ] := self.new_version;
+               targetLv.items[i].subItems[ integer(lvVA) ] := self.new_version;
             end;
     end;
 

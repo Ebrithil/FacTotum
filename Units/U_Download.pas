@@ -17,7 +17,6 @@ type
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
         public
             URL:        string;
-            dummyProgB: tProgressBar;
             dataStream: tMemoryStream;
             procedure   exec; override;
     end;
@@ -25,7 +24,6 @@ type
     tTaskDownloadReport = class(tTaskOutput)
         public
             dlPct:      byte;
-            dummyProgB: tProgressBar;
             procedure   exec; override;
     end;
 
@@ -49,24 +47,34 @@ implementation
     procedure tTaskDownload.onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
     var
         reportTask: tTaskDownloadReport;
+        targetPb:   tProgressBar;
     begin
+        if not (self.dummyTargets[0] is tProgressBar) then
+            exit;
+
+        targetPb := self.dummyTargets[0] as tProgressBar;
+
         if aWorkCount >= (self.dlchunk * self.dlcur) then
         begin
-            self.dlcur            := (self.dlchunk * self.dlcur) div aWorkCount;
+            self.dlcur                 := (self.dlchunk * self.dlcur) div aWorkCount;
 
-            reportTask            := tTaskDownloadReport.create;
-            reportTask.dlPct      := trunc( (aWorkCount / self.dlmax) * 100 );
-            reportTask.dummyProgB := self.dummyProgB;
+            reportTask                 := tTaskDownloadReport.create;
+            reportTask.dlPct           := trunc( (aWorkCount / self.dlmax) * 100 );
+
+            setLength(reportTask.dummyTargets, 1);
+            reportTask.dummyTargets[0] := targetPb;
 
             sTaskMgr.pushTaskToOutput(reportTask);
         end
         else if aWorkCount = self.dlmax then
         begin
-            self.dlcur            := 100;
+            self.dlcur                 := 100;
 
-            reportTask            := tTaskDownloadReport.create;
-            reportTask.dlPct      := 100;
-            reportTask.dummyProgB := self.dummyProgB;
+            reportTask                 := tTaskDownloadReport.create;
+            reportTask.dlPct           := 100;
+
+            setLength(reportTask.dummyTargets, 1);
+            reportTask.dummyTargets[0] := targetPb;
 
             sTaskMgr.pushTaskToOutput(reportTask);
         end;
@@ -80,8 +88,15 @@ implementation
     end;
 
     procedure tTaskDownloadReport.exec;
+    var
+        targetPb: tProgressBar;
     begin
-        self.dummyProgB.position := self.dlPct;
+        if not (self.dummyTargets[0] is tProgressBar) then
+            exit;
+
+        targetPb := self.dummyTargets[0] as tProgressBar;
+
+        targetPb.position := self.dlPct;
     end;
 
     function downloadManager.downloadLastStableVersion(URL: string; eOnWork, eOnWorkBegin: tWorkEvent): tMemoryStream;

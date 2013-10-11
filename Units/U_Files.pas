@@ -41,7 +41,6 @@ type
         public
             selectedFile:   string;
             selectedFolder: string;
-            pReturn:        tLabeledEdit;
 
             procedure exec; override;
     end;
@@ -177,20 +176,28 @@ implementation
         if (not sFileMgr.addSetupToArchive(self.formHandle, self.cmdRec, self.fileName, self.folderName)) then
             exit;
 
-        taskAdded                := tTaskAddedToArchive.create;
-        taskAdded.selectedFile   := self.fileName;
-        taskAdded.selectedFolder := self.folderName;
-        taskAdded.pReturn        := self.pReturn;
+        taskAdded                 := tTaskAddedToArchive.create;
+        taskAdded.selectedFile    := self.fileName;
+        taskAdded.selectedFolder  := self.folderName;
+        setLength(taskAdded.dummyTargets, 1);
+        taskAdded.dummyTargets[0] := self.pReturn;
 
         sTaskMgr.pushTaskToOutput(taskAdded);
     end;
 
     procedure tTaskAddedToArchive.exec;
+    var
+        targetLe: tLabeledEdit;
     begin
+        if not (self.dummyTargets[0] is tLabeledEdit) then
+            exit;
+
+        targetLe := self.dummyTargets[0] as tLabeledEdit;
+
         if self.selectedFolder <> '' then
-            self.pReturn.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
+            targetLe.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
         else
-            self.pReturn.text := extractFileName(selectedFile);
+            targetLe.text := extractFileName(selectedFile);
     end;
 
 end.

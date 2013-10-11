@@ -638,8 +638,9 @@ implementation
 
                 taskVer           := tTaskGetVer.create;
                 taskVer.cmdRec    := cmdRecord( cList.items[j] );
-                taskVer.targetTab := tUpdate;
-                taskVer.targetLv  := lvUpdate;
+                setLength(taskVer.dummyTargets, 2);
+                taskVer.dummyTargets[0] := lvUpdate;
+                taskVer.dummyTargets[1] := tUpdate;
                 sTaskMgr.pushTaskToInput(taskVer);
             end;
         end;
