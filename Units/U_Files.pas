@@ -4,26 +4,49 @@ interface
 
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
-    vcl.extCtrls, System.StrUtils, vcl.forms,
+    vcl.extCtrls, System.StrUtils, vcl.forms, vcl.comCtrls, IdComponent,
 
-    U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks;
+    U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser;
 
 type
     fileManager = class
        protected
            m_hasher:    tIdHash;
            m_stpFolder: string;
-           function     getFileHash(fileName: string): string;
+           function     getFileHash(fileName: string): string; overload;
+           function     getFileHash(fileData: tMemoryStream): string; overload;
            function     getArchivePathFor(cmdGuid: integer): string;
            function     isArchived(cmdGuid: integer): boolean; overload;
            function     isArchived(fileHash: string): boolean; overload;
        public
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
-           function    addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean; overload;
-           procedure   saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
+           function    addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
+           function    updateSetupInArchive(cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
            procedure   runCommand(cmd: string);
            procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
+    end;
+
+    tTaskDownload = class(tTask)
+        protected
+            dlmax,
+            dlcur,
+            dlchunk:    int64;
+            cmdRec:     cmdRecord;
+            fileName:   string;
+            procedure   onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
+            procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
+            procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
+        public
+            URL:        string;
+            dataStream: tMemoryStream;
+            procedure   exec; override;
+    end;
+
+    tTaskDownloadReport = class(tTaskOutput)
+        public
+            dlPct:    byte;
+            procedure exec; override;
     end;
 
     tTaskAddToArchive = class(tTask)
@@ -84,9 +107,9 @@ implementation
         msFile.free;
     end;
 
-    procedure fileManager.saveDataStreamToFile(fileName: string; dataStream: tMemoryStream);
+    function fileManager.getFileHash(fileData: tMemoryStream): string;
     begin
-        dataStream.saveToFile(fileName)
+        result := ansiLowerCase( self.m_hasher.hashStreamAsHex(fileData) );
     end;
 
     procedure fileManager.runCommand(cmd: string);
@@ -132,6 +155,21 @@ implementation
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);
             result := true;
         end;
+    end;
+
+    function fileManager.updateSetupInArchive(cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
+    var
+        fileFound: tSearchRec;
+        newHash:   string;
+    begin
+        result  := false;
+        newHash := self.getFileHash(data);
+        renameFile(m_stpFolder + cmdRec.hash, m_stpFolder + newHash);
+        findFirst(m_stpFolder + newHash + '*.exe', faAnyFile, fileFound);
+        renameFile(m_stpFolder + newHash + fileFound.name, m_stpFolder + newHash + fileFound.name + '.old');
+        data.saveToFile(m_stpFolder + newHash + fileName);
+        cmdRec.hash := newHash;
+        sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
     end;
 
     procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
@@ -198,6 +236,72 @@ implementation
             targetLe.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
         else
             targetLe.text := extractFileName(selectedFile);
+    end;
+
+    procedure tTaskDownload.onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
+    var
+        reportTask: tTaskDownloadReport;
+        targetPb:   tProgressBar;
+    begin
+        if not ( self.dummyTargets[0] is tProgressBar ) then
+            exit;
+
+        targetPb := self.dummyTargets[0] as tProgressBar;
+
+        if aWorkCount >= (self.dlchunk * self.dlcur) then
+        begin
+            self.dlcur                 := (self.dlchunk * self.dlcur) div aWorkCount;
+
+            reportTask                 := tTaskDownloadReport.create;
+            reportTask.dlPct           := trunc( (aWorkCount / self.dlmax) * 100 );
+
+            setLength(reportTask.dummyTargets, 1);
+            reportTask.dummyTargets[0] := targetPb;
+
+            sTaskMgr.pushTaskToOutput(reportTask);
+        end
+        else if aWorkCount = self.dlmax then
+        begin
+            self.dlcur       := 100;
+
+            reportTask       := tTaskDownloadReport.create;
+            reportTask.dlPct := 100;
+
+            setLength(reportTask.dummyTargets, 1);
+            reportTask.dummyTargets[0] := targetPb;
+
+            sTaskMgr.pushTaskToOutput(reportTask);
+        end;
+    end;
+
+    procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
+    begin
+        self.dlcur   := 0;
+        self.dlmax   := aWorkCountMax;
+        self.dlchunk := self.dlmax div 100;
+    end;
+
+    procedure tTaskDownload.exec;
+    begin
+        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+        sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
+    end;
+
+    procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
+    begin
+        self.fileName := copy(dest, lastDelimiter('/', dest) + 1, dest.length);
+    end;
+
+    procedure tTaskDownloadReport.exec;
+    var
+        targetPb: tProgressBar;
+    begin
+        if not ( self.dummyTargets[0] is tProgressBar ) then
+            exit;
+
+        targetPb := self.dummyTargets[0] as tProgressBar;
+
+        targetPb.position := self.dlPct;
     end;
 
 end.

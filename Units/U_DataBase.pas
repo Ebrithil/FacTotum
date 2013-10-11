@@ -654,6 +654,7 @@ implementation
                     dbFieldCmdVers: cmdRecord(self.pRecord).vers := self.value;
                     dbFieldCmdArch: cmdRecord(self.pRecord).arch := strToInt(self.value);
                     dbFieldCmduURL: cmdRecord(self.pRecord).uURL := self.value;
+                    dbFieldCmdHash: cmdRecord(self.pRecord).hash := self.value;
                 end;
         end;
         sDBMgr.updateDBRecord(self.tRecord, self.pRecord, self.field, self.value);
