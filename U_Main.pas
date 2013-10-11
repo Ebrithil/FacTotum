@@ -626,8 +626,9 @@ implementation
         i: integer;
     begin
         lvUpdate.clear;
-        pbUpdate.position := 0;
-        bUpdate.enabled   := false;
+        pbUpdate.position   := 0;
+        lUpdateProg.caption := '0%';
+        bUpdate.enabled     := false;
 
         for i := 0 to pred(lvUpdate.controlCount) do
             lvUpdate.controls[0].free;
