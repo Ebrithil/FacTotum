@@ -58,7 +58,7 @@ implementation
                 end;
         end;
         result := RemoteVersionNotAvailable;
-        sEventHdlr.pushEventToList('Impossibile ricavare la versione del software: ' + swName, eiError);
+        sEventHdlr.pushEventToList('Impossibile ricavare la versione: ' + swName, eiError);
         swParts.free;
     end;
 
@@ -184,14 +184,14 @@ implementation
                     result := self.getVersionFromFileName( trim(srcTagE.innerText) );
                     break;
                 end
-                else
-                    sEventHdlr.pushEventToList('Versione del software non accettabile: ' + srcTagE.innerText + '.', eiAlert);
+                //else
+                //    sEventHdlr.pushEventToList('Versione non stabile: ' + srcTagE.innerText + '.', eiAlert);
             end;
         end;
 
         if result = '' then
         begin
-            sEventHdlr.pushEventToList( 'Nessuna versione accettabile del software trovata.', eiError );
+            sEventHdlr.pushEventToList( 'Nessuna versione stabile trovata: ' + srcTagE.innerText + '.', eiError);
             result := RemoteVersionNotAvailable;
         end;
     end;

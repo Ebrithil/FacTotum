@@ -28,13 +28,13 @@ type
         rgArchInfo: TRadioGroup;
         leCmdInfo: TLabeledEdit;
         pmSoftware: TPopupMenu;
-        pmInsert: TMenuItem;
-        pmDelete: TMenuItem;
+        miInsert: TMenuItem;
+        miDelete: TMenuItem;
         lUpdate: TLabel;
         pbUpdate: TProgressBar;
         leVerInfo: TLabeledEdit;
         leUrlInfo: TLabeledEdit;
-        pmSetMainCmd: TMenuItem;
+        miSetMainCmd: TMenuItem;
         lUpdateProg: TLabel;
         tLog: TTabSheet;
         lCmdInstProg: TLabel;
@@ -50,16 +50,18 @@ type
         pbEvents: TProgressBar;
         lEventsProg: TLabel;
         lEvents: TLabel;
+        pmUpdate: TPopupMenu;
+        miUpdate: TMenuItem;
 
         procedure formCreate(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
         procedure bEmptyClick(sender: tObject);
         procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
         procedure formClose(sender: tObject; var action: tCloseAction);
-        procedure pmInsertClick(sender: tObject);
+        procedure miInsertClick(sender: tObject);
         procedure tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
         procedure pmSoftwarePopup(sender: tObject);
-        procedure pmDeleteClick(sender: tObject);
+        procedure miDeleteClick(sender: tObject);
         procedure leCmdInfoExit(sender: tObject);
         procedure leVerInfoExit(sender: tObject);
         procedure leVerInfoKeyPress(sender: tObject; var key: char);
@@ -72,6 +74,8 @@ type
         procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
         procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
         procedure bUpdateClick(sender: tObject);
+        procedure pmUpdatePopup(sender: tObject);
+        procedure miUpdateClick(sender: tObject);
 
         procedure fillConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
@@ -231,18 +235,6 @@ implementation
                     event.free;
                 end;
 
-        taskOut := sTaskMgr.pullTaskFromOutput;
-
-        if not assigned(taskOut) then
-            exit;
-
-        while( assigned(taskOut) ) do
-        begin
-            taskOut.exec;
-            taskOut.free;
-            taskOut := sTaskMgr.pullTaskFromOutput;
-        end;
-
         // Visualizza il carico di lavoro della ThreadPool
         pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
         lEventsProg.caption := intToStr(pbEvents.position) + '%';
@@ -250,7 +242,7 @@ implementation
         // Visualizza l'avanzamento della ricerca aggiornamenti
         updComp := 0;
         for i := 0 to pred(lvUpdate.items.count) do
-            if trim(lvUpdate.Items[i].subItems[2]) <> '' then
+            if trim(lvUpdate.items[i].subItems[ pred( integer(lvColUV) ) ]) <> '' then
                 inc(updComp);
 
         pbUpdate.max        := lvUpdate.items.count;
@@ -259,6 +251,14 @@ implementation
 
         if pbUpdate.position = pbUpdate.max then
             bUpdate.enabled := true;
+
+        // Processa la coda di output
+        taskOut := sTaskMgr.pullTaskFromOutput;
+        if assigned(taskOut) then
+        begin
+            taskOut.exec;
+            taskOut.free;
+        end;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
@@ -443,7 +443,7 @@ implementation
             end;
     end;
 
-    procedure tfFacTotum.pmInsertClick(Sender: TObject);
+    procedure tfFacTotum.miInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordInsert;
         command:    cmdRecord;
@@ -486,27 +486,46 @@ implementation
         sTaskMgr.pushTaskToInput(taskInsert);
     end;
 
+    procedure tfFacTotum.miUpdateClick(Sender: TObject);
+    var
+        taskDownload: tTaskDownload;
+    begin
+        taskDownload     := tTaskDownload.create;
+        taskDownload.URL := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
+
+        setLength(taskDownload.dummyTargets, 2);
+        taskDownload.dummyTargets[0] := tProgressBar(lvUpdate.controls[lvUpdate.selected.index]);
+        taskDownload.dummyTargets[1] := tObject(lvUpdate.items[lvUpdate.selected.index].subItems[pred( integer(lvColStatus) )]);
+
+        sTaskMgr.pushTaskToInput(taskDownload);
+    end;
+
     procedure tfFacTotum.pmSoftwarePopup(Sender: TObject);
     begin
-        pmDelete.enabled := false;
+        miDelete.enabled := false;
 
         if assigned(tvConfig.selected) then
         begin
             if assigned(tvConfig.selected.parent) then
             begin
-                pmInsert.caption := 'Inserisci comando';
-                pmDelete.caption := 'Elimina comando';
+                miInsert.caption := 'Inserisci comando';
+                miDelete.caption := 'Elimina comando';
             end
             else
             begin
-                pmInsert.caption := 'Inserisci software';
-                pmDelete.caption := 'Elimina software';
+                miInsert.caption := 'Inserisci software';
+                miDelete.caption := 'Elimina software';
             end;
-            pmDelete.enabled := true;
+            miDelete.enabled := true;
         end;
     end;
 
-    procedure tfFacTotum.pmDeleteClick(sender: tObject);
+    procedure tfFacTotum.pmUpdatePopup(Sender: TObject);
+    begin
+        miUpdate.enabled := lvUpdate.Selected.StateIndex = tImageIndex(eiDotRed);
+    end;
+
+    procedure tfFacTotum.miDeleteClick(sender: tObject);
     var
         taskDelete: tTaskRecordDelete;
     begin
@@ -622,18 +641,16 @@ implementation
     end;
 
     procedure tfFacTotum.bUpdateClick(Sender: TObject);
-    var
-        i: integer;
     begin
         lvUpdate.clear;
         pbUpdate.position   := 0;
         lUpdateProg.caption := '0%';
         bUpdate.enabled     := false;
 
-        for i := 0 to pred(lvUpdate.controlCount) do
+        while lvUpdate.controlCount > 0 do
             lvUpdate.controls[0].free;
 
-        tUpdate.ImageIndex := tImageIndex(tiUpdate);
+        tUpdate.imageIndex := tImageIndex(tiUpdate);
         self.fillUpdateSoftwareList;
         self.sendUpdateSoftwareList;
     end;
@@ -652,7 +669,7 @@ implementation
             cList := swRecord( sList.items[i] ).commands;
             for j := 0 to pred(cList.count) do
             begin
-                if (cmdRecord( cList.items[j] ).uURL = '') or (cmdRecord( cList.items[j] ).vers = '') then // TODO: Da rimuovere quando sarà previsto l'update manuale
+                if ( cmdRecord(cList.items[j]).uURL = '' ) or ( cmdRecord(cList.items[j]).vers = '' ) then // TODO: Da rimuovere quando sarà previsto l'update manuale
                     continue;
 
                 taskVer           := tTaskGetVer.create;
@@ -696,15 +713,17 @@ implementation
                     subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) + ']' );
                     subItems.add(cmdRec.vers);
                     subItems.add('');
+                    subItems.add('');
+                    subItems.add('');
 
                     progBar        := tProgressBar.create(nil);
                     progBar.parent := lvUpdate;
                     progRec        := displayRect(drBounds);
 
-                    for k := 0 to pred( integer(lvProgress) ) do
+                    for k := 0 to pred( integer(lvColProgress) ) do
                         progRec.left := progRec.left + lvUpdate.columns[k].width;
 
-                    progRec.right      := progRec.left + lvUpdate.columns[ integer(lvProgress) ].width;
+                    progRec.right      := progRec.left + lvUpdate.columns[ integer(lvColProgress) ].width;
                     progBar.boundsRect := progRec;
 
                     stateIndex := tImageIndex(eiDotYellow);

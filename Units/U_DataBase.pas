@@ -18,7 +18,7 @@ type
                           dbFieldCmdGUID,  dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName,
                           dbFieldCmdCmmd,  dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
                           dbFieldCmdHash );
-    lvUpdateColIndex  = ( lvuSoftware = 1, lvVA, lvUV, lvProgress );
+    lvUpdateColIndex  = ( lvColSoftCmd = 1, lvColVA, lvColUV, lvColProgress, lvColStatus );
 
     DBRecord = class
     end;
@@ -732,9 +732,9 @@ implementation
         for i := 0 to pred(targetLv.items.count) do
             if ( targetLv.items[i].data = self.cmdRec ) then
             begin
-                if targetLv.items[i].subItems[ integer(lvuSoftware) ] = self.new_version then
+                if targetLv.items[i].subItems[ integer(lvColSoftCmd) ] = self.new_version then
                     targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
-                else if (targetLv.items[i].subItems[ integer(lvuSoftware) ] =  RemoteVersionNotAvailable) then
+                else if (targetLv.items[i].subItems[ integer(lvColSoftCmd) ] =  RemoteVersionNotAvailable) then
                     targetLv.items[i].stateIndex := tImageIndex(eiDotYellow)
                 else
                 begin
@@ -742,7 +742,7 @@ implementation
                     targetTs.ImageIndex := tImageIndex(tiUpdateNotif);
                 end;
 
-               targetLv.items[i].subItems[ integer(lvVA) ] := self.new_version;
+               targetLv.items[i].subItems[ integer(lvColVA) ] := self.new_version;
             end;
     end;
 

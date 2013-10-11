@@ -4,7 +4,7 @@ interface
 
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
-    vcl.extCtrls, System.StrUtils, vcl.forms, vcl.comCtrls, IdComponent,
+    vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, vcl.forms, vcl.comCtrls, IdComponent, IdURI,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser;
 
@@ -290,17 +290,20 @@ implementation
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
     begin
         self.fileName := copy(dest, lastDelimiter('/', dest) + 1, dest.length);
+        dest := tIdURI.urlEncode(dest);
     end;
 
     procedure tTaskDownloadReport.exec;
     var
+        targetL:  string;
         targetPb: tProgressBar;
     begin
-        if not ( self.dummyTargets[0] is tProgressBar ) then
+        if self.dummyTargets[0] is tProgressBar then
             exit;
 
-        targetPb := self.dummyTargets[0] as tProgressBar;
-
+        targetL           := string(self.dummyTargets[1]);
+        targetPb          := self.dummyTargets[0] as tProgressBar;
+        targetL           := intToStr(self.dlPct) + '%';
         targetPb.position := self.dlPct;
     end;
 

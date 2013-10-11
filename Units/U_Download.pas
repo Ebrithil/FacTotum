@@ -24,6 +24,7 @@ var
     sDownloadMgr: downloadManager;
 
 implementation
+
     function downloadManager.downloadLastStableVersion(URL: string; eOnWork, eOnWorkBegin: tWorkEvent; eOnRedirect: TIdHTTPOnRedirectEvent): tMemoryStream;
     var
         http:  tIdHTTP;
