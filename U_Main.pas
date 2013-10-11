@@ -256,6 +256,9 @@ implementation
         pbUpdate.max        := lvUpdate.items.count;
         pbUpdate.position   := updComp;
         lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
+
+        if pbUpdate.position = pbUpdate.max then
+            bUpdate.enabled := true;
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
@@ -623,6 +626,8 @@ implementation
         i: integer;
     begin
         lvUpdate.clear;
+        pbUpdate.position := 0;
+        bUpdate.enabled   := false;
 
         for i := 0 to pred(lvUpdate.controlCount) do
             lvUpdate.controls[0].free;
