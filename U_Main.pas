@@ -209,6 +209,8 @@ implementation
 
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
     var
+        i,
+        updComp: word;
         taskOut: tTaskOutput;
         event:   tEvent;
     begin
@@ -241,8 +243,22 @@ implementation
             taskOut := sTaskMgr.pullTaskFromOutput;
         end;
 
+        // Visualizza il carico di lavoro della ThreadPool
         pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
         lEventsProg.caption := intToStr(pbEvents.position) + '%';
+
+        // Visualizza l'avanzamento della ricerca aggiornamenti
+        updComp := 0;
+        for i := 0 to pred(lvUpdate.items.count) do
+            if trim(lvUpdate.Items[i].subItems[2]) <> '' then
+                inc(updComp);
+
+        pbUpdate.max        := lvUpdate.items.count;
+        pbUpdate.position   := updComp;
+        if pbUpdate.position = pbUpdate.max then
+            lUpdateProg.caption := '100%'
+        else
+            lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
     end;
 
     procedure tfFacTotum.formCreate(sender: tObject);
