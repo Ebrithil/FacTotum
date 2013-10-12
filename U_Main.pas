@@ -124,7 +124,15 @@ implementation
 
     procedure tfFacTotum.formClose(sender: tObject; var action: tCloseAction);
     begin
-        sTaskMgr.free;
+        if sTaskMgr.getBusyThreadsCount > 0 then
+            if messageDlg('Ci sono ancora dei processi in esecuzione.'
+                        + #13 + #13
+                        + 'Vuoi interromperli subito?', mtWarning, mbYesNo, 0) = mrYes then
+                sTaskMgr.Destroy(true)
+            else
+                sTaskMgr.Destroy(false)
+        else
+            sTaskMgr.Destroy(false);
     end;
 
     procedure tfFacTotum.fillConfigureSoftwareList;
