@@ -82,9 +82,6 @@ type
         procedure fillUpdateSoftwareList;
     end;
 
-const
-    FH_URL = 'http://www.filehippo.com/';
-
 var
     fFacTotum: tfFacTotum;
 
@@ -215,6 +212,7 @@ implementation
     var
         i,
         updComp: word;
+        chkJobs: boolean;
         taskOut: tTaskOutput;
         event:   tEvent;
     begin
@@ -252,8 +250,17 @@ implementation
             lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
         end;
 
-        if pbUpdate.position = pbUpdate.max then
-            bUpdate.enabled := true;
+        if not bUpdate.enabled then
+        begin
+            chkJobs := true;
+            for i := 0 to pred(lvUpdate.items.count) do
+                if lvUpdate.items[i].stateIndex in [tImageIndex(eiDotYellow), tImageIndex(eiDotRed)] then
+                begin
+                    chkJobs := false;
+                    break;
+                end;
+            bUpdate.enabled := chkJobs;
+        end;
 
         // Processa la coda di output
         taskOut := sTaskMgr.pullTaskFromOutput;
@@ -497,6 +504,8 @@ implementation
         curRow:       integer;
         taskDownload: tTaskDownload;
     begin
+        lvUpdate.selected.stateIndex := tImageIndex(eiDotYellow);
+
         taskDownload        := tTaskDownload.create;
         taskDownload.URL    := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
         taskDownload.cmdRec := lvUpdate.selected.data;
@@ -533,7 +542,7 @@ implementation
 
     procedure tfFacTotum.pmUpdatePopup(Sender: TObject);
     begin
-        miUpdate.enabled := lvUpdate.Selected.StateIndex = tImageIndex(eiDotRed);
+        miUpdate.enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed);
     end;
 
     procedure tfFacTotum.miDeleteClick(sender: tObject);
@@ -727,12 +736,14 @@ implementation
                     subItems.add('');
                     subItems.add('');
 
-                    progBar          := tProgressBar.create(nil);
-                    progBar.parent   := lvUpdate;
-                    progBar.max      := 100;
-                    progBar.min      := 0;
-                    progBar.position := 0;
-                    progRec          := displayRect(drBounds);
+                    progBar               := tProgressBar.create(nil);
+                    progBar.parent        := lvUpdate;
+                    progBar.max           := 100;
+                    progBar.min           := 0;
+                    progBar.position      := 0;
+                    progBar.barColor      := clLime;
+                    progBar.styleElements := [seFont, seBorder];
+                    progRec               := displayRect(drBounds);
 
                     for k := 0 to pred( integer(lvColProgress) ) do
                         progRec.left := progRec.left + lvUpdate.columns[k].width;
