@@ -3,7 +3,7 @@ unit U_Parser;
 interface
 
 uses
-    MSHTML, System.Classes, System.SysUtils, System.StrUtils, System.Variants, ActiveX,
+    MSHTML, System.Classes, System.SysUtils, System.StrUtils, System.Variants, ActiveX, System.UITypes,
 
     U_Threads, U_Functions, U_Events, U_Download, U_InputTasks, U_OutputTasks;
 

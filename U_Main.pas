@@ -130,9 +130,9 @@ implementation
                         + 'Vuoi interromperli subito?', mtWarning, mbYesNo, 0) = mrYes then
                 sTaskMgr.Destroy(true)
             else
-                sTaskMgr.Destroy(false)
+                sTaskMgr.Destroy
         else
-            sTaskMgr.Destroy(false);
+            sTaskMgr.Destroy;
     end;
 
     procedure tfFacTotum.fillConfigureSoftwareList;

@@ -3,7 +3,7 @@ unit U_Download;
 interface
 
 uses
-    System.Classes, IdHTTP, System.SysUtils, IdComponent,
+    System.Classes, IdHTTP, System.SysUtils, IdComponent, System.UITypes,
 
     U_Events, U_Threads, U_InputTasks, U_OutputTasks;
 

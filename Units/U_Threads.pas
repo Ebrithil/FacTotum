@@ -24,7 +24,7 @@ type
         public
             constructor create; overload;
             constructor create(const threadsCount: byte); overload;
-            destructor  Destroy(forced: boolean = false); overload;
+            destructor  Destroy(forced: boolean = false); reintroduce; overload;
 
             function  getBusyThreadsCount: byte;
             function  getThreadsCount: byte;
@@ -96,7 +96,7 @@ implementation
         self.create(CPUCount)
     end;
 
-    destructor taskManager.Destroy(forced: boolean);
+    destructor taskManager.Destroy(forced: boolean = false);
     var
         i: integer;
     begin
