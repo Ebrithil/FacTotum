@@ -32,13 +32,13 @@ type
             dlmax,
             dlcur,
             dlchunk:    int64;
-            cmdRec:     cmdRecord;
             fileName:   string;
             procedure   onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
             procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
         public
             URL:        string;
+            cmdRec:     cmdRecord;
             dataStream: tMemoryStream;
             procedure   exec; override;
     end;
@@ -164,9 +164,16 @@ implementation
     begin
         result  := false;
         newHash := self.getFileHash(data);
-        renameFile(m_stpFolder + cmdRec.hash, m_stpFolder + newHash);
-        findFirst(m_stpFolder + newHash + '*.exe', faAnyFile, fileFound);
-        renameFile(m_stpFolder + newHash + fileFound.name, m_stpFolder + newHash + fileFound.name + '.old');
+
+        if fileExists(m_stpFolder + cmdRec.hash) then
+        begin
+            renameFile(m_stpFolder + cmdRec.hash, m_stpFolder + newHash);
+            findFirst(m_stpFolder + newHash + '*.exe', faAnyFile, fileFound);
+            renameFile(m_stpFolder + newHash + fileFound.name, m_stpFolder + newHash + fileFound.name + '.old');
+        end
+        else
+            sEventHdlr.pushEventToList('Impossibile trovare la versione precedente del comando guid: ' + intToStr(cmdRec.guid) + ' (software guid: ' + intToStr(cmdRec.swid) + ').', eiAlert);
+
         data.saveToFile(m_stpFolder + newHash + fileName);
         cmdRec.hash := newHash;
         sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
@@ -241,13 +248,7 @@ implementation
     procedure tTaskDownload.onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
     var
         reportTask: tTaskDownloadReport;
-        targetPb:   tProgressBar;
     begin
-        if not ( self.dummyTargets[0] is tProgressBar ) then
-            exit;
-
-        targetPb := self.dummyTargets[0] as tProgressBar;
-
         if aWorkCount >= ( self.dlchunk * succ(self.dlcur) ) then
         begin
             self.dlcur                 := aWorkCount div self.dlchunk;
@@ -255,8 +256,9 @@ implementation
             reportTask                 := tTaskDownloadReport.create;
             reportTask.dlPct           := self.dlcur;
 
-            setLength(reportTask.dummyTargets, 1);
-            reportTask.dummyTargets[0] := targetPb;
+            setLength(reportTask.dummyTargets, 2);
+            reportTask.dummyTargets[0] := self.dummyTargets[0];
+            reportTask.dummyTargets[1] := self.dummyTargets[1];
 
             sTaskMgr.pushTaskToOutput(reportTask);
         end
@@ -267,8 +269,9 @@ implementation
             reportTask       := tTaskDownloadReport.create;
             reportTask.dlPct := self.dlcur;
 
-            setLength(reportTask.dummyTargets, 1);
-            reportTask.dummyTargets[0] := targetPb;
+            setLength(reportTask.dummyTargets, 2);
+            reportTask.dummyTargets[0] := self.dummyTargets[0];
+            reportTask.dummyTargets[1] := self.dummyTargets[1];
 
             sTaskMgr.pushTaskToOutput(reportTask);
         end;
@@ -283,8 +286,12 @@ implementation
 
     procedure tTaskDownload.exec;
     begin
+        if not (self.dummyTargets[0] is tProgressBar) or
+           not (self.dummyTargets[1] is tListItem) then
+            exit;
+
         self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
-        //sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
+        sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
@@ -295,16 +302,17 @@ implementation
 
     procedure tTaskDownloadReport.exec;
     var
-        targetL:  string;
+        targetL:  tListItem;
         targetPb: tProgressBar;
     begin
-        if self.dummyTargets[0] is tProgressBar then
-            exit;
+        if not (self.dummyTargets[0] is tProgressBar) or
+           not (self.dummyTargets[1] is tListItem) then
+             exit;
 
-        targetL           := string(self.dummyTargets[1]);
-        targetPb          := self.dummyTargets[0] as tProgressBar;
-        targetL           := intToStr(self.dlPct) + '%';
-        targetPb.position := self.dlPct;
+        targetL                                        := self.dummyTargets[1] as tListItem;
+        targetPb                                       := self.dummyTargets[0] as tProgressBar;
+        targetL.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
+        targetPb.position                              := self.dlPct;
     end;
 
 end.

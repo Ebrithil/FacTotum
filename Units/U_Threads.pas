@@ -32,6 +32,7 @@ type
             procedure pushTaskToInput(taskToAdd: tTask);
             function  pullTaskFromOutput: tTaskOutput;
             procedure pushTaskToOutput(taskToAdd: tTaskOutput);
+            function  isTaskOutputEmpty: boolean;
 
         protected
             m_threadPool: tThreads;
@@ -150,6 +151,11 @@ implementation
     procedure taskManager.pushTaskToOutput(taskToAdd: tTaskOutput);
     begin
         self.pushTaskToQueue(taskToAdd, m_outputTasks, m_outputMutex)
+    end;
+
+    function taskManager.isTaskOutputEmpty: boolean;
+    begin
+        result := (m_outputTasks.count = 0);
     end;
 
     function taskManager.pullTaskFromOutput: tTaskOutput;

@@ -30,7 +30,7 @@ implementation
         http:  tIdHTTP;
         tries: byte;
     begin
-        result               := nil;
+        result               := tMemoryStream.create;
         tries                := 0;
         http                 := tIdHTTP.create;
         http.onWork          := eOnWork;

@@ -241,13 +241,16 @@ implementation
 
         // Visualizza l'avanzamento della ricerca aggiornamenti
         updComp := 0;
-        for i := 0 to pred(lvUpdate.items.count) do
-            if trim(lvUpdate.items[i].subItems[ pred( integer(lvColUV) ) ]) <> '' then
-                inc(updComp);
+        if lvUpdate.items.count > 0 then
+        begin
+            for i := 0 to pred(lvUpdate.items.count) do
+                if trim(lvUpdate.items[i].subItems[ pred( integer(lvColUV) ) ]) <> '' then
+                    inc(updComp);
 
-        pbUpdate.max        := lvUpdate.items.count;
-        pbUpdate.position   := updComp;
-        lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
+            pbUpdate.max        := lvUpdate.items.count;
+            pbUpdate.position   := updComp;
+            lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
+        end;
 
         if pbUpdate.position = pbUpdate.max then
             bUpdate.enabled := true;
@@ -258,6 +261,9 @@ implementation
         begin
             taskOut.exec;
             taskOut.free;
+
+            if not sTaskMgr.isTaskOutputEmpty then
+                done := false;
         end;
     end;
 
@@ -491,15 +497,18 @@ implementation
         curRow:       integer;
         taskDownload: tTaskDownload;
     begin
-        taskDownload     := tTaskDownload.create;
-        taskDownload.URL := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
+        taskDownload        := tTaskDownload.create;
+        taskDownload.URL    := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
+        taskDownload.cmdRec := lvUpdate.selected.data;
 
         curRow := lvUpdate.selected.index;
         setLength(taskDownload.dummyTargets, 2);
         taskDownload.dummyTargets[0] := tProgressBar( lvUpdate.controls[curRow] );
-        taskDownload.dummyTargets[1] := tObject(lvUpdate.items[curRow].subItems[ pred( integer(lvColStatus) ) ]);
+        taskDownload.dummyTargets[1] := lvUpdate.selected;
 
         sTaskMgr.pushTaskToInput(taskDownload);
+
+        lvUpdate.selected.subitems[pred( integer(lvColStatus) )] := '0%';
     end;
 
     procedure tfFacTotum.pmSoftwarePopup(Sender: TObject);
