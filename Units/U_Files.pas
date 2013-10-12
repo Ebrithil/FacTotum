@@ -4,7 +4,7 @@ interface
 
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
-    vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, vcl.forms, vcl.comCtrls, IdComponent, IdURI,
+    vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, System.UITypes, Vcl.forms, vcl.comCtrls, IdComponent, IdURI,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser;
 
@@ -302,17 +302,21 @@ implementation
 
     procedure tTaskDownloadReport.exec;
     var
-        targetL:  tListItem;
-        targetPb: tProgressBar;
+        targetLI: tListItem;
+        targetPB: tProgressBar;
     begin
         if not (self.dummyTargets[0] is tProgressBar) or
            not (self.dummyTargets[1] is tListItem) then
              exit;
 
-        targetL                                        := self.dummyTargets[1] as tListItem;
-        targetPb                                       := self.dummyTargets[0] as tProgressBar;
-        targetL.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
-        targetPb.position                              := self.dlPct;
+        targetLI                                        := self.dummyTargets[1] as tListItem;
+        targetPB                                        := self.dummyTargets[0] as tProgressBar;
+        targetLI.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
+        targetPb.position                               := self.dlPct;
+
+        if self.dlPct = 100 then
+            targetLI.stateIndex := tImageIndex(eiDotGreen);
+            // Bisogna far chiamare un task specifico per il refresh di questa singola riga...
     end;
 
 end.

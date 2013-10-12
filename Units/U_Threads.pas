@@ -3,7 +3,7 @@ unit U_Threads;
 interface
 
 uses
-    System.SyncObjs, System.Types, System.Classes, System.SysUtils, System.UITypes,
+    System.SyncObjs, System.Types, System.Classes, System.SysUtils, System.UITypes, Windows,
 
     U_InputTasks, U_OutputTasks, U_Events;
 
@@ -24,7 +24,7 @@ type
         public
             constructor create; overload;
             constructor create(const threadsCount: byte); overload;
-            destructor  Destroy; override;
+            destructor  Destroy(forced: boolean = false); overload;
 
             function  getBusyThreadsCount: byte;
             function  getThreadsCount: byte;
@@ -96,20 +96,26 @@ implementation
         self.create(CPUCount)
     end;
 
-    destructor taskManager.Destroy;
+    destructor taskManager.Destroy(forced: boolean);
     var
         i: integer;
     begin
-        for i := 0 to pred(length(m_threadPool)) do
-            m_threadPool[i].terminate;
-
-        for i := 0 to pred(length(m_threadPool)) do
+        if forced then
+            for i := 0 to pred( length(m_threadPool) ) do
+                terminateThread(m_threadPool[i].threadID, 0)
+        else
         begin
-            m_threadPool[i].waitFor;
-            m_threadPool[i].free;
+            for i := 0 to pred( length(m_threadPool) ) do
+                m_threadPool[i].terminate;
+
+            for i := 0 to pred( length(m_threadPool) ) do
+            begin
+                m_threadPool[i].waitFor;
+                m_threadPool[i].free;
+            end;
         end;
 
-        inherited;
+        inherited Destroy;
     end;
 
     constructor taskManager.create(const threadsCount: byte);
