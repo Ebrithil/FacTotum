@@ -46,7 +46,7 @@ implementation
                     break;
                 except
                     on e: exception do
-                        sEventHdlr.pushEventToList('Impossibile scaricare il file: ' + e.Message, eiError);
+                        createEvent('Impossibile scaricare il file: ' + e.Message, eiError);
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally
@@ -70,7 +70,7 @@ implementation
                     http.disconnect;
                 except
                     on e: exception do
-                        sEventHdlr.pushEventToList('Impossibile caricare la pagina: ' + e.Message, eiError);
+                        createEvent('Impossibile caricare la pagina: ' + e.Message, eiError);
                 end;
             until (tries = defaultMaxConnectionRetries);
         finally

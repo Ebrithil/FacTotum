@@ -10,7 +10,6 @@ uses
     U_InputTasks, U_OutputTasks, U_Parser, U_Events, U_Threads;
 
 type
-    tTabImage = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiUpdateNotif, tiEvtErr);
     compatibilityMask = ( archNone, archx86, archx64 );
     recordType        = ( recordSoftware, recordCommand );
     dbStringsIndex    = ( dbTableCommands, dbTableSoftware,
@@ -183,19 +182,19 @@ implementation
     begin
         if not( fileExists(m_DBNamePath) ) then
         begin
-             sEventHdlr.pushEventToList('DataBase non trovato.', eiAlert);
-             sEventHdlr.pushEventToList('Il DataBase verra'' ricreato.', eiAlert);
+             createEvent('DataBase non trovato.', eiAlert);
+             createEvent('Il DataBase verra'' ricreato.', eiAlert);
         end;
 
         //setDllDirectory('.\dll');
         try
             try
                 m_connector.open;
-                sEventHdlr.pushEventToList('Stabilita connessione al DataBase.', eiInfo);
+                createEvent('Stabilita connessione al DataBase.', eiInfo);
                 self.rebuildDBStructure;
             except
                 on e: exception do
-                    sEventHdlr.pushEventToList('Impossibile connettersi al DataBase: ' + e.Message, eiError);
+                    createEvent('Impossibile connettersi al DataBase: ' + e.Message, eiError);
             end;
         finally
             //setDllDirectory('');
@@ -206,10 +205,10 @@ implementation
     begin
         try
             m_connector.close;
-            sEventHdlr.pushEventToList('Terminata connessione al DataBase.', eiInfo);
+            createEvent('Terminata connessione al DataBase.', eiInfo);
         except
             on e: exception do
-                sEventHdlr.pushEventToList('Impossibile disconnettersi dal DataBase: ' + e.message, eiError);
+                createEvent('Impossibile disconnettersi dal DataBase: ' + e.message, eiError);
         end;
     end;
 
@@ -221,7 +220,7 @@ implementation
             result:= true;
         except
             on e: exception do
-                sEventHdlr.pushEventToList('Impossibile eseguire la Query: ' + e.message, eiError);
+                createEvent('Impossibile eseguire la Query: ' + e.message, eiError);
         end;
     end;
 
@@ -232,7 +231,7 @@ implementation
             self.m_connector.execute(qString, nil, result);
         except
             on e: exception do
-                sEventHdlr.pushEventToList('Impossibile eseguire la Query: ' + e.message, eiError);
+                createEvent('Impossibile eseguire la Query: ' + e.message, eiError);
         end;
     end;
 

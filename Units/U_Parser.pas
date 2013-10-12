@@ -58,7 +58,7 @@ implementation
                 end;
         end;
         result := RemoteVersionNotAvailable;
-        sEventHdlr.pushEventToList('Impossibile ricavare la versione: ' + swName, eiError);
+        createEvent('Impossibile ricavare la versione: ' + swName, eiError);
         swParts.free;
     end;
 
@@ -191,7 +191,7 @@ implementation
 
         if result = '' then
         begin
-            sEventHdlr.pushEventToList( 'Nessuna versione stabile trovata: ' + srcTagE.innerText + '.', eiError);
+            createEvent( 'Nessuna versione stabile trovata: ' + srcTagE.innerText + '.', eiError);
             result := RemoteVersionNotAvailable;
         end;
     end;

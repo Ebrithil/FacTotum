@@ -3,7 +3,7 @@ unit U_Threads;
 interface
 
 uses
-    System.SyncObjs, System.Types, System.Classes, System.SysUtils,
+    System.SyncObjs, System.Types, System.Classes, System.SysUtils, System.UITypes,
 
     U_InputTasks, U_OutputTasks, U_Events;
 
@@ -42,6 +42,8 @@ type
             function  pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
     end;
 
+    procedure createEvent(description: string; eventType: tEventImage); inline;
+
 const
     defaultThreadPoolSleepTime = 50;
 
@@ -49,6 +51,10 @@ var
     sTaskMgr: taskManager;
 
 implementation
+    procedure createEvent(description: string; eventType: tEventImage); inline;
+    begin
+        sTaskMgr.pushTaskToOutput( sEventHdlr.createEvent(description, tImageIndex(eventType)) );
+    end;
 
     constructor thread.create;
     begin
@@ -117,10 +123,10 @@ implementation
 
         setLength(m_threadPool, threadsCount);
 
+        m_outputTasks.add( sEventHdlr.createEvent('Inizializzazione threadpool a ' + IntToStr(threadsCount) + ' threads.', tImageIndex(eiInfo)) );
+
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create;
-
-        sEventHdlr.pushEventToList('ThreadPool inizializzata a ' + IntToStr(threadsCount) + ' threads.', eiInfo);
     end;
 
     function taskManager.getBusyThreadsCount: byte;

@@ -78,10 +78,10 @@ implementation
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
         begin
-            sEventHdlr.pushEventToList('Cartella d''installazione non trovata.', eiAlert);
-            sEventHdlr.pushEventToList('La cartella verra'' ricreata.', eiAlert);
+            createEvent('Cartella d''installazione non trovata.', eiAlert);
+            createEvent('La cartella verra'' ricreata.', eiAlert);
             if not( createDir(self.m_stpFolder) ) then
-                sEventHdlr.pushEventToList('Impossibile creare la cartella d''installazione.', eiError)
+                createEvent('Impossibile creare la cartella d''installazione.', eiError)
         end;
 
         if useSha1 then
@@ -149,7 +149,7 @@ implementation
         errorCode := SHFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError)
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError)
         else
         begin
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);
@@ -172,7 +172,7 @@ implementation
             renameFile(m_stpFolder + newHash + fileFound.name, m_stpFolder + newHash + fileFound.name + '.old');
         end
         else
-            sEventHdlr.pushEventToList('Impossibile trovare la versione precedente del comando guid: ' + intToStr(cmdRec.guid) + ' (software guid: ' + intToStr(cmdRec.swid) + ').', eiAlert);
+            createEvent('Impossibile trovare la versione precedente del comando guid: ' + intToStr(cmdRec.guid) + ' (software guid: ' + intToStr(cmdRec.swid) + ').', eiAlert);
 
         data.saveToFile(m_stpFolder + newHash + fileName);
         cmdRec.hash := newHash;
@@ -196,7 +196,7 @@ implementation
         errorCode := SHFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            sEventHdlr.pushEventToList('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eliminare [' + soFileOperation.pFrom + ']', eiError);
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eliminare [' + soFileOperation.pFrom + ']', eiError);
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;

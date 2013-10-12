@@ -3,97 +3,78 @@ unit U_Events;
 interface
 
 uses
-    System.UITypes, System.Classes, System.SyncObjs, System.SysUtils, System.Types;
+    System.UITypes, System.Classes, System.SyncObjs, System.SysUtils, System.Types, vcl.comCtrls,
+
+    U_OutputTasks;
 
 type
+    tTabImage   = (tiNoImg = -1, tiInstall, tiConfig, tiUpdate, tiEvents, tiUpdateNotif, tiEvtErr);
     tEventImage = (eiNoImg = -1, eiInfo, eiAlert, eiError, eiDotGreen, eiDotYellow, eiDotRed);
 
-    tEvent = class
-        eventDesc,
-        eventTime:  string;
-        eventType:  tImageIndex;
-        constructor create(eDesc: string; eType: tEventImage);
+    tTaskEvent = class(tTaskOutput)
+        public
+            eventDesc,
+            eventTime:  string;
+            eventType:  tImageIndex;
+            constructor create(description: string; eventType: tImageIndex);
+            procedure   exec; override;
     end;
 
     eventHandler = class
         public
-            constructor create;
-            procedure   pushEventToList(event: string; eType: tEventImage); overload;
-            function    pullEventFromList: tEvent;
-            function    isEventListEmpty:  boolean;
-            function    getErrorCache:     boolean;
-            procedure   clearErrorCache;
+            constructor create(errorList: tListView; errorTab: tTabSheet);
+            function    createEvent(description: string; eventType: tImageIndex): tTaskEvent;
+
         protected
-            m_eventMutex:     tMutex;
-            m_eventList:      tList;
-            m_containsErrors: boolean;
-            procedure   pushEventToList(event: tEvent); overload;
+            m_errorList: tListView;
+            m_errorTab:  tTabSheet;
     end;
 
 var
     sEventHdlr: eventHandler;
 
 implementation
-
-    constructor tEvent.create(eDesc: string; eType: tEventImage);
+    constructor eventHandler.create(errorList: tListView; errorTab: tTabSheet);
     begin
-        self.eventType := tImageIndex(eType);
+        self.m_errorList := errorList;
+        self.m_errorTab  := errorTab;
+    end;
+
+    function eventHandler.createEvent(description: string; eventType: TImageIndex): tTaskEvent;
+    begin
+        result := tTaskEvent.create(description, eventType);
+        setLength(result.dummyTargets, 2);
+        result.dummyTargets[0] := self.m_errorList;
+        result.dummyTargets[1] := Self.m_errorTab;
+    end;
+
+    constructor tTaskEvent.create(description: string; eventType: tImageIndex);
+    begin
         self.eventTime := formatDateTime('hh:nn:ss', now);
-        self.eventDesc := eDesc;
+        self.eventDesc := description;
+        self.eventType := eventType;
     end;
 
-    constructor eventHandler.create;
+    procedure tTaskEvent.exec;
+    var
+        lvEvents: tListView;
+        tLog:     tTabSheet;
     begin
-        m_eventMutex := tMutex.create;
-        m_eventList := tList.create;
-    end;
-
-    procedure eventHandler.pushEventToList(event: tEvent);
-    begin
-        m_eventMutex.acquire;
-        m_eventList.add(event);
-        m_eventMutex.release;
-
-        if event.eventType = tImageIndex(eiError) then
-            m_containsErrors := true;
-    end;
-
-    procedure eventHandler.pushEventToList(event: string; eType: tEventImage);
-    begin
-        self.pushEventToList( tEvent.create(event, eType) );
-    end;
-
-    function eventHandler.pullEventFromList: tEvent;
-    begin
-        m_eventMutex.acquire;
-
-        if m_eventList.count = 0 then
-        begin
-            m_eventMutex.release;
-            result := nil;
+        if not (self.dummyTargets[0] is tListView) or
+           not (self.dummyTargets[1] is tTabSheet) then
             exit;
+
+        lvEvents := self.dummyTargets[0] as tListView;
+        tLog     := self.dummyTargets[1] as tTabSheet;
+
+        if self.eventType = tImageIndex(eiError) then
+            tLog.ImageIndex := tImageIndex(tiEvtErr);
+
+        with(lvEvents.items.add) do
+        begin
+            stateIndex := self.eventType;
+            subItems.add(self.eventTime);
+            subItems.add(self.eventDesc);
         end;
-
-        result := tEvent(m_eventList.first);
-        m_eventList.remove(m_eventList.first);
-        m_eventMutex.release;
     end;
-
-    function eventHandler.isEventListEmpty: boolean;
-    begin
-        m_eventMutex.acquire;
-        result := (m_eventList.count = 0);
-        m_eventMutex.release;
-    end;
-
-    function eventHandler.getErrorCache: boolean;
-    begin
-        result := m_containsErrors;
-    end;
-
-    procedure eventHandler.clearErrorCache;
-    begin
-        m_containsErrors := false;
-    end;
-
 end.

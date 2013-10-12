@@ -216,25 +216,7 @@ implementation
         i,
         updComp: word;
         taskOut: tTaskOutput;
-        event:   tEvent;
     begin
-        // TODO: Riscrivere anche la gestione degli eventi come task
-        if (sEventHdlr.getErrorCache) then
-            tLog.imageIndex := tImageIndex(tiEvtErr);
-
-        if not(sEventHdlr.isEventListEmpty) then
-            while not(sEventHdlr.isEventListEmpty) do
-                with lvEvents.items.add do
-                begin
-                    event := sEventHdlr.pullEventFromList;
-
-                    stateIndex := event.eventType;
-                    subItems.add(event.eventTime);
-                    subItems.add(event.eventDesc);
-
-                    event.free;
-                end;
-
         // Visualizza il carico di lavoro della ThreadPool
         pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
         lEventsProg.caption := intToStr(pbEvents.position) + '%';
@@ -269,7 +251,7 @@ implementation
 
     procedure tfFacTotum.formCreate(sender: tObject);
     begin
-        sEventHdlr          := eventHandler.create;
+        sEventHdlr          := eventHandler.create(lvEvents, tLog);
         sTaskMgr            := taskManager.create;
         sUpdateParser       := updateParser.create;
         sDownloadMgr        := downloadManager.create;
@@ -647,7 +629,6 @@ implementation
     procedure tfFacTotum.bEmptyClick(sender: tObject);
     begin
         lvEvents.items.clear;
-        sEventHdlr.clearErrorCache;
         tLog.imageIndex := tImageIndex(tiEvents);
     end;
 
