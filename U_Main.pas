@@ -488,14 +488,16 @@ implementation
 
     procedure tfFacTotum.miUpdateClick(Sender: TObject);
     var
+        curRow:       integer;
         taskDownload: tTaskDownload;
     begin
         taskDownload     := tTaskDownload.create;
         taskDownload.URL := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
 
+        curRow := lvUpdate.selected.index;
         setLength(taskDownload.dummyTargets, 2);
-        taskDownload.dummyTargets[0] := tProgressBar(lvUpdate.controls[lvUpdate.selected.index]);
-        taskDownload.dummyTargets[1] := tObject(lvUpdate.items[lvUpdate.selected.index].subItems[pred( integer(lvColStatus) )]);
+        taskDownload.dummyTargets[0] := tProgressBar( lvUpdate.controls[curRow] );
+        taskDownload.dummyTargets[1] := tObject(lvUpdate.items[curRow].subItems[ pred( integer(lvColStatus) ) ]);
 
         sTaskMgr.pushTaskToInput(taskDownload);
     end;
@@ -716,9 +718,12 @@ implementation
                     subItems.add('');
                     subItems.add('');
 
-                    progBar        := tProgressBar.create(nil);
-                    progBar.parent := lvUpdate;
-                    progRec        := displayRect(drBounds);
+                    progBar          := tProgressBar.create(nil);
+                    progBar.parent   := lvUpdate;
+                    progBar.max      := 100;
+                    progBar.min      := 0;
+                    progBar.position := 0;
+                    progRec          := displayRect(drBounds);
 
                     for k := 0 to pred( integer(lvColProgress) ) do
                         progRec.left := progRec.left + lvUpdate.columns[k].width;

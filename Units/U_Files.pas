@@ -248,12 +248,12 @@ implementation
 
         targetPb := self.dummyTargets[0] as tProgressBar;
 
-        if aWorkCount >= (self.dlchunk * self.dlcur) then
+        if aWorkCount >= ( self.dlchunk * succ(self.dlcur) ) then
         begin
-            self.dlcur                 := (self.dlchunk * self.dlcur) div aWorkCount;
+            self.dlcur                 := aWorkCount div self.dlchunk;
 
             reportTask                 := tTaskDownloadReport.create;
-            reportTask.dlPct           := trunc( (aWorkCount / self.dlmax) * 100 );
+            reportTask.dlPct           := self.dlcur;
 
             setLength(reportTask.dummyTargets, 1);
             reportTask.dummyTargets[0] := targetPb;
@@ -265,7 +265,7 @@ implementation
             self.dlcur       := 100;
 
             reportTask       := tTaskDownloadReport.create;
-            reportTask.dlPct := 100;
+            reportTask.dlPct := self.dlcur;
 
             setLength(reportTask.dummyTargets, 1);
             reportTask.dummyTargets[0] := targetPb;
@@ -284,7 +284,7 @@ implementation
     procedure tTaskDownload.exec;
     begin
         self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
-        sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
+        //sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
