@@ -168,46 +168,97 @@ implementation
         result  := false;
         newHash := self.getFileHash(data);
 
-        // Rinomino il vecchio eseguibile del comando
-        testFile := m_stpFolder + cmdRec.hash + '\' + cmdRec.Cmmd;
-        while ( not FileExists(testFile) ) and ( length(testFile) > 0 ) do
-            delete(testFile, length(testFile), 1);
+        if cmdRec.hash <> '' then
+        begin
+            // Rinomino il vecchio eseguibile del comando
+            testFile := m_stpFolder + cmdRec.hash + '\' + cmdRec.Cmmd;
+            while ( not FileExists(testFile) ) and ( length(testFile) > 0 ) do
+                delete(testFile, length(testFile), 1);
 
-        if length(testFile) > 0 then
+            if length(testFile) > 0 then
+            begin
+                with soFileOperation do
+                begin
+                    wnd    := handle;
+                    wFunc  := FO_RENAME;
+                    pFrom  := pchar(m_stpFolder + cmdRec.hash + '\' + testFile + #0);
+                    pTo    := pchar(m_stpFolder + cmdRec.hash + '\' + testFile + '.old' + #0);
+                    fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+                end;
+            errorCode := shFileOperation(soFileOperation);
+            end
+            else
+                exit;
+
+            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            begin
+                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile rinominare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+                exit;
+            end;
+
+            // Salvo il file scaricato in temp per lo spostamento
+            data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
+            with soFileOperation do
+            begin
+                wnd    := handle;
+                wFunc  := FO_MOVE;
+                pFrom  := pchar(getEnvironmentVariable('TEMP') + '\' + fileName + #0);
+                pTo    := pchar(m_stpFolder + cmdRec.hash + '\' + fileName + #0);
+                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+            end;
+            errorCode := shFileOperation(soFileOperation);
+
+            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            begin
+                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile spostare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+                exit;
+            end;
+
+            // Rinomino la vecchia cartella con il nuovo hash
             with soFileOperation do
             begin
                 wnd    := handle;
                 wFunc  := FO_RENAME;
-                pFrom  := pchar(testFile + #0);
-                pTo    := pchar(testFile + '.old' + #0);
-                fFlags := FOF_NOCONFIRMATION or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+                pFrom  := pchar(m_stpFolder + cmdRec.hash + #0);
+                pTo    := pchar(m_stpFolder + newHash + #0);
+                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
             end;
-        errorCode := shFileOperation(soFileOperation);
+            errorCode := shFileOperation(soFileOperation);
 
-        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            begin
+                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile rinominare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+                exit;
+            end;
 
-        // Salvo il nuovo eseguibile nella vecchia cartella
-        data.saveToFile(m_stpFolder + newHash + '\' + fileName);
-
-        // Rinomino la vecchia cartella con il nuovo hash
-        with soFileOperation do
+            // Aggiorno il database con le nuove informazioni
+            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, ansiReplaceStr(cmdRec.cmmd, testFile, fileName));
+        end
+        else
         begin
-            wnd    := handle;
-            wFunc  := FO_RENAME;
-            pFrom  := pchar(m_stpFolder + cmdRec.hash + #0);
-            pTo    := pchar(m_stpFolder + newHash + '.old' + #0);
-            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+            // Salvo il file scaricato in temp per lo spostamento
+            data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
+            with soFileOperation do
+            begin
+                wnd    := handle;
+                wFunc  := FO_MOVE;
+                pFrom  := pchar(getEnvironmentVariable('TEMP') + '\' + fileName + #0);
+                pTo    := pchar(m_stpFolder + newHash + '\' + fileName + #0);
+                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+            end;
+            errorCode := shFileOperation(soFileOperation);
+
+            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            begin
+                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile spostare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+                exit;
+            end;
+
+            // Aggiorno il database con le nuove informazioni
+            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, fileName);
         end;
-        errorCode := shFileOperation(soFileOperation);
-
-        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
-
-        // Aggiorno il database con le nuove informazioni
         cmdRec.hash := newHash;
         sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
-        sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, ansiReplaceStr(cmdRec.cmmd, testFile, fileName));
     end;
 
     procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
