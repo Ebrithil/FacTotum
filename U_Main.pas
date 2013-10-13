@@ -497,7 +497,6 @@ implementation
         lvUpdate.selected.stateIndex := tImageIndex(eiDotYellow);
 
         taskDownload            := tTaskDownload.create;
-        taskDownload.URL        := 'http://filehippo.com/it/download_7-zip_64/';  // Mettere l'indirizzo corretto...
         taskDownload.formHandle := handle;
         taskDownload.cmdRec     := lvUpdate.selected.data;
 

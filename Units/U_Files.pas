@@ -18,6 +18,7 @@ type
            function     getArchivePathFor(cmdGuid: integer): string;
            function     isArchived(cmdGuid: integer): boolean; overload;
            function     isArchived(fileHash: string): boolean; overload;
+           function     executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
        public
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
@@ -37,7 +38,6 @@ type
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
             procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
         public
-            URL:        string;
             cmdRec:     cmdRecord;
             formHandle: tHandle;
             dataStream: tMemoryStream;
@@ -120,38 +120,24 @@ implementation
 
     function fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
     var
-        soFileOperation: tSHFileOpStruct;
-        errorCode:       integer;
+        tmpFrom,
         tmpTo,
         tempHash:        string;
     begin
         result := false;
-        fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
         tempHash := self.getFileHash(fileName);
-        with soFileOperation do
+
+        tmpTo := extractFilePath(application.exeName) + self.m_stpFolder + tempHash;
+
+        if folderName = '' then
         begin
-            wnd    := handle;
-            wFunc  := FO_COPY;
-
-            tmpTo := extractFilePath(application.exeName) + self.m_stpFolder + tempHash;
-
-            if folderName = '' then
-            begin
-                pFrom := pchar(fileName + #0);
-                tmpTo := tmpTo + '\' + extractFileName(fileName);
-            end
-            else
-                pFrom := pchar(folderName + #0);
-
-            pTo := pchar(tmpTo + #0);
-
-            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
-        end;
-        errorCode := shFileOperation(soFileOperation);
-
-        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError)
+            tmpFrom := fileName;
+            tmpTo := tmpTo + '\' + extractFileName(fileName);
+        end
         else
+            tmpFrom := folderName;
+
+        if (sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo)) then
         begin
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);
             result := true;
@@ -160,9 +146,6 @@ implementation
 
     function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
     var
-        soFileOperation: tSHFileOpStruct;
-        fileFound:       tSearchRec;
-        errorCode:       integer;
         testFile,
         newHash:         string;
     begin
@@ -176,61 +159,19 @@ implementation
             while ( not FileExists(testFile) ) and ( length(testFile) > 0 ) do
                 delete(testFile, length(testFile), 1);
 
-            if length(testFile) > 0 then
-            begin
-                with soFileOperation do
-                begin
-                    wnd    := handle;
-                    wFunc  := FO_RENAME;
-                    pFrom  := pchar(testFile + #0);
-                    pTo    := pchar(testFile + '.old' + #0);
-                    fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
-                end;
-            errorCode := shFileOperation(soFileOperation);
-            end
-            else
+            if (length(testFile) = 0) or
+               (not sFileMgr.executeFileOperation(handle, FO_RENAME, testFile, testFile + '.old')) then
                 exit;
-
-            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            begin
-                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile rinominare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
-                exit;
-            end;
 
             // Salvo il file scaricato in temp per lo spostamento
             data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
-            with soFileOperation do
-            begin
-                wnd    := handle;
-                wFunc  := FO_MOVE;
-                pFrom  := pchar(getEnvironmentVariable('TEMP') + '\' + fileName + #0);
-                pTo    := pchar(m_stpFolder + cmdRec.hash + '\' + fileName + #0);
-                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
-            end;
-            errorCode := shFileOperation(soFileOperation);
 
-            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            begin
-                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile spostare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + cmdRec.hash + '\' + fileName) then
                 exit;
-            end;
 
             // Rinomino la vecchia cartella con il nuovo hash
-            with soFileOperation do
-            begin
-                wnd    := handle;
-                wFunc  := FO_RENAME;
-                pFrom  := pchar(m_stpFolder + cmdRec.hash + #0);
-                pTo    := pchar(m_stpFolder + newHash + #0);
-                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
-            end;
-            errorCode := shFileOperation(soFileOperation);
-
-            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            begin
-                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile rinominare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            if not sFileMgr.executeFileOperation(handle, FO_RENAME, m_stpFolder + cmdRec.hash, m_stpFolder + newHash) then
                 exit;
-            end;
 
             // Aggiorno il database con le nuove informazioni
             testFile := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
@@ -240,21 +181,9 @@ implementation
         begin
             // Salvo il file scaricato in temp per lo spostamento
             data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
-            with soFileOperation do
-            begin
-                wnd    := handle;
-                wFunc  := FO_MOVE;
-                pFrom  := pchar(getEnvironmentVariable('TEMP') + '\' + fileName + #0);
-                pTo    := pchar(m_stpFolder + newHash + '\' + fileName + #0);
-                fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
-            end;
-            errorCode := shFileOperation(soFileOperation);
 
-            if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            begin
-                createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile spostare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + newHash + '\' + fileName) then
                 exit;
-            end;
 
             // Aggiorno il database con le nuove informazioni
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, fileName);
@@ -266,23 +195,9 @@ implementation
     end;
 
     procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
-    var
-        soFileOperation: tSHFileOpStruct;
-        errorCode:       integer;
     begin
         // usas FillChar
-        fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
-        with soFileOperation do
-        begin
-            wnd    := handle;
-            wFunc  := FO_COPY;
-            pFrom := pchar(folderName + #0);
-            fFlags := FOF_NOCONFIRMATION or FOF_SIMPLEPROGRESS;
-        end;
-        errorCode := SHFileOperation(soFileOperation);
-
-        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eliminare [' + soFileOperation.pFrom + ']', eiError);
+        sFileMgr.executeFileOperation(handle, FO_DELETE, folderName);
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;
@@ -298,6 +213,33 @@ implementation
     function fileManager.isArchived(fileHash: string): boolean;
     begin
         result := directoryExists(fileHash);
+    end;
+
+    function fileManager.executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
+    var
+        soFileOperation: tSHFileOpStruct;
+        errorCode:       integer;
+    begin
+        fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
+
+        with soFileOperation do
+        begin
+            wnd    := handle;
+            wFunc  := op;
+            pFrom  := pchar(pathFrom + #0);
+            pTo    := pchar(pathTo + #0);
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+        end;
+
+        errorCode := shFileOperation(soFileOperation);
+
+        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+        begin
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eseguire l''operazione ' + intToStr(op) + ' [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            result := false;
+        end
+        else
+            result := true;
     end;
 
     procedure tTaskAddToArchive.exec;
@@ -376,7 +318,7 @@ implementation
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
-        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.cmdRec.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
         self.dataStream.seek(0, soBeginning);
         sFileMgr.updateSetupInArchive(self.formHandle, self.cmdRec, self.dataStream, self.fileName);
     end;
