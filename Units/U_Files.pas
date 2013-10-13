@@ -37,7 +37,6 @@ type
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
             procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
         public
-            URL:        string;
             cmdRec:     cmdRecord;
             formHandle: tHandle;
             dataStream: tMemoryStream;
@@ -376,7 +375,7 @@ implementation
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
-        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.cmdRec.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
         self.dataStream.seek(0, soBeginning);
         sFileMgr.updateSetupInArchive(self.formHandle, self.cmdRec, self.dataStream, self.fileName);
     end;
