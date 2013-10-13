@@ -173,11 +173,9 @@ implementation
     begin
         if cmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
         begin
-            taskUpdate         := tTaskRecordUpdate.create;
-            taskUpdate.field   := dbFieldCmdArch;
-            taskUpdate.value   := rgArchInfo.itemIndex.toString;
-            taskUpdate.tRecord := recordCommand;
-            taskUpdate.pRecord := tvConfig.selected.data;
+            cmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
+            taskUpdate                             := tTaskRecordUpdate.create;
+            taskUpdate.pRecord                     := tvConfig.selected.data;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
         end;
@@ -189,20 +187,12 @@ implementation
     begin
         taskUpdate := tTaskRecordUpdate.create;
 
-        if node.hasChildren then
-        // E' un software
-        begin
-            taskUpdate.field   := dbFieldSwName;
-            taskUpdate.tRecord := recordSoftware;
-        end
-        else
-        // E' un comando
-        begin
-            taskUpdate.field   := dbFieldCmdName;
-            taskUpdate.tRecord := recordCommand;
-        end;
+        if node.hasChildren then  // E' un software
+            swRecord(tvConfig.selected.data).name := trim(s)
+        else                      // E' un comando
+            cmdRecord(tvConfig.selected.data).name := trim(s);
         taskUpdate.pRecord := tvConfig.selected.data;
-        taskUpdate.value   := trim(s);
+
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
@@ -294,9 +284,8 @@ implementation
             if length(leCmdInfo.text) > 0 then
             begin
                 taskUpdate         := tTaskRecordUpdate.create;
-                taskUpdate.field   := dbFieldCmdCmmd;
-                taskUpdate.value   := leCmdInfo.text;
-                taskUpdate.tRecord := recordCommand;
+
+                cmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
                 taskUpdate.pRecord := tvConfig.selected.data;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
@@ -327,9 +316,8 @@ implementation
             if length(leUrlInfo.text) > 0 then
             begin
                 taskUpdate         := tTaskRecordUpdate.create;
-                taskUpdate.field   := dbFieldCmduURL;
-                taskUpdate.value   := leUrlInfo.text;
-                taskUpdate.tRecord := recordCommand;
+
+                cmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
                 taskUpdate.pRecord := tvConfig.selected.data;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
@@ -368,9 +356,8 @@ implementation
                ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
             begin
                 taskUpdate         := tTaskRecordUpdate.create;
-                taskUpdate.field   := dbFieldCmdVers;
-                taskUpdate.value   := leVerInfo.text;
-                taskUpdate.tRecord := recordCommand;
+
+                cmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
                 taskUpdate.pRecord := tvConfig.selected.data;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);

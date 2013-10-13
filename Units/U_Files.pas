@@ -120,26 +120,26 @@ implementation
 
     function fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
     var
-        tmpFrom,
         tmpTo,
-        tempHash:        string;
+        tmpFrom,
+        tempHash: string;
     begin
         result := false;
+
         tempHash := self.getFileHash(fileName);
-
-        tmpTo := extractFilePath(application.exeName) + self.m_stpFolder + tempHash;
-
+        tmpTo    := getCurrentDir + self.m_stpFolder + tempHash;
         if folderName = '' then
         begin
             tmpFrom := fileName;
-            tmpTo := tmpTo + '\' + extractFileName(fileName);
+            tmpTo   := tmpTo + '\' + extractFileName(fileName);
         end
         else
             tmpFrom := folderName;
 
-        if (sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo)) then
+        if sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo) then
         begin
-            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, tempHash);
+            cmdRec.hash := tempHash;
+            sDBMgr.updateDBRecord(cmdRec);
             result := true;
         end;
     end;
@@ -156,11 +156,10 @@ implementation
         begin
             // Rinomino il vecchio eseguibile del comando
             testFile := m_stpFolder + cmdRec.hash + '\' + cmdRec.Cmmd;
-            while ( not FileExists(testFile) ) and ( length(testFile) > 0 ) do
+            while not fileExists(testFile) and (testFile <> '') do
                 delete(testFile, length(testFile), 1);
 
-            if (length(testFile) = 0) or
-               (not sFileMgr.executeFileOperation(handle, FO_RENAME, testFile, testFile + '.old')) then
+            if (testFile = '') or not sFileMgr.executeFileOperation(handle, FO_RENAME, testFile, testFile + '.old') then
                 exit;
 
             // Salvo il file scaricato in temp per lo spostamento
@@ -174,8 +173,9 @@ implementation
                 exit;
 
             // Aggiorno il database con le nuove informazioni
-            testFile := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
-            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, ansiReplaceStr(cmdRec.cmmd, testFile, fileName));
+            testFile    := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
+            cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, testFile, fileName);
+            sDBMgr.updateDBRecord(cmdRec);
         end
         else
         begin
@@ -186,10 +186,11 @@ implementation
                 exit;
 
             // Aggiorno il database con le nuove informazioni
-            sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, fileName);
+            cmdRec.name := fileName;
+            sDBMgr.updateDBRecord(cmdRec);
         end;
         cmdRec.hash := newHash;
-        sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
+        sDBMgr.updateDBRecord(cmdRec);
 
         result := true;
     end;
