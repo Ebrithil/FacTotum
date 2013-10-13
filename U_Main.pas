@@ -496,9 +496,10 @@ implementation
     begin
         lvUpdate.selected.stateIndex := tImageIndex(eiDotYellow);
 
-        taskDownload        := tTaskDownload.create;
-        taskDownload.URL    := 'http://www.filehippo.com/it/download_firefox';  // Mettere l'indirizzo corretto...
-        taskDownload.cmdRec := lvUpdate.selected.data;
+        taskDownload            := tTaskDownload.create;
+        taskDownload.URL        := 'http://filehippo.com/it/download_7-zip_64/';  // Mettere l'indirizzo corretto...
+        taskDownload.formHandle := handle;
+        taskDownload.cmdRec     := lvUpdate.selected.data;
 
         curRow := lvUpdate.selected.index;
         setLength(taskDownload.dummyTargets, 2);

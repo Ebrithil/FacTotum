@@ -39,6 +39,7 @@ type
         public
             URL:        string;
             cmdRec:     cmdRecord;
+            formHandle: tHandle;
             dataStream: tMemoryStream;
             procedure   exec; override;
     end;
@@ -157,7 +158,7 @@ implementation
         end;
     end;
 
-    function fileManager.updateSetupInArchive(cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
+    function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
     var
         soFileOperation: tSHFileOpStruct;
         fileFound:       tSearchRec;
@@ -181,8 +182,8 @@ implementation
                 begin
                     wnd    := handle;
                     wFunc  := FO_RENAME;
-                    pFrom  := pchar(m_stpFolder + cmdRec.hash + '\' + testFile + #0);
-                    pTo    := pchar(m_stpFolder + cmdRec.hash + '\' + testFile + '.old' + #0);
+                    pFrom  := pchar(testFile + #0);
+                    pTo    := pchar(testFile + '.old' + #0);
                     fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
                 end;
             errorCode := shFileOperation(soFileOperation);
@@ -259,6 +260,8 @@ implementation
         end;
         cmdRec.hash := newHash;
         sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
+
+        result := true;
     end;
 
     procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
@@ -373,7 +376,8 @@ implementation
             exit;
 
         self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.URL), self.onDownload, self.onDownloadBegin, self.onRedirect );
-        sFileMgr.updateSetupInArchive(self.cmdRec, self.dataStream, self.fileName);
+        self.dataStream.seek(0, soBeginning);
+        sFileMgr.updateSetupInArchive(self.formHandle, self.cmdRec, self.dataStream, self.fileName);
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
