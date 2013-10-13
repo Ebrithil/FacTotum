@@ -3,7 +3,7 @@ unit U_DataBase;
 interface
 
 uses
-    System.SysUtils, System.UITypes, Vcl.Dialogs, Data.DB, Data.SqlExpr, Data.DBXSqlite,
+    System.SysUtils, System.UITypes, Vcl.Dialogs, Data.db, Data.SqlExpr, Data.dbXSqlite,
     System.Classes, winapi.windows, System.SyncObjs, System.Types,
     IdGlobal, IdHash, IdHashSHA, IdHashMessageDigest, ShellAPI, vcl.comCtrls, System.StrUtils,
 
@@ -19,17 +19,17 @@ type
                           dbFieldCmdHash );
     lvUpdateColIndex  = ( lvColSoftCmd = 1, lvColVA, lvColUV, lvColProgress, lvColStatus );
 
-    DBRecord = class
+    dbRecord = class
     end;
 
-    swRecord = class(DBRecord)
+    swRecord = class(dbRecord)
         guid:     integer;
         name:     string;
         commands: tList;
         function  hasValidCommands: boolean;
     end;
 
-    cmdRecord = class(DBRecord)
+    cmdRecord = class(dbRecord)
         guid,
         swid: integer;
         prty,
@@ -44,7 +44,7 @@ type
     tTaskRecordOP = class(tTask)
         public
             tRecord: recordType;
-            pRecord: DBRecord;
+            pRecord: dbRecord;
     end;
 
     tTaskRecordInsert = class(tTaskRecordOP)
@@ -77,30 +77,28 @@ type
             procedure exec; override;
     end;
 
-    DBManager = class
+    dbManager = class
         protected
             m_connector:  tSQLConnection;
             m_software:   tList;
-            m_updated:    boolean;
-            m_DBNamePath: string;
+            m_dbNamePath: string;
             procedure     connect;
             procedure     disconnect;
-            procedure     rebuildDBStructure;
-            procedure     insertRecordInDB(software: swRecord); overload;
-            procedure     insertRecordInDB(command: cmdRecord); overload;
-            procedure     deleteRecordFromDB(software: swRecord); overload;
-            procedure     deleteRecordFromDB(command: cmdRecord); overload;
+            procedure     rebuilddbStructure;
+            procedure     insertRecordIndb(software: swRecord); overload;
+            procedure     insertRecordIndb(command: cmdRecord); overload;
+            procedure     deleteRecordFromdb(software: swRecord); overload;
+            procedure     deleteRecordFromdb(command: cmdRecord); overload;
             function      query(qString: string): boolean;
             function      queryRes(qString: string): tDataSet;
             function      getLastInsertedRecordID: integer;
             function      getCommandList(const swID: integer): tList;
         public
-            constructor create(DBNamePath: string = 'FacTotum.db');
+            constructor create(dbNamePath: string = 'FacTotum.db');
             destructor  Destroy; override;
-            procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
-            procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
-            procedure   updateDBRecord(pRecord: DBRecord);
-            function    wasUpdated: boolean;
+            procedure   insertdbRecord(tRecord: recordType; pRecord: dbRecord);
+            procedure   deletedbRecord(tRecord: recordType; pRecord: dbRecord);
+            procedure   updatedbRecord(pRecord: dbRecord);
             function    getSoftwareList: tList;
             function    getSoftwareRec(guid: integer): swRecord;
             function    getCommandRec(guid: integer):  cmdRecord;
@@ -124,7 +122,7 @@ const
         'hash' );
 
 var
-    sDBMgr: DBManager;
+    sdbMgr: dbManager;
 
 implementation
 
@@ -149,11 +147,10 @@ implementation
 // Start Implementation of TDatabase Class
 //------------------------------------------------------------------------------
 
-    constructor DBManager.create(DBNamePath: string = 'FacTotum.db');
+    constructor dbManager.create(dbNamePath: string = 'FacTotum.db');
     begin
         m_connector   := tSQLConnection.create(nil);
-        m_updated     := true;
-        m_DBNamePath  := DBNamePath;
+        m_dbNamePath  := dbNamePath;
 
         m_connector.connectionName := 'SQLITECONNECTION';
         m_connector.driverName     := 'Sqlite';
@@ -161,21 +158,21 @@ implementation
 
         m_connector.params.clear;
         m_connector.params.add('DriverName=Sqlite');
-        m_connector.params.add('Database=' + m_DBNamePath);
+        m_connector.params.add('Database=' + m_dbNamePath);
         m_connector.params.add('FailIfMissing=False');
 
         self.connect;
     end;
 
-    destructor DBManager.Destroy;
+    destructor dbManager.Destroy;
     begin
         self.disconnect;
         inherited;
     end;
 
-    procedure DBManager.connect;
+    procedure dbManager.connect;
     begin
-        if not( fileExists(m_DBNamePath) ) then
+        if not( fileExists(m_dbNamePath) ) then
         begin
              createEvent('DataBase non trovato.', eiAlert);
              createEvent('Il DataBase verra'' ricreato.', eiAlert);
@@ -186,7 +183,7 @@ implementation
             try
                 m_connector.open;
                 createEvent('Stabilita connessione al DataBase.', eiInfo);
-                self.rebuildDBStructure;
+                self.rebuilddbStructure;
             except
                 on e: exception do
                     createEvent('Impossibile connettersi al DataBase: ' + e.Message, eiError);
@@ -196,7 +193,7 @@ implementation
         end;
     end;
 
-    procedure DBManager.disconnect;
+    procedure dbManager.disconnect;
     begin
         try
             m_connector.close;
@@ -207,7 +204,7 @@ implementation
         end;
     end;
 
-    function DBManager.query(qString: string): boolean;
+    function dbManager.query(qString: string): boolean;
     begin
         result := false;
         try
@@ -219,7 +216,7 @@ implementation
         end;
     end;
 
-    function DBManager.queryRes(qString: string): tDataSet;
+    function dbManager.queryRes(qString: string): tDataSet;
     begin
         result := nil;
         try
@@ -230,7 +227,7 @@ implementation
         end;
     end;
 
-    procedure DBManager.rebuildDBStructure;
+    procedure dbManager.rebuilddbStructure;
     var
         query: string;
     begin
@@ -280,7 +277,7 @@ implementation
         self.query(query);
     end;
 
-    function DBManager.getCommandList(const swID: integer): tList;
+    function dbManager.getCommandList(const swID: integer): tList;
     var
         query:   string;
         cmdRec:  cmdRecord;
@@ -340,7 +337,7 @@ implementation
         sqlData.free;
     end;
 
-    function DBManager.getCommandRec(guid: integer): cmdRecord;
+    function dbManager.getCommandRec(guid: integer): cmdRecord;
     var
         i,
         j:      integer;
@@ -358,7 +355,7 @@ implementation
             end;
     end;
 
-    function DBManager.getSoftwareList: tList;
+    function dbManager.getSoftwareList: tList;
     var
         query:   string;
         swRec:   swRecord;
@@ -401,7 +398,7 @@ implementation
         m_software := result;
     end;
 
-    function DBManager.getSoftwareRec(guid: integer): swRecord;
+    function dbManager.getSoftwareRec(guid: integer): swRecord;
     var
         i:      integer;
         swList: tList;
@@ -417,7 +414,7 @@ implementation
             end;
     end;
 
-    procedure DBManager.insertRecordInDB(software: swRecord);
+    procedure dbManager.insertRecordIndb(software: swRecord);
     var
         query: string;
     begin
@@ -436,7 +433,7 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.insertRecordInDB(command: cmdRecord);
+    procedure dbManager.insertRecordIndb(command: cmdRecord);
     var
         query: string;
     begin
@@ -457,7 +454,7 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.deleteRecordFromDB(software: swRecord);
+    procedure dbManager.deleteRecordFromdb(software: swRecord);
     var
         query: string;
     begin
@@ -475,7 +472,7 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.deleteRecordFromDB(command: cmdRecord);
+    procedure dbManager.deleteRecordFromdb(command: cmdRecord);
     var
         query: string;
     begin
@@ -493,43 +490,39 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.insertDBRecord(tRecord: recordType; pRecord: DBRecord);
+    procedure dbManager.insertdbRecord(tRecord: recordType; pRecord: dbRecord);
     var
         i: integer;
     begin
         case tRecord of
             recordSoftware:
             begin
-                self.insertRecordInDB( swRecord(pRecord) );
+                self.insertRecordIndb( swRecord(pRecord) );
                 for i := 0 to pred( swRecord(pRecord).commands.count ) do
                 begin
                     swRecord(pRecord).guid := self.getLastInsertedRecordID;
                     cmdRecord(swRecord(pRecord).commands[i]).swid := self.getLastInsertedRecordID;
-                    self.insertRecordInDB( cmdRecord(swRecord(pRecord).commands[i]) );
+                    self.insertRecordIndb( cmdRecord(swRecord(pRecord).commands[i]) );
                     cmdRecord(swRecord(pRecord).commands[i]).guid := self.getLastInsertedRecordID;
                 end;
             end;
             recordCommand:
             begin
-                self.insertRecordInDB( cmdRecord(pRecord) );
+                self.insertRecordIndb( cmdRecord(pRecord) );
                 cmdRecord(pRecord).guid := self.getLastInsertedRecordID;
             end;
         end;
-
-        m_updated := true;
     end;
 
-    procedure DBManager.deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
+    procedure dbManager.deletedbRecord(tRecord: recordType; pRecord: dbRecord);
     begin
         case tRecord of
-            recordSoftware: self.deleteRecordFromDB( swRecord(pRecord) );
-            recordCommand:  self.deleteRecordFromDB( cmdRecord(pRecord) );
+            recordSoftware: self.deleteRecordFromdb( swRecord(pRecord) );
+            recordCommand:  self.deleteRecordFromdb( cmdRecord(pRecord) );
         end;
-
-        m_updated := true;
     end;
 
-    procedure DBManager.updateDBRecord(pRecord: DBRecord);
+    procedure dbManager.updatedbRecord(pRecord: dbRecord);
     var
         query: string;
     begin
@@ -553,13 +546,13 @@ implementation
         begin
             query := format(
               'UPDATE %s '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'', '
-            + 'SET %s = ''%s'' '
+            + 'SET %s = ''%u'', '
+            + '%s = ''%u'', '
+            + '%s = ''%s'', '
+            + '%s = ''%s'', '
+            + '%s = ''%s'', '
+            + '%s = ''%s'', '
+            + '%s = ''%s'' '
             + 'WHERE %s = ''%d'';',
               [
               // Update
@@ -577,22 +570,10 @@ implementation
               ]
             );
         end;
-        if self.query(query) then
-            m_updated := true;
+        self.query(query);
     end;
 
-    function DBManager.wasUpdated: boolean;
-    begin
-        if m_updated then
-        begin
-            m_updated := false;
-            result    := true;
-        end
-        else
-            result := false;
-    end;
-
-    function DBManager.getLastInsertedRecordID: integer;
+    function dbManager.getLastInsertedRecordID: integer;
     var
         query:   string;
         sqlData: tDataSet;
@@ -613,13 +594,13 @@ implementation
         pList: tList;
         i:     integer;
     begin
-        pList := sDBMgr.getSoftwareList;
+        pList := sdbMgr.getSoftwareList;
 
         case self.tRecord of
             recordSoftware:
             begin
                 pList.add(self.pRecord);
-                sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
+                sdbMgr.insertdbRecord(self.tRecord, self.pRecord);
             end;
             recordCommand:
             begin
@@ -630,14 +611,14 @@ implementation
                         break;
                     end;
 
-                sDBMgr.insertDBRecord(self.tRecord, self.pRecord);
+                sdbMgr.insertdbRecord(self.tRecord, self.pRecord);
             end;
         end;
     end;
 
     procedure tTaskRecordUpdate.exec;
     begin
-        sDBMgr.updateDBRecord(self.pRecord);
+        sdbMgr.updatedbRecord(self.pRecord);
     end;
 
     // TODO: Controlla di aver rimosso tutta la PARANOIA.
@@ -646,7 +627,7 @@ implementation
         pList: tList;
         i:     integer;
      begin
-        pList := sDBMgr.getSoftwareList;
+        pList := sdbMgr.getSoftwareList;
 
         if self.tRecord = recordCommand then
         begin
@@ -659,7 +640,7 @@ implementation
 
             if swRecord( pList.items[i] ).commands.count = 0 then
             begin
-                sDBMgr.deleteDBRecord( recordSoftware, pList.items[i] );
+                sdbMgr.deletedbRecord( recordSoftware, pList.items[i] );
                 swRecord( pList.items[i] ).free;
                 pList.delete(i);
             end;
@@ -668,14 +649,14 @@ implementation
         begin
             for i := 0 to pred( swRecord(self.pRecord).commands.count ) do
             begin
-                sDBMgr.deleteDBRecord( recordCommand, swRecord(self.pRecord).commands.first );
+                sdbMgr.deletedbRecord( recordCommand, swRecord(self.pRecord).commands.first );
                 cmdRecord( swRecord(self.pRecord).commands.first ).free;
                 swRecord(self.pRecord).commands.remove( swRecord(self.pRecord).commands.first );
             end;
             pList.remove(self.pRecord);
         end;
 
-        sDBMgr.deleteDBRecord(self.tRecord, self.pRecord);
+        sdbMgr.deletedbRecord(self.tRecord, self.pRecord);
         freeAndNil(self.pRecord);
     end;
 

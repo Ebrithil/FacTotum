@@ -139,7 +139,7 @@ implementation
         if sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo) then
         begin
             cmdRec.hash := tempHash;
-            sDBMgr.updateDBRecord(cmdRec);
+            sdbMgr.updatedbRecord(cmdRec);
             result := true;
         end;
     end;
@@ -175,7 +175,6 @@ implementation
             // Aggiorno il database con le nuove informazioni
             testFile    := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
             cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, testFile, fileName);
-            sDBMgr.updateDBRecord(cmdRec);
         end
         else
         begin
@@ -187,10 +186,9 @@ implementation
 
             // Aggiorno il database con le nuove informazioni
             cmdRec.name := fileName;
-            sDBMgr.updateDBRecord(cmdRec);
         end;
         cmdRec.hash := newHash;
-        sDBMgr.updateDBRecord(cmdRec);
+        sdbMgr.updatedbRecord(cmdRec);
 
         result := true;
     end;
@@ -203,7 +201,7 @@ implementation
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;
     begin
-        result := self.m_stpFolder + cmdRecord( sDBMgr.getCommandRec(cmdGuid) ).hash;
+        result := self.m_stpFolder + cmdRecord( sdbMgr.getCommandRec(cmdGuid) ).hash;
     end;
 
     function fileManager.isArchived(cmdGuid: integer): boolean;

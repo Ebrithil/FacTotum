@@ -145,7 +145,7 @@ implementation
     begin
         tvConfig.items.clear;
 
-        software := sDBMgr.getSoftwareList;
+        software := sdbMgr.getSoftwareList;
 
         for i := 0 to pred(software.count) do
         begin
@@ -261,7 +261,7 @@ implementation
         sUpdateParser       := updateParser.create;
         sDownloadMgr        := downloadManager.create;
         sFileMgr            := fileManager.create;
-        sDBMgr              := dbManager.create;
+        sdbMgr              := dbManager.create;
 
         fFacTotum.left      := (Screen.Width - Width)   div 2;
         fFacTotum.top       := (Screen.Height - Height) div 2;
@@ -659,7 +659,7 @@ implementation
         i,
         j:       integer;
     begin
-        sList := sDBMgr.getSoftwareList;
+        sList := sdbMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
             cList := swRecord( sList.items[i] ).commands;
@@ -690,7 +690,7 @@ implementation
       progBar: tProgressBar;
       progRec: tRect;
     begin
-        sList := sDBMgr.getSoftwareList;
+        sList := sdbMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
             swRec := swRecord( sList.items[i] );
