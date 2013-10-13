@@ -54,9 +54,6 @@ type
 
     tTaskRecordUpdate = class(tTaskRecordOP)
         public
-            field: dbStringsIndex;
-            value: string;
-
             procedure exec; override;
     end;
 
@@ -91,8 +88,6 @@ type
             procedure     rebuildDBStructure;
             procedure     insertRecordInDB(software: swRecord); overload;
             procedure     insertRecordInDB(command: cmdRecord); overload;
-            procedure     updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string); overload;
-            procedure     updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string); overload;
             procedure     deleteRecordFromDB(software: swRecord); overload;
             procedure     deleteRecordFromDB(command: cmdRecord); overload;
             function      query(qString: string): boolean;
@@ -104,7 +99,7 @@ type
             destructor  Destroy; override;
             procedure   insertDBRecord(tRecord: recordType; pRecord: DBRecord);
             procedure   deleteDBRecord(tRecord: recordType; pRecord: DBRecord);
-            procedure   updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
+            procedure   updateDBRecord(pRecord: DBRecord);
             function    wasUpdated: boolean;
             function    getSoftwareList: tList;
             function    getSoftwareRec(guid: integer): swRecord;
@@ -462,46 +457,6 @@ implementation
         self.query(query);
     end;
 
-    procedure DBManager.updateRecordInDB(software: swRecord; field: dbStringsIndex; value: string);
-    var
-        query: string;
-    begin
-        query := format(
-          'UPDATE %s '
-        + 'SET %s = ''%s'' '
-        + 'WHERE %s = ''%d'';',
-          [
-          // Update
-          dbStrings[dbTableSoftware],
-          // Set
-          dbStrings[field], value,
-          // Where
-          dbStrings[dbFieldSwGUID], software.guid
-          ]
-        );
-        self.query(query);
-    end;
-
-    procedure DBManager.updateRecordInDB(command: cmdRecord; field: dbStringsIndex; value: string);
-    var
-        query: string;
-    begin
-        query := format(
-          'UPDATE %s '
-        + 'SET %s = ''%s'' '
-        + 'WHERE %s = ''%d'';',
-          [
-          // Update
-          dbStrings[dbTableCommands],
-          // Set
-          dbStrings[field], value,
-          // Where
-          dbStrings[dbFieldCmdGUID], command.guid
-          ]
-        );
-        self.query(query);
-    end;
-
     procedure DBManager.deleteRecordFromDB(software: swRecord);
     var
         query: string;
@@ -574,14 +529,56 @@ implementation
         m_updated := true;
     end;
 
-    procedure DBManager.updateDBRecord(tRecord: recordType; pRecord: DBRecord; field: dbStringsIndex; value: string);
+    procedure DBManager.updateDBRecord(pRecord: DBRecord);
+    var
+        query: string;
     begin
-        case tRecord of
-            recordSoftware: self.updateRecordInDB( swRecord(pRecord), field, value );
-            recordCommand:  self.updateRecordInDB( cmdRecord(pRecord), field, value );
+        if pRecord is swRecord then
+        begin
+            query := format(
+              'UPDATE %s '
+            + 'SET %s = ''%s'' '
+            + 'WHERE %s = ''%d'';',
+              [
+              // Update
+              dbStrings[dbTableSoftware],
+              // Set
+              dbStrings[dbFieldSwName], (pRecord as swRecord).name,
+              // Where
+              dbStrings[dbFieldSwGUID], (pRecord as swRecord).guid
+              ]
+            );
+        end
+        else if pRecord is cmdRecord then
+        begin
+            query := format(
+              'UPDATE %s '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'', '
+            + 'SET %s = ''%s'' '
+            + 'WHERE %s = ''%d'';',
+              [
+              // Update
+              dbStrings[dbTableCommands],
+              // Set
+              dbStrings[dbFieldCmdPrty], (pRecord as cmdRecord).prty,
+              dbStrings[dbFieldCmdArch], (pRecord as cmdRecord).arch,
+              dbStrings[dbFieldCmdName], (pRecord as cmdRecord).name,
+              dbStrings[dbFieldCmdCmmd], (pRecord as cmdRecord).cmmd,
+              dbStrings[dbFieldCmdVers], (pRecord as cmdRecord).vers,
+              dbStrings[dbFieldCmduURL], (pRecord as cmdRecord).uURL,
+              dbStrings[dbFieldCmdHash], (pRecord as cmdRecord).hash,
+              // Where
+              dbStrings[dbFieldCmdGUID], (pRecord as cmdRecord).guid
+              ]
+            );
         end;
-
-        m_updated := true;
+        if self.query(query) then
+            m_updated := true;
     end;
 
     function DBManager.wasUpdated: boolean;
@@ -640,23 +637,7 @@ implementation
 
     procedure tTaskRecordUpdate.exec;
     begin
-        case self.tRecord of
-            recordSoftware:
-                case self.field of
-                    dbFieldSwName: swRecord(self.pRecord).name := self.value;
-                end;
-            recordCommand:
-                case self.field of
-                    dbFieldCmdPrty: cmdRecord(self.pRecord).prty := strToInt(self.value);
-                    dbFieldCmdName: cmdRecord(self.pRecord).name := self.value;
-                    dbFieldCmdCmmd: cmdRecord(self.pRecord).cmmd := self.value;
-                    dbFieldCmdVers: cmdRecord(self.pRecord).vers := self.value;
-                    dbFieldCmdArch: cmdRecord(self.pRecord).arch := strToInt(self.value);
-                    dbFieldCmduURL: cmdRecord(self.pRecord).uURL := self.value;
-                    dbFieldCmdHash: cmdRecord(self.pRecord).hash := self.value;
-                end;
-        end;
-        sDBMgr.updateDBRecord(self.tRecord, self.pRecord, self.field, self.value);
+        sDBMgr.updateDBRecord(self.pRecord);
     end;
 
     // TODO: Controlla di aver rimosso tutta la PARANOIA.
