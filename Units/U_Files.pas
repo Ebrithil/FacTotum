@@ -233,6 +233,7 @@ implementation
             end;
 
             // Aggiorno il database con le nuove informazioni
+            testFile := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
             sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, ansiReplaceStr(cmdRec.cmmd, testFile, fileName));
         end
         else
