@@ -22,7 +22,7 @@ type
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
            function    addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
-           function    updateSetupInArchive(cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
+           function    updateSetupInArchive(handle: tHandle; cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
            procedure   runCommand(cmd: string);
            procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
     end;
@@ -144,9 +144,9 @@ implementation
 
             pTo := pchar(tmpTo + #0);
 
-            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS;
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
         end;
-        errorCode := SHFileOperation(soFileOperation);
+        errorCode := shFileOperation(soFileOperation);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
             createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError)
@@ -159,24 +159,55 @@ implementation
 
     function fileManager.updateSetupInArchive(cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
     var
-        fileFound: tSearchRec;
-        newHash:   string;
+        soFileOperation: tSHFileOpStruct;
+        fileFound:       tSearchRec;
+        errorCode:       integer;
+        testFile,
+        newHash:         string;
     begin
         result  := false;
         newHash := self.getFileHash(data);
 
-        if fileExists(m_stpFolder + cmdRec.hash) then
-        begin
-            renameFile(m_stpFolder + cmdRec.hash, m_stpFolder + newHash);
-            findFirst(m_stpFolder + newHash + '*.exe', faAnyFile, fileFound);
-            renameFile(m_stpFolder + newHash + fileFound.name, m_stpFolder + newHash + fileFound.name + '.old');
-        end
-        else
-            createEvent('Impossibile trovare la versione precedente del comando guid: ' + intToStr(cmdRec.guid) + ' (software guid: ' + intToStr(cmdRec.swid) + ').', eiAlert);
+        // Rinomino il vecchio eseguibile del comando
+        testFile := m_stpFolder + cmdRec.hash + '\' + cmdRec.Cmmd;
+        while ( not FileExists(testFile) ) and ( length(testFile) > 0 ) do
+            delete(testFile, length(testFile), 1);
 
-        data.saveToFile(m_stpFolder + newHash + fileName);
+        if length(testFile) > 0 then
+            with soFileOperation do
+            begin
+                wnd    := handle;
+                wFunc  := FO_RENAME;
+                pFrom  := pchar(testFile + #0);
+                pTo    := pchar(testFile + '.old' + #0);
+                fFlags := FOF_NOCONFIRMATION or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+            end;
+        errorCode := shFileOperation(soFileOperation);
+
+        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+
+        // Salvo il nuovo eseguibile nella vecchia cartella
+        data.saveToFile(m_stpFolder + newHash + '\' + fileName);
+
+        // Rinomino la vecchia cartella con il nuovo hash
+        with soFileOperation do
+        begin
+            wnd    := handle;
+            wFunc  := FO_RENAME;
+            pFrom  := pchar(m_stpFolder + cmdRec.hash + #0);
+            pTo    := pchar(m_stpFolder + newHash + '.old' + #0);
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+        end;
+        errorCode := shFileOperation(soFileOperation);
+
+        if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile copiare [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+
+        // Aggiorno il database con le nuove informazioni
         cmdRec.hash := newHash;
         sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdHash, newHash);
+        sDBMgr.updateDBRecord(recordCommand, cmdRec, dbFieldCmdCmmd, ansiReplaceStr(cmdRec.cmmd, testFile, fileName));
     end;
 
     procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
