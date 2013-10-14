@@ -169,13 +169,14 @@ implementation
 
     procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
     var
-        taskUpdate: tTaskRecordUpdate;
+        taskUpdate: tTaskRecordOP;
     begin
         if cmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
         begin
             cmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
-            taskUpdate                             := tTaskRecordUpdate.create;
+            taskUpdate                             := tTaskRecordOP.create;
             taskUpdate.pRecord                     := tvConfig.selected.data;
+            taskUpdate.tOperation                  := DOR_UPDATE;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
         end;
@@ -183,15 +184,17 @@ implementation
 
     procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
     var
-        taskUpdate: tTaskRecordUpdate;
+        taskUpdate: tTaskRecordOP;
     begin
-        taskUpdate := tTaskRecordUpdate.create;
+        taskUpdate := tTaskRecordOP.create;
 
         if node.hasChildren then  // E' un software
             swRecord(tvConfig.selected.data).name := trim(s)
         else                      // E' un comando
             cmdRecord(tvConfig.selected.data).name := trim(s);
-        taskUpdate.pRecord := tvConfig.selected.data;
+
+        taskUpdate.pRecord    := tvConfig.selected.data;
+        taskUpdate.tOperation := DOR_UPDATE;
 
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
@@ -277,16 +280,17 @@ implementation
 
     procedure tfFacTotum.leCmdInfoExit(sender: tObject);
     var
-        taskUpdate: tTaskRecordUpdate;
+        taskUpdate: tTaskRecordOP;
     begin
         leCmdInfo.text := trim(leCmdInfo.text);
         if cmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
             if length(leCmdInfo.text) > 0 then
             begin
-                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate         := tTaskRecordOP.create;
 
                 cmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
-                taskUpdate.pRecord := tvConfig.selected.data;
+                taskUpdate.pRecord                     := tvConfig.selected.data;
+                taskUpdate.tOperation                  := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -309,16 +313,17 @@ implementation
 
     procedure tfFacTotum.leUrlInfoExit(Sender: TObject);
     var
-        taskUpdate: tTaskRecordUpdate;
+        taskUpdate: tTaskRecordOP;
     begin
         leUrlInfo.text := trim(leUrlInfo.text);
         if cmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
             if length(leUrlInfo.text) > 0 then
             begin
-                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate         := tTaskRecordOP.create;
 
                 cmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
-                taskUpdate.pRecord := tvConfig.selected.data;
+                taskUpdate.pRecord                     := tvConfig.selected.data;
+                taskUpdate.tOperation                  := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -347,7 +352,7 @@ implementation
 
     procedure tfFacTotum.leVerInfoExit(sender: tObject);
     var
-        taskUpdate: tTaskRecordUpdate;
+        taskUpdate: tTaskRecordOP;
     begin
         leVerInfo.text := trim( leVerInfo.text );
         if cmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
@@ -355,10 +360,11 @@ implementation
                ( length(leVerInfo.text) > 0 )                    and
                ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
             begin
-                taskUpdate         := tTaskRecordUpdate.create;
+                taskUpdate         := tTaskRecordOP.create;
 
                 cmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
-                taskUpdate.pRecord := tvConfig.selected.data;
+                taskUpdate.pRecord                     := tvConfig.selected.data;
+                taskUpdate.tOperation                  := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -435,26 +441,26 @@ implementation
 
     procedure tfFacTotum.miInsertClick(Sender: TObject);
     var
-        taskInsert: tTaskRecordInsert;
+        taskInsert: tTaskRecordOP;
         command:    cmdRecord;
         node:       tTreeNode;
     begin
-        taskInsert   := tTaskRecordInsert.create;
+        taskInsert   := tTaskRecordOP.create;
 
         command      := cmdRecord.create;
 
         if assigned(tvConfig.selected) and assigned(tvConfig.selected.parent) then
         begin
-            taskInsert.tRecord := recordCommand;
-            taskInsert.pRecord := command;
-            command.swid       := swRecord(tvConfig.selected.parent.data).guid;
-            command.prty       := swRecord(tvConfig.selected.parent.data).commands.count;
+            taskInsert.pRecord    := command;
+            taskInsert.tOperation := DOR_INSERT;
+            command.swid          := swRecord(tvConfig.selected.parent.data).guid;
+            command.prty          := swRecord(tvConfig.selected.parent.data).commands.count;
             tvConfig.items.addChild(tvConfig.selected.parent, '<Nuovo Comando>').data := command;
         end
         else
         begin
-            taskInsert.tRecord                    := recordSoftware;
             taskInsert.pRecord                    := swRecord.create;
+            taskInsert.tOperation                 := DOR_INSERT;
             swRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
             swRecord(taskInsert.pRecord).commands := tList.create;
             command.prty                          := 0;
@@ -524,14 +530,14 @@ implementation
 
     procedure tfFacTotum.miDeleteClick(sender: tObject);
     var
-        taskDelete: tTaskRecordDelete;
+        taskDelete: tTaskRecordOP;
     begin
-        taskDelete := tTaskRecordDelete.create;
+        taskDelete := tTaskRecordOP.create;
 
         if assigned(tvConfig.selected.parent) then
         begin
-            taskDelete.tRecord := recordCommand;
-            taskDelete.pRecord := tvConfig.selected.data;
+            taskDelete.pRecord    := tvConfig.selected.data;
+            taskDelete.tOperation := DOR_DELETE;
 
             if tvConfig.selected.parent.count = 1 then
                 tvConfig.items.delete(tvConfig.selected.parent)
@@ -540,8 +546,8 @@ implementation
         end
         else
         begin
-            taskDelete.tRecord := recordSoftware;
-            taskDelete.pRecord := tvConfig.selected.data;
+            taskDelete.pRecord    := tvConfig.selected.data;
+            taskDelete.tOperation := DOR_DELETE;
             tvConfig.items.delete(tvConfig.selected);
         end;
 
