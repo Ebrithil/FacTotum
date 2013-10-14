@@ -98,7 +98,7 @@ type
             destructor  Destroy; override;
             procedure   insertdbRecord(tRecord: recordType; pRecord: dbRecord);
             procedure   deletedbRecord(tRecord: recordType; pRecord: dbRecord);
-            procedure   updatedbRecord(pRecord: dbRecord);
+            function    updatedbRecord(pRecord: dbRecord): dbRecord;
             function    getSoftwareList: tList;
             function    getSoftwareRec(guid: integer): swRecord;
             function    getCommandRec(guid: integer):  cmdRecord;
@@ -522,7 +522,7 @@ implementation
         end;
     end;
 
-    procedure dbManager.updatedbRecord(pRecord: dbRecord);
+    function dbManager.updatedbRecord(pRecord: dbRecord): dbRecord;
     var
         query: string;
     begin
@@ -541,6 +541,8 @@ implementation
               dbStrings[dbFieldSwGUID], (pRecord as swRecord).guid
               ]
             );
+            self.query(query);
+            result := self.getSoftwareRec( (pRecord as swRecord).guid ) as dbRecord;
         end
         else if pRecord is cmdRecord then
         begin
@@ -569,8 +571,11 @@ implementation
               dbStrings[dbFieldCmdGUID], (pRecord as cmdRecord).guid
               ]
             );
-        end;
-        self.query(query);
+            self.query(query);
+            result := self.getCommandRec( (pRecord as cmdRecord).guid ) as dbRecord;
+        end
+        else
+            result := nil;
     end;
 
     function dbManager.getLastInsertedRecordID: integer;
@@ -618,7 +623,7 @@ implementation
 
     procedure tTaskRecordUpdate.exec;
     begin
-        sdbMgr.updatedbRecord(self.pRecord);
+        self.pRecord := sdbMgr.updatedbRecord(self.pRecord);
     end;
 
     // TODO: Controlla di aver rimosso tutta la PARANOIA.

@@ -139,7 +139,7 @@ implementation
         if sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo) then
         begin
             cmdRec.hash := tempHash;
-            sdbMgr.updatedbRecord(cmdRec);
+            cmdRec := sdbMgr.updatedbRecord(cmdRec) as cmdRecord;
             result := true;
         end;
     end;
@@ -188,7 +188,7 @@ implementation
             cmdRec.name := fileName;
         end;
         cmdRec.hash := newHash;
-        sdbMgr.updatedbRecord(cmdRec);
+        cmdRec := sdbMgr.updatedbRecord(cmdRec) as cmdRecord;
 
         result := true;
     end;
