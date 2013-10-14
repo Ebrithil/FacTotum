@@ -87,6 +87,8 @@ implementation
         srcDoc2.write( pSafeArray(tVarData(V).vArray) );
         srcDoc2.close;
 
+        V := Unassigned;
+
         result := srcDoc2 as iHTMLDocument3;
     end;
 
@@ -138,9 +140,20 @@ implementation
     function updateParser.getLastStableVerFromURL(baseURL: string): string;
     var
         srcDoc3: iHTMLDocument3;
+        V:       array of string;
     begin
         srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
         result  := self.getLastStableVerFromSrc(srcDoc3);
+
+        setLength(V, 1);
+        V[0]    := '';
+
+        (srcDoc3 as iHTMLDocument2).write( pSafeArray(V) );
+        (srcDoc3 as iHTMLDocument2).close;
+
+        srcDoc3 := nil;
+
+        CoFreeUnusedLibraries;
     end;
 
     function updateParser.getLastStableVerFromSrc(srcCode: iHTMLDocument3): string;

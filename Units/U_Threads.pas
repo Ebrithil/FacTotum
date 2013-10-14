@@ -102,7 +102,7 @@ implementation
     begin
         if forced then
             for i := 0 to pred( length(m_threadPool) ) do
-                terminateThread(m_threadPool[i].threadID, 0)
+                m_threadPool[i].free
         else
         begin
             for i := 0 to pred( length(m_threadPool) ) do

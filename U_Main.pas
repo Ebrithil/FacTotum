@@ -234,7 +234,7 @@ implementation
         begin
             chkJobs := true;
             for i := 0 to pred(lvUpdate.items.count) do
-                if lvUpdate.items[i].stateIndex in [tImageIndex(eiDotYellow), tImageIndex(eiDotRed)] then
+                if lvUpdate.items[i].stateIndex = tImageIndex(eiDotYellow) then
                 begin
                     chkJobs := false;
                     break;
