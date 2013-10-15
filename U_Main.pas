@@ -487,9 +487,10 @@ implementation
     begin
         lvUpdate.selected.stateIndex := tImageIndex(eiDotYellow);
 
-        taskDownload            := tTaskDownload.create;
-        taskDownload.formHandle := handle;
-        taskDownload.cmdRec     := lvUpdate.selected.data;
+        taskDownload              := tTaskDownload.create;
+        taskDownload.formHandle   := handle;
+        taskDownload.pRecord      := lvUpdate.selected.data;
+        taskDownload.pRecord.vers := lvUpdate.selected.subItems[pred( integer(lvColUV) )];
 
         curRow := lvUpdate.selected.index;
         setLength(taskDownload.dummyTargets, 2);

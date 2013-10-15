@@ -13,11 +13,12 @@ type
        protected
            m_hasher:    tIdHash;
            m_stpFolder: string;
+           function     isArchived(cmdGuid: integer): boolean; overload;
+           function     isArchived(fileHash: string): boolean; overload;
            function     getFileHash(fileName: string): string; overload;
            function     getFileHash(fileData: tMemoryStream): string; overload;
            function     getArchivePathFor(cmdGuid: integer): string;
-           function     isArchived(cmdGuid: integer): boolean; overload;
-           function     isArchived(fileHash: string): boolean; overload;
+           function     getCmdRecordsByHash(const hash: string): tList;
            function     executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
        public
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
@@ -38,7 +39,7 @@ type
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
             procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
         public
-            cmdRec:     tCmdRecord;
+            pRecord:    tCmdRecord;
             formHandle: tHandle;
             dataStream: tMemoryStream;
             procedure   exec; override;
@@ -146,11 +147,15 @@ implementation
 
     function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
     var
-        testFile,
-        newHash:         string;
+        i:          integer;
+        tmpRec:     tDBRecord;
+        newHash,
+        testFile:   string;
+        cmdRecList: tList;
     begin
-        result  := false;
-        newHash := self.getFileHash(data);
+        result   := false;
+        newHash  := self.getFileHash(data);
+        testFile := '';
 
         if cmdRec.hash <> '' then
         begin
@@ -185,10 +190,25 @@ implementation
                 exit;
 
             // Aggiorno il database con le nuove informazioni
-            cmdRec.name := fileName;
+            cmdRec.cmmd := fileName;
         end;
         cmdRec.hash := newHash;
         sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
+
+        // Aggiorno allo stesso modo tutti gli altri comandi con lo stesso hash (preservando gli switch se possibile)
+        cmdRecList := sFileMgr.getCmdRecordsByHash(newHash);
+        for i := 0 to pred( cmdRecList.count ) do
+        begin
+            tCmdRecord(cmdRecList[i]).hash := cmdRec.hash;
+            tCmdRecord(cmdRecList[i]).vers := cmdRec.vers;
+            if testFile <> '' then
+                tCmdRecord(cmdRecList[i]).cmmd := ansiReplaceStr( tCmdRecord(cmdRecList[i]).cmmd, testFile, fileName)
+            else
+                tCmdRecord(cmdRecList[i]).cmmd := fileName;
+
+            tmpRec := tDBRecord(cmdRecList[i]);
+            sdbMgr.updatedbRecord( tmpRec );
+        end;
 
         result := true;
     end;
@@ -212,6 +232,21 @@ implementation
     function fileManager.isArchived(fileHash: string): boolean;
     begin
         result := directoryExists(fileHash);
+    end;
+
+    function fileManager.getCmdRecordsByHash(const hash: string): tList;
+    var
+        i,
+        j:       integer;
+        swList:  tList;
+    begin
+       result := tList.create;
+       swList := sdbMgr.getSoftwareList;
+
+       for i := 0 to pred(swList.count) do
+          for j := 0 to pred( tSwRecord(swList[i]).commands.count ) do
+              if tCmdRecord( tSwRecord(swList[i]).commands[j] ).hash = hash then
+                  result.add( tCmdRecord( tSwRecord(swList[i]).commands[j] ) );
     end;
 
     function fileManager.executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
@@ -317,9 +352,9 @@ implementation
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
-        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.cmdRec.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.pRecord.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
         self.dataStream.seek(0, soBeginning);
-        sFileMgr.updateSetupInArchive(self.formHandle, self.cmdRec, self.dataStream, self.fileName);
+        sFileMgr.updateSetupInArchive(self.formHandle, self.pRecord, self.dataStream, self.fileName);
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
