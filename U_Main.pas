@@ -92,7 +92,7 @@ implementation
     procedure tfFacTotum.configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
     var
         isChild: boolean;
-        cmdRec:  cmdRecord;
+        cmdRec:  tCmdRecord;
     begin
         isChild            := assigned(node.parent);
         bBrowse.enabled    := isChild;
@@ -141,7 +141,7 @@ implementation
         j,
         i:        integer;
         node:     tTreeNode;
-        swRec:    swRecord;
+        swRec:    tSwRecord;
     begin
         tvConfig.items.clear;
 
@@ -149,7 +149,7 @@ implementation
 
         for i := 0 to pred(software.count) do
         begin
-            swRec := swRecord(software.items[i]);
+            swRec := tSwRecord(software.items[i]);
 
             if swRec.hasValidCommands then
                 clbInstall.items.add(swRec.name);
@@ -161,7 +161,7 @@ implementation
                 continue;
 
             for j := 0 to pred(swRec.commands.count) do
-                tvConfig.items.addChild( node, cmdRecord(swRec.commands[j]).name ).data := cmdRecord(swRec.commands[j]);
+                tvConfig.items.addChild( node, tCmdRecord( swRec.commands[j]).name ).data := tCmdRecord(swRec.commands[j]);
 
             node.expand(true);
         end;
@@ -171,12 +171,12 @@ implementation
     var
         taskUpdate: tTaskRecordOP;
     begin
-        if cmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
+        if tCmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
         begin
-            cmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
-            taskUpdate                             := tTaskRecordOP.create;
-            taskUpdate.pRecord                     := tvConfig.selected.data;
-            taskUpdate.tOperation                  := DOR_UPDATE;
+            tCmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
+            taskUpdate                              := tTaskRecordOP.create;
+            taskUpdate.pRecord                      := tvConfig.selected.data;
+            taskUpdate.tOperation                   := DOR_UPDATE;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
         end;
@@ -189,9 +189,9 @@ implementation
         taskUpdate := tTaskRecordOP.create;
 
         if node.hasChildren then  // E' un software
-            swRecord(tvConfig.selected.data).name := trim(s)
+            tSwRecord(tvConfig.selected.data).name  := trim(s)
         else                      // E' un comando
-            cmdRecord(tvConfig.selected.data).name := trim(s);
+            tCmdRecord(tvConfig.selected.data).name := trim(s);
 
         taskUpdate.pRecord    := tvConfig.selected.data;
         taskUpdate.tOperation := DOR_UPDATE;
@@ -283,14 +283,14 @@ implementation
         taskUpdate: tTaskRecordOP;
     begin
         leCmdInfo.text := trim(leCmdInfo.text);
-        if cmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
+        if tCmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
             if length(leCmdInfo.text) > 0 then
             begin
                 taskUpdate         := tTaskRecordOP.create;
 
-                cmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
-                taskUpdate.pRecord                     := tvConfig.selected.data;
-                taskUpdate.tOperation                  := DOR_UPDATE;
+                tCmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
+                taskUpdate.pRecord                      := tvConfig.selected.data;
+                taskUpdate.tOperation                   := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -316,14 +316,14 @@ implementation
         taskUpdate: tTaskRecordOP;
     begin
         leUrlInfo.text := trim(leUrlInfo.text);
-        if cmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
+        if tCmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
             if length(leUrlInfo.text) > 0 then
             begin
                 taskUpdate         := tTaskRecordOP.create;
 
-                cmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
-                taskUpdate.pRecord                     := tvConfig.selected.data;
-                taskUpdate.tOperation                  := DOR_UPDATE;
+                tCmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
+                taskUpdate.pRecord                      := tvConfig.selected.data;
+                taskUpdate.tOperation                   := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -355,16 +355,16 @@ implementation
         taskUpdate: tTaskRecordOP;
     begin
         leVerInfo.text := trim( leVerInfo.text );
-        if cmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
+        if tCmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
             if ( leVerInfo.text <> '.' )                         and
                ( length(leVerInfo.text) > 0 )                    and
                ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
             begin
                 taskUpdate         := tTaskRecordOP.create;
 
-                cmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
-                taskUpdate.pRecord                     := tvConfig.selected.data;
-                taskUpdate.tOperation                  := DOR_UPDATE;
+                tCmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
+                taskUpdate.pRecord                      := tvConfig.selected.data;
+                taskUpdate.tOperation                   := DOR_UPDATE;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
 
@@ -442,29 +442,28 @@ implementation
     procedure tfFacTotum.miInsertClick(Sender: TObject);
     var
         taskInsert: tTaskRecordOP;
-        command:    cmdRecord;
+        command:    tCmdRecord;
         node:       tTreeNode;
     begin
         taskInsert   := tTaskRecordOP.create;
-
-        command      := cmdRecord.create;
+        command      := tCmdRecord.create;
 
         if assigned(tvConfig.selected) and assigned(tvConfig.selected.parent) then
         begin
             taskInsert.pRecord    := command;
             taskInsert.tOperation := DOR_INSERT;
-            command.swid          := swRecord(tvConfig.selected.parent.data).guid;
-            command.prty          := swRecord(tvConfig.selected.parent.data).commands.count;
+            command.swid          := tSwRecord(tvConfig.selected.parent.data).guid;
+            command.prty          := tSwRecord(tvConfig.selected.parent.data).commands.count;
             tvConfig.items.addChild(tvConfig.selected.parent, '<Nuovo Comando>').data := command;
         end
         else
         begin
-            taskInsert.pRecord                    := swRecord.create;
-            taskInsert.tOperation                 := DOR_INSERT;
-            swRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
-            swRecord(taskInsert.pRecord).commands := tList.create;
-            command.prty                          := 0;
-            swRecord(taskInsert.pRecord).commands.add(command);
+            taskInsert.pRecord                     := tSwRecord.create;
+            taskInsert.tOperation                  := DOR_INSERT;
+            tSwRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
+            tSwRecord(taskInsert.pRecord).commands := tList.create;
+            command.prty                           := 0;
+            tSwRecord(taskInsert.pRecord).commands.add(command);
             node                                                  := tvConfig.items.add(nil, '<Nuovo Software>');
             node.data                                             := taskInsert.pRecord;
             tvConfig.items.addChild(node, '<Nuovo Comando>').data := command;
@@ -668,17 +667,19 @@ implementation
         sList := sdbMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
-            cList := swRecord( sList.items[i] ).commands;
+            cList := tSwRecord(sList.items[i]).commands;
             for j := 0 to pred(cList.count) do
             begin
-                if ( cmdRecord(cList.items[j]).uURL = '' ) or ( cmdRecord(cList.items[j]).vers = '' ) then // TODO: Da rimuovere quando sarà previsto l'update manuale
+                if ( tCmdRecord(cList.items[j]).uURL = '' ) or ( tCmdRecord(cList.items[j]).vers = '' ) then // TODO: Da rimuovere quando sarà previsto l'update manuale
                     continue;
 
-                taskVer           := tTaskGetVer.create;
-                taskVer.cmdRec    := cmdRecord( cList.items[j] );
+                taskVer                 := tTaskGetVer.create;
+                taskVer.cmdRec          := tCmdRecord(cList.items[j]);
+
                 setLength(taskVer.dummyTargets, 2);
                 taskVer.dummyTargets[0] := lvUpdate;
                 taskVer.dummyTargets[1] := tUpdate;
+
                 sTaskMgr.pushTaskToInput(taskVer);
             end;
         end;
@@ -688,8 +689,8 @@ implementation
     var
       sList,
       cList:   tList;
-      swRec:   swRecord;
-      cmdRec:  cmdRecord;
+      swRec:   tSwRecord;
+      cmdRec:  tCmdRecord;
       i,
       j,
       k:       integer;
@@ -699,7 +700,7 @@ implementation
         sList := sdbMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
-            swRec := swRecord( sList.items[i] );
+            swRec := tSwRecord( sList.items[i] );
             cList := swRec.commands;
             for j := 0 to pred(cList.count) do
             begin

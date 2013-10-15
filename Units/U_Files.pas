@@ -22,8 +22,8 @@ type
        public
            constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
-           function    addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
-           function    updateSetupInArchive(handle: tHandle; cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
+           function    addSetupToArchive(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
+           function    updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
            procedure   runCommand(cmd: string);
            procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
     end;
@@ -38,7 +38,7 @@ type
             procedure   onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
             procedure   onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
         public
-            cmdRec:     cmdRecord;
+            cmdRec:     tCmdRecord;
             formHandle: tHandle;
             dataStream: tMemoryStream;
             procedure   exec; override;
@@ -53,7 +53,7 @@ type
     tTaskAddToArchive = class(tTask)
         public
             formHandle: tHandle;
-            cmdRec:     cmdRecord;
+            cmdRec:     tCmdRecord;
             fileName:   string;
             folderName: string;
             pReturn:    tLabeledEdit;
@@ -118,7 +118,7 @@ implementation
         // TODO
     end;
 
-    function fileManager.addSetupToArchive(handle: tHandle; cmdRec: cmdRecord; fileName: string; folderName: string = ''): boolean;
+    function fileManager.addSetupToArchive(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
     var
         tmpTo,
         tmpFrom,
@@ -144,7 +144,7 @@ implementation
         end;
     end;
 
-    function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: cmdRecord; data: tMemoryStream; fileName:string): boolean;
+    function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
     var
         testFile,
         newHash:         string;
@@ -201,7 +201,7 @@ implementation
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;
     begin
-        result := self.m_stpFolder + cmdRecord( sdbMgr.getCmdRecordByGUID(cmdGuid) ).hash;
+        result := self.m_stpFolder + tCmdRecord( sdbMgr.getCmdRecordByGUID(cmdGuid) ).hash;
     end;
 
     function fileManager.isArchived(cmdGuid: integer): boolean;

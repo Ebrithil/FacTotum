@@ -19,17 +19,17 @@ type
                           dbFieldCmdHash );
     lvUpdateColIndex  = ( lvColSoftCmd = 1, lvColVA, lvColUV, lvColProgress, lvColStatus );
 
-    dbRecord = class
+    tDBRecord = class
     end;
 
-    swRecord = class(dbRecord)
+    tSwRecord = class(tDBRecord)
         guid:     integer;
         name:     string;
         commands: tList;
         function  hasValidCommands: boolean;
     end;
 
-    cmdRecord = class(dbRecord)
+    tCmdRecord = class(tDBRecord)
         guid,
         swid: integer;
         prty,
@@ -56,30 +56,30 @@ type
         public
             constructor   create(dbNamePath: string = 'FacTotum.db');
             destructor    Destroy; override;
-            procedure     insertDBRecord(pRecord: dbRecord);
-            procedure     deleteDBRecord(pRecord: dbRecord);
-            procedure     updateDBRecord(pRecord: dbRecord);
+            procedure     insertDBRecord(pRecord: tDBRecord);
+            procedure     deleteDBRecord(pRecord: tDBRecord);
+            procedure     updateDBRecord(pRecord: tDBRecord);
             function      getSoftwareList: tList;
-            function      getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false):  swRecord;
-            function      getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): cmdRecord;
+            function      getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false):  tSwRecord;
+            function      getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
     end;
 
     tTaskRecordOP = class(tTask)
         public
-            pRecord:        dbRecord;
+            pRecord:        tDBRecord;
             tOperation:     dbOperation;
             procedure exec; override;
     end;
 
     tTaskGetVer = class(tTask)
         public
-            cmdRec:   cmdRecord;
+            cmdRec:   tCmdRecord;
             procedure exec; override;
     end;
 
     tTaskSetVer = class(tTaskOutput)
         public
-            cmdRec:         cmdRecord;
+            cmdRec:         tCmdRecord;
             new_version:    string;
             procedure exec; override;
     end;
@@ -106,7 +106,7 @@ var
 
 implementation
 
-    function swRecord.hasValidCommands: boolean;
+    function tSwRecord.hasValidCommands: boolean;
     var
         i: integer;
     begin
@@ -117,7 +117,7 @@ implementation
 
         for i := 0 to pred(commands.count) do
             // Confronto il mask di compatibility con la mask generata dall'architettura del SO, usando la Magia Nera
-            if ( (cmdRecord(commands.items[i]).arch and (1 shl byte(tOSVersion.architecture))) > 0 ) then
+            if ( (tCmdRecord(commands.items[i]).arch and (1 shl byte(tOSVersion.architecture))) > 0 ) then
             begin
                 result := true;
                 exit
@@ -257,14 +257,17 @@ implementation
         self.query(query);
     end;
 
-    procedure dbManager.insertDBRecord(pRecord: dbRecord);
+    procedure dbManager.insertDBRecord(pRecord: tDBRecord);
     var
-        i:     integer;
-        query: string;
+        i:         integer;
+        tmpSwRec:  tSwRecord;
+        tmpCmdRec: tCmdRecord;
+        query:     string;
     begin
-        if pRecord is swRecord then
+        if pRecord is tSwRecord then
         begin
-            query := format(
+            tmpSwRec := pRecord as tSwRecord;
+            query    := format(
               'INSERT INTO %s (%s) '
             + 'VALUES (''%s'');',
               [
@@ -273,21 +276,34 @@ implementation
               // Columns
               dbStrings[dbFieldSwName],
               // Values
-              (pRecord as swRecord).name
+              tmpSwRec.name
               ]
             );
             if self.query(query) then
             begin
-                (pRecord as swRecord).guid := self.getLastInsertedRecordID;
-                for i := 0 to pred( (pRecord as swRecord).commands.count ) do
+                tmpSwRec.guid := self.getLastInsertedRecordID;
+                for i := 0 to pred( tmpSwRec.commands.count ) do
                 begin
-                    cmdRecord( (pRecord as swRecord).commands[i] ).swid := (pRecord as swRecord).guid;
-                    self.insertDBRecord( cmdRecord( (pRecord as swRecord).commands[i] ) );
+                    tmpCmdRec      := tCmdRecord( tmpSwRec.commands[i] );
+                    tmpCmdRec.swid := tmpSwRec.guid;
+
+                    self.insertDBRecord( tmpCmdRec );
+                    if not assigned(tmpCmdRec) then
+                    begin
+                        while tmpSwRec.commands.count > 0 do
+                        begin
+                            tmpCmdRec := tCmdRecord( tmpSwRec.commands.first );
+                            freeAndNil(tmpCmdRec);
+                        end;
+                        freeAndNil(tmpSwRec);
+                        exit;
+                    end;
                 end;
             end;
         end
-        else if pRecord is cmdRecord then
+        else if pRecord is tCmdRecord then
         begin
+            tmpCmdRec := pRecord as tCmdRecord;
             query := format(
               'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s) '
             + 'VALUES (''%d'', ''%u'', ''%s'', ''%s'', ''%s'', ''%u'', ''%s'', ''%s'');',
@@ -298,20 +314,22 @@ implementation
               dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdCmmd],
               dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmduURL], dbStrings[dbFieldCmdHash],
               // Values
-              (pRecord as cmdRecord).swid, (pRecord as cmdRecord).prty, (pRecord as cmdRecord).name, (pRecord as cmdRecord).cmmd,
-              (pRecord as cmdRecord).vers, (pRecord as cmdRecord).arch, (pRecord as cmdRecord).uURL, (pRecord as cmdRecord).hash
+              (pRecord as tCmdRecord).swid, (pRecord as tCmdRecord).prty, (pRecord as tCmdRecord).name, (pRecord as tCmdRecord).cmmd,
+              (pRecord as tCmdRecord).vers, (pRecord as tCmdRecord).arch, (pRecord as tCmdRecord).uURL, (pRecord as tCmdRecord).hash
               ]
             );
             if self.query(query) then
-                (pRecord as cmdRecord).guid := self.getLastInsertedRecordID;
+                tmpCmdRec.guid := self.getLastInsertedRecordID
+            else
+                freeAndNil(tmpCmdRec);
         end;
     end;
 
-    procedure dbManager.updateDBRecord(pRecord: dbRecord);
+    procedure dbManager.updateDBRecord(pRecord: tDBRecord);
     var
         query: string;
     begin
-        if pRecord is swRecord then
+        if pRecord is tSwRecord then
         begin
             query := format(
               'UPDATE %s '
@@ -321,18 +339,18 @@ implementation
               // Update
               dbStrings[dbTableSoftware],
               // Set
-              dbStrings[dbFieldSwName], (pRecord as swRecord).name,
+              dbStrings[dbFieldSwName], (pRecord as tSwRecord).name,
               // Where
-              dbStrings[dbFieldSwGUID], (pRecord as swRecord).guid
+              dbStrings[dbFieldSwGUID], (pRecord as tSwRecord).guid
               ]
             );
             if not self.query(query) then
             begin
                 pRecord.free;
-                pRecord := self.getSwRecordByGUID( (pRecord as swRecord).guid, true );
+                pRecord := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
             end;
         end
-        else if pRecord is cmdRecord then
+        else if pRecord is tCmdRecord then
         begin
             query := format(
               'UPDATE %s '
@@ -348,48 +366,55 @@ implementation
               // Update
               dbStrings[dbTableCommands],
               // Set
-              dbStrings[dbFieldCmdPrty], (pRecord as cmdRecord).prty,
-              dbStrings[dbFieldCmdArch], (pRecord as cmdRecord).arch,
-              dbStrings[dbFieldCmdName], (pRecord as cmdRecord).name,
-              dbStrings[dbFieldCmdCmmd], (pRecord as cmdRecord).cmmd,
-              dbStrings[dbFieldCmdVers], (pRecord as cmdRecord).vers,
-              dbStrings[dbFieldCmduURL], (pRecord as cmdRecord).uURL,
-              dbStrings[dbFieldCmdHash], (pRecord as cmdRecord).hash,
+              dbStrings[dbFieldCmdPrty], (pRecord as tCmdRecord).prty,
+              dbStrings[dbFieldCmdArch], (pRecord as tCmdRecord).arch,
+              dbStrings[dbFieldCmdName], (pRecord as tCmdRecord).name,
+              dbStrings[dbFieldCmdCmmd], (pRecord as tCmdRecord).cmmd,
+              dbStrings[dbFieldCmdVers], (pRecord as tCmdRecord).vers,
+              dbStrings[dbFieldCmduURL], (pRecord as tCmdRecord).uURL,
+              dbStrings[dbFieldCmdHash], (pRecord as tCmdRecord).hash,
               // Where
-              dbStrings[dbFieldCmdGUID], (pRecord as cmdRecord).guid
+              dbStrings[dbFieldCmdGUID], (pRecord as tCmdRecord).guid
               ]
             );
             if not self.query(query) then
             begin
                 pRecord.free;
-                pRecord := self.getCmdRecordByGUID( (pRecord as swRecord).guid, true );
+                pRecord := self.getCmdRecordByGUID( (pRecord as tSwRecord).guid, true );
             end;
         end;
     end;
 
-    procedure dbManager.deletedbRecord(pRecord: dbRecord);
+    procedure dbManager.deleteDBRecord(pRecord: tDBRecord);
     var
-        i,
         varValue: integer;
         query,
         varTable,
-        varField: string;
+        varField:  string;
+        tmpSwRec:  tSwRecord;
+        tmpCmdRec: tCmdRecord;
     begin
         varValue := -1;
 
-        if pRecord is swRecord then
+        if pRecord is tSwRecord then
         begin
+            tmpSwRec := pRecord as tSwRecord;
             varTable := dbStrings[dbTableSoftware];
             varField := dbStrings[dbFieldSwGUID];
-            varValue := (pRecord as swRecord).guid;
-            for i := 0 to pred( (pRecord as swRecord).commands.count ) do
-                self.deleteDBRecord( (pRecord as swRecord).commands[i] );
+            varValue := (pRecord as tSwRecord).guid;
+            while tmpSwRec.commands.count > 0 do
+            begin
+                tmpCmdRec := tCmdRecord(tmpSwRec.commands.first);
+                self.deleteDBRecord(tmpCmdRec);
+                if assigned(tmpCmdRec) then
+                    exit;
+            end;
         end
-        else if pRecord is cmdRecord then
+        else if pRecord is tCmdRecord then
         begin
             varTable := dbStrings[dbTableCommands];
             varField := dbStrings[dbFieldCmdGUID];
-            varValue := (pRecord as cmdRecord).guid;
+            varValue := (pRecord as tCmdRecord).guid;
         end;
 
         query := format(
@@ -419,7 +444,7 @@ implementation
         result := sqlData.fields[0].value;
     end;
 
-    function dbManager.getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false): swRecord;
+    function dbManager.getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false): tSwRecord;
     var
         i,
         j:       integer;
@@ -430,9 +455,9 @@ implementation
         begin
             result := nil;
             for i := 0 to pred(self.m_software.count) do
-                if swRecord(self.m_software[i]).guid = guid then
+                if tSwRecord(self.m_software[i]).guid = guid then
                 begin
-                    result := swRecord(self.m_software[i]);
+                    result := tSwRecord(self.m_software[i]);
                     exit;
                 end;
             exit;
@@ -454,7 +479,7 @@ implementation
         result := nil;
         if not sqlData.isEmpty then
         begin
-            result := swRecord.create;
+            result := tSwRecord.create;
             sqlData.first;
             with result do
             begin
@@ -467,7 +492,7 @@ implementation
             sqlData.free;
     end;
 
-    function dbManager.getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): cmdRecord;
+    function dbManager.getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
     var
         i,
         j:       integer;
@@ -478,10 +503,10 @@ implementation
         begin
             result := nil;
             for i := 0 to pred(self.m_software.count) do
-                for j := 0 to pred( swRecord(self.m_software[i]).commands.count ) do
-                    if cmdRecord( swRecord(self.m_software[i]).commands.items[j] ).guid = guid then
+                for j := 0 to pred( tSwRecord(self.m_software[i]).commands.count ) do
+                    if tCmdRecord( tSwRecord(self.m_software[i]).commands.items[j] ).guid = guid then
                     begin
-                        result := cmdRecord( swRecord(self.m_software[i]).commands.items[j] );
+                        result := tCmdRecord( tSwRecord(self.m_software[i]).commands.items[j] );
                         exit;
                     end;
             exit;
@@ -503,7 +528,7 @@ implementation
         result := nil;
         if not sqlData.isEmpty then
         begin
-            result := cmdRecord.create;
+            result := tCmdRecord.create;
             sqlData.first;
             with result do
             begin
@@ -525,7 +550,7 @@ implementation
     function dbManager.getSoftwareList: tList;
     var
         query:   string;
-        swRec:   swRecord;
+        swRec:   tSwRecord;
         sqlData: tDataSet;
     begin
         if assigned(self.m_software) then
@@ -551,7 +576,7 @@ implementation
             sqlData.first;
             while not(sqlData.eof) do
             begin
-                swRec := swRecord.create;
+                swRec := tSwRecord.create;
 
                 with swRec do
                 begin
@@ -573,16 +598,16 @@ implementation
     var
         i:       integer;
         query:   string;
-        cmdRec:  cmdRecord;
+        cmdRec:  tCmdRecord;
         sqlData: tDataSet;
     begin
         if assigned(self.m_software) then
         begin
             result := nil;
             for i := 0 to pred(self.m_software.count) do
-                if swRecord(self.m_software.items[i]).guid = swid then
+                if tSwRecord(self.m_software.items[i]).guid = swid then
                 begin
-                    result := swRecord(self.m_software.items[i]).commands;
+                    result := tSwRecord(self.m_software.items[i]).commands;
                     break;
                 end;
             exit;
@@ -611,7 +636,7 @@ implementation
             result := tList.create;
             while not sqlData.eof do
             begin
-                cmdRec  := cmdRecord.create;
+                cmdRec  := tCmdRecord.create;
                 with cmdRec do
                 begin
                     guid := sqlData.fieldByName( dbStrings[dbFieldCmdGUID] ).value;
@@ -638,7 +663,7 @@ implementation
     procedure tTaskRecordOP.exec;
     begin
         case self.tOperation of
-            DOR_INSERT: sdbMgr.insertdbRecord(self.pRecord);
+            DOR_INSERT: sdbMgr.insertDBRecord(self.pRecord);
             DOR_UPDATE: sdbMgr.updateDBRecord(self.pRecord);
             DOR_DELETE: sdbMgr.deleteDBRecord(self.pRecord);
         end;
