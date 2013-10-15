@@ -56,15 +56,22 @@ type
         public
             constructor   create(dbNamePath: string = 'FacTotum.db');
             destructor    Destroy; override;
-            procedure     insertDBRecord(pRecord: tDBRecord);
-            procedure     deleteDBRecord(pRecord: tDBRecord);
-            procedure     updateDBRecord(pRecord: tDBRecord);
+            procedure     insertDBRecord(var pRecord: tDBRecord);
+            procedure     deleteDBRecord(var pRecord: tDBRecord);
+            procedure     updateDBRecord(var pRecord: tDBRecord);
             function      getSoftwareList: tList;
             function      getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false):  tSwRecord;
             function      getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
     end;
 
     tTaskRecordOP = class(tTask)
+        public
+            pRecord:        tDBRecord;
+            tOperation:     dbOperation;
+            procedure exec; override;
+    end;
+
+    tTaskRecordOPFeedBack = class(tTaskOutput)
         public
             pRecord:        tDBRecord;
             tOperation:     dbOperation;
@@ -257,7 +264,7 @@ implementation
         self.query(query);
     end;
 
-    procedure dbManager.insertDBRecord(pRecord: tDBRecord);
+    procedure dbManager.insertDBRecord(var pRecord: tDBRecord);
     var
         i:         integer;
         tmpSwRec:  tSwRecord;
@@ -287,19 +294,21 @@ implementation
                     tmpCmdRec      := tCmdRecord( tmpSwRec.commands[i] );
                     tmpCmdRec.swid := tmpSwRec.guid;
 
-                    self.insertDBRecord( tmpCmdRec );
+                    self.insertDBRecord( tDBRecord(tmpCmdRec) );
                     if not assigned(tmpCmdRec) then
                     begin
                         while tmpSwRec.commands.count > 0 do
                         begin
-                            tmpCmdRec := tCmdRecord( tmpSwRec.commands.first );
+                            tmpCmdRec := tCmdRecord(tmpSwRec.commands.first);
                             freeAndNil(tmpCmdRec);
+                            tmpSwRec.commands.remove(tmpSwRec.commands.first);
                         end;
                         freeAndNil(tmpSwRec);
-                        exit;
                     end;
                 end;
-            end;
+            end
+            else
+                freeAndNil(pRecord);
         end
         else if pRecord is tCmdRecord then
         begin
@@ -325,9 +334,10 @@ implementation
         end;
     end;
 
-    procedure dbManager.updateDBRecord(pRecord: tDBRecord);
+    procedure dbManager.updateDBRecord(var pRecord: tDBRecord);
     var
-        query: string;
+        query:     string;
+        tmpRecord: tDBRecord;
     begin
         if pRecord is tSwRecord then
         begin
@@ -346,8 +356,9 @@ implementation
             );
             if not self.query(query) then
             begin
-                pRecord.free;
-                pRecord := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
+                tmpRecord                   := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
+                (pRecord as tSwRecord).name := (tmpRecord as tSwRecord).name;
+                tmpRecord.free;
             end;
         end
         else if pRecord is tCmdRecord then
@@ -379,20 +390,27 @@ implementation
             );
             if not self.query(query) then
             begin
-                pRecord.free;
-                pRecord := self.getCmdRecordByGUID( (pRecord as tSwRecord).guid, true );
+                tmpRecord := self.getCmdRecordByGUID( (pRecord as tCmdRecord).guid, true );
+                (pRecord as tCmdRecord).prty := (tmpRecord as tCmdRecord).prty;
+                (pRecord as tCmdRecord).arch := (tmpRecord as tCmdRecord).arch;
+                (pRecord as tCmdRecord).name := (tmpRecord as tCmdRecord).name;
+                (pRecord as tCmdRecord).cmmd := (tmpRecord as tCmdRecord).cmmd;
+                (pRecord as tCmdRecord).vers := (tmpRecord as tCmdRecord).vers;
+                (pRecord as tCmdRecord).uURL := (tmpRecord as tCmdRecord).uURL;
+                (pRecord as tCmdRecord).hash := (tmpRecord as tCmdRecord).hash;
+                tmpRecord.free;
             end;
         end;
     end;
 
-    procedure dbManager.deleteDBRecord(pRecord: tDBRecord);
+    procedure dbManager.deleteDBRecord(var pRecord: tDBRecord);
     var
         varValue: integer;
         query,
         varTable,
         varField:  string;
         tmpSwRec:  tSwRecord;
-        tmpCmdRec: tCmdRecord;
+        tmpCmdRec: tDBRecord;
     begin
         varValue := -1;
 
@@ -402,12 +420,13 @@ implementation
             varTable := dbStrings[dbTableSoftware];
             varField := dbStrings[dbFieldSwGUID];
             varValue := (pRecord as tSwRecord).guid;
-            while tmpSwRec.commands.count > 0 do
+            while pred(tmpSwRec.commands.count) > -1 do
             begin
-                tmpCmdRec := tCmdRecord(tmpSwRec.commands.first);
+                tmpCmdRec := tmpSwRec.commands.first;
                 self.deleteDBRecord(tmpCmdRec);
                 if assigned(tmpCmdRec) then
                     exit;
+                tmpSwRec.commands.remove(tmpSwRec.commands.first);
             end;
         end
         else if pRecord is tCmdRecord then
@@ -446,8 +465,7 @@ implementation
 
     function dbManager.getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false): tSwRecord;
     var
-        i,
-        j:       integer;
+        i:       integer;
         query:   string;
         sqlData: tDataSet;
     begin
@@ -661,12 +679,91 @@ implementation
 // End Implementation of TDatabase Class
 
     procedure tTaskRecordOP.exec;
+    var
+        i:            integer;
+        taskFeedBack: tTaskRecordOPFeedBack;
     begin
         case self.tOperation of
             DOR_INSERT: sdbMgr.insertDBRecord(self.pRecord);
             DOR_UPDATE: sdbMgr.updateDBRecord(self.pRecord);
             DOR_DELETE: sdbMgr.deleteDBRecord(self.pRecord);
         end;
+
+        taskFeedBack            := tTaskRecordOPFeedBack.create;
+        taskFeedBack.pRecord    := self.pRecord;
+        taskFeedBack.tOperation := self.tOperation;
+        setLength(taskFeedBack.dummyTargets, length(self.dummyTargets));
+
+        for i := 0 to pred( length(self.dummyTargets) ) do
+            taskFeedBack.dummyTargets[i] := self.dummyTargets[i];
+
+        sTaskMgr.pushTaskToOutput(taskFeedBack);
+    end;
+
+    procedure tTaskRecordOPFeedBack.exec;
+    var
+        i:        integer;
+        node:     tTreeNode;
+        tvConfig: tTreeView;
+    begin
+        if not (self.dummyTargets[0] is tTreeView) then
+            exit;
+
+        tvConfig := self.dummyTargets[0] as tTreeView;
+
+        case self.tOperation of
+            DOR_INSERT:
+                if assigned(self.pRecord) then
+                begin
+                    if (self.pRecord is tSwRecord) then
+                    begin
+                        node      := tvConfig.items.add( nil, tSwRecord(self.pRecord).name );
+                        node.data := self.pRecord;
+                        tvConfig.items.addChild( node, tCmdRecord(tSwRecord(self.pRecord).commands.first).name ).data := tSwRecord(self.pRecord).commands.first;
+                        node.expand(true);
+                        exit;
+                    end;
+
+                    if (self.pRecord is tCmdRecord) then
+                        for i := 0 to pred(tvConfig.items.count) do
+                            if tCmdRecord(self.pRecord).swid = tSwRecord(tvConfig.items[i]).guid then
+                            begin
+                                tvConfig.items.addChild( tvConfig.items[i], tCmdRecord(self.pRecord).name ).data := self.pRecord;
+                                exit;
+                            end;
+                end;
+            DOR_UPDATE:
+                for i := 0 to pred(tvConfig.items.count) do
+                    if (self.pRecord is tSwRecord) and
+                       (tvConfig.items[i].hasChildren) and
+                       ( tSwRecord(self.pRecord).guid = tSwRecord(tvConfig.items[i].data).guid ) then
+                    begin
+                        tvConfig.items[i].text := tSwRecord(self.pRecord).name;
+                        exit;
+                    end
+                    else if (self.pRecord is tCmdRecord) and
+                            (not tvConfig.items[i].hasChildren) and
+                            ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.items[i].data).guid) then
+                            begin
+                                tvConfig.items[i].text := tCmdRecord(self.pRecord).name;
+                                exit;
+                            end;
+            DOR_DELETE:
+                if not assigned(self.pRecord) then
+                    for i := 0 to pred(tvConfig.items.count) do
+                        if not assigned(tvConfig.items[i].data) then
+                        begin
+                            tvConfig.items[i].delete;
+                            exit;
+                        end
+                        else
+                        begin
+                            node := tvConfig.items[i].getFirstChild;
+                            while( assigned(node) and assigned(node.data) ) do
+                                node := tvConfig.items[i].GetNextChild(node);
+                            node.free;
+                        end;
+        end
     end;
 
     procedure tTaskGetVer.exec;

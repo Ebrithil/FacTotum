@@ -196,6 +196,9 @@ implementation
         taskUpdate.pRecord    := tvConfig.selected.data;
         taskUpdate.tOperation := DOR_UPDATE;
 
+        setLength(taskUpdate.dummyTargets, 1);
+        taskUpdate.dummyTargets[0] := tvConfig;
+
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
@@ -443,7 +446,6 @@ implementation
     var
         taskInsert: tTaskRecordOP;
         command:    tCmdRecord;
-        node:       tTreeNode;
     begin
         taskInsert   := tTaskRecordOP.create;
         command      := tCmdRecord.create;
@@ -454,7 +456,6 @@ implementation
             taskInsert.tOperation := DOR_INSERT;
             command.swid          := tSwRecord(tvConfig.selected.parent.data).guid;
             command.prty          := tSwRecord(tvConfig.selected.parent.data).commands.count;
-            tvConfig.items.addChild(tvConfig.selected.parent, '<Nuovo Comando>').data := command;
         end
         else
         begin
@@ -464,11 +465,6 @@ implementation
             tSwRecord(taskInsert.pRecord).commands := tList.create;
             command.prty                           := 0;
             tSwRecord(taskInsert.pRecord).commands.add(command);
-            node                                                  := tvConfig.items.add(nil, '<Nuovo Software>');
-            node.data                                             := taskInsert.pRecord;
-            tvConfig.items.addChild(node, '<Nuovo Comando>').data := command;
-
-            node.expand(true);
         end;
 
         command.arch := byte(archNone);
@@ -477,6 +473,9 @@ implementation
         command.cmmd := '<Comando>';
         command.uURL := '';
         command.hash := '';
+
+        setLength(taskInsert.dummyTargets, 1);
+        taskInsert.dummyTargets[0] := tvConfig;
 
         sTaskMgr.pushTaskToInput(taskInsert);
     end;
@@ -533,22 +532,22 @@ implementation
     begin
         taskDelete := tTaskRecordOP.create;
 
-        if assigned(tvConfig.selected.parent) then
-        begin
-            taskDelete.pRecord    := tvConfig.selected.data;
-            taskDelete.tOperation := DOR_DELETE;
+        taskDelete.tOperation := DOR_DELETE;
 
-            if tvConfig.selected.parent.count = 1 then
-                tvConfig.items.delete(tvConfig.selected.parent)
-            else
-                tvConfig.items.delete(tvConfig.selected);
+        if assigned(tvConfig.selected.parent)and
+            (tvConfig.selected.parent.count = 1) then
+        begin
+            taskDelete.pRecord := tvConfig.selected.parent.data;
+            tvConfig.items.delete(tvConfig.selected.parent);
         end
         else
         begin
-            taskDelete.pRecord    := tvConfig.selected.data;
-            taskDelete.tOperation := DOR_DELETE;
+            taskDelete.pRecord := tvConfig.selected.data;
             tvConfig.items.delete(tvConfig.selected);
         end;
+
+        setLength(taskDelete.dummyTargets, 1);
+        taskDelete.dummyTargets[0] := tvConfig;
 
         sTaskMgr.pushTaskToInput(taskDelete);
     end;
