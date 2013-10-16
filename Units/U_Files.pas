@@ -21,7 +21,7 @@ type
            function     getCmdRecordsByHash(const hash: string): tList;
            function     executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
        public
-           constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
+           constructor create(useMD5: boolean = false; stpFolder: string = 'Setup\');
            destructor  Destroy; override;
            function    addSetupToArchive(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
            function    updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
@@ -75,7 +75,7 @@ var
 
 implementation
 
-    constructor fileManager.create(useSha1: boolean = false; stpFolder: string = 'Setup\');
+    constructor fileManager.create(useMD5: boolean = false; stpFolder: string = 'Setup\');
     begin
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
@@ -86,10 +86,10 @@ implementation
                 createEvent('Impossibile creare la cartella d''installazione.', eiError)
         end;
 
-        if useSha1 then
-            m_hasher := tIdHashSHA1.create
+        if useMD5 then
+            m_hasher := tIdHashMessageDigest5.create
         else
-            m_hasher := tIdHashMessageDigest5.create;
+            m_hasher := tIdHashSHA1.create;
     end;
 
     destructor fileManager.Destroy;

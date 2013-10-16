@@ -6,6 +6,7 @@ uses
     System.SysUtils, System.UITypes, Vcl.Dialogs, Data.db, Data.SqlExpr, Data.dbXSqlite,
     System.Classes, winapi.windows, System.SyncObjs, System.Types,
     IdGlobal, IdHash, IdHashSHA, IdHashMessageDigest, ShellAPI, vcl.comCtrls, System.StrUtils,
+    vcl.extCtrls,
 
     U_InputTasks, U_OutputTasks, U_Parser, U_Events, U_Threads;
 
@@ -56,9 +57,9 @@ type
         public
             constructor   create(dbNamePath: string = 'FacTotum.db');
             destructor    Destroy; override;
-            procedure     insertDBRecord(var pRecord: tDBRecord);
-            procedure     deleteDBRecord(var pRecord: tDBRecord);
-            procedure     updateDBRecord(var pRecord: tDBRecord);
+            function      insertDBRecord(var pRecord: tDBRecord): boolean;
+            function      deleteDBRecord(var pRecord: tDBRecord): boolean;
+            function      updateDBRecord(var pRecord: tDBRecord): boolean;
             function      getSoftwareList: tList;
             function      getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false):  tSwRecord;
             function      getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
@@ -75,6 +76,7 @@ type
         public
             pRecord:        tDBRecord;
             tOperation:     dbOperation;
+            queryResult:    boolean;
             procedure exec; override;
     end;
 
@@ -264,13 +266,14 @@ implementation
         self.query(query);
     end;
 
-    procedure dbManager.insertDBRecord(var pRecord: tDBRecord);
+    function dbManager.insertDBRecord(var pRecord: tDBRecord): boolean;
     var
         i:         integer;
         tmpSwRec:  tSwRecord;
         tmpCmdRec: tCmdRecord;
         query:     string;
     begin
+        result := false;
         if pRecord is tSwRecord then
         begin
             tmpSwRec := pRecord as tSwRecord;
@@ -288,6 +291,7 @@ implementation
             );
             if self.query(query) then
             begin
+                result := true;
                 tmpSwRec.guid := self.getLastInsertedRecordID;
                 for i := 0 to pred( tmpSwRec.commands.count ) do
                 begin
@@ -328,17 +332,21 @@ implementation
               ]
             );
             if self.query(query) then
-                tmpCmdRec.guid := self.getLastInsertedRecordID
+            begin
+                tmpCmdRec.guid := self.getLastInsertedRecordID;
+                result := true;
+            end
             else
                 freeAndNil(tmpCmdRec);
         end;
     end;
 
-    procedure dbManager.updateDBRecord(var pRecord: tDBRecord);
+    function dbManager.updateDBRecord(var pRecord: tDBRecord): boolean;
     var
         query:     string;
         tmpRecord: tDBRecord;
     begin
+        result := false;
         if pRecord is tSwRecord then
         begin
             query := format(
@@ -359,7 +367,9 @@ implementation
                 tmpRecord                   := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
                 (pRecord as tSwRecord).name := (tmpRecord as tSwRecord).name;
                 tmpRecord.free;
-            end;
+            end
+            else
+                result := true;
         end
         else if pRecord is tCmdRecord then
         begin
@@ -399,11 +409,13 @@ implementation
                 (pRecord as tCmdRecord).uURL := (tmpRecord as tCmdRecord).uURL;
                 (pRecord as tCmdRecord).hash := (tmpRecord as tCmdRecord).hash;
                 tmpRecord.free;
-            end;
+            end
+            else
+                result := true;
         end;
     end;
 
-    procedure dbManager.deleteDBRecord(var pRecord: tDBRecord);
+    function dbManager.deleteDBRecord(var pRecord: tDBRecord): boolean;
     var
         varValue: integer;
         query,
@@ -412,6 +424,7 @@ implementation
         tmpSwRec:  tSwRecord;
         tmpCmdRec: tDBRecord;
     begin
+        result   := false;
         varValue := -1;
 
         if pRecord is tSwRecord then
@@ -448,7 +461,10 @@ implementation
           ]
         );
         if self.query(query) then
+        begin
+            result := true;
             freeAndNil(pRecord);
+        end;
     end;
 
     function dbManager.getLastInsertedRecordID: integer;
@@ -683,13 +699,14 @@ implementation
         i:            integer;
         taskFeedBack: tTaskRecordOPFeedBack;
     begin
+        taskFeedBack := tTaskRecordOPFeedBack.create;
+
         case self.tOperation of
-            DOR_INSERT: sdbMgr.insertDBRecord(self.pRecord);
-            DOR_UPDATE: sdbMgr.updateDBRecord(self.pRecord);
-            DOR_DELETE: sdbMgr.deleteDBRecord(self.pRecord);
+            DOR_INSERT: taskFeedBack.queryResult := sdbMgr.insertDBRecord(self.pRecord);
+            DOR_UPDATE: taskFeedBack.queryResult := sdbMgr.updateDBRecord(self.pRecord);
+            DOR_DELETE: taskFeedBack.queryResult := sdbMgr.deleteDBRecord(self.pRecord);
         end;
 
-        taskFeedBack            := tTaskRecordOPFeedBack.create;
         taskFeedBack.pRecord    := self.pRecord;
         taskFeedBack.tOperation := self.tOperation;
         setLength(taskFeedBack.dummyTargets, length(self.dummyTargets));
@@ -733,21 +750,35 @@ implementation
                             end;
                 end;
             DOR_UPDATE:
+            begin
                 for i := 0 to pred(tvConfig.items.count) do
                     if (self.pRecord is tSwRecord) and
                        (tvConfig.items[i].hasChildren) and
                        ( tSwRecord(self.pRecord).guid = tSwRecord(tvConfig.items[i].data).guid ) then
                     begin
                         tvConfig.items[i].text := tSwRecord(self.pRecord).name;
-                        exit;
+                        break;
                     end
                     else if (self.pRecord is tCmdRecord) and
                             (not tvConfig.items[i].hasChildren) and
                             ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.items[i].data).guid) then
                             begin
                                 tvConfig.items[i].text := tCmdRecord(self.pRecord).name;
-                                exit;
+
+                                if ( length(self.dummyTargets) = 2 ) and
+                                   (self.dummyTargets[1] is tLabeledEdit) then
+                                begin
+                                    if not ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.selected.data).guid ) then
+                                        tvConfig.selected := tvConfig.items[i];
+
+                                    if self.queryResult then
+                                        (self.dummyTargets[1] as tLabeledEdit).color := $0080FF80 // Verde
+                                    else
+                                        (self.dummyTargets[1] as tLabeledEdit).color := $008080FF; // Rosso
+                                end;
+                                break;
                             end;
+            end;
             DOR_DELETE:
                 if not assigned(self.pRecord) then
                     for i := 0 to pred(tvConfig.items.count) do
