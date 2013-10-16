@@ -13,20 +13,21 @@ type
        protected
            m_hasher:    tIdHash;
            m_stpFolder: string;
+           function     fileExistsInPath(fileName: string): boolean;
            function     isArchived(cmdGuid: integer): boolean; overload;
            function     isArchived(fileHash: string): boolean; overload;
            function     getFileHash(fileName: string): string; overload;
            function     getFileHash(fileData: tMemoryStream): string; overload;
-           function     getArchivePathFor(cmdGuid: integer): string;
+           function     getArchivePathFor(cmdGuid: integer):  string;
            function     getCmdRecordsByHash(const hash: string): tList;
-           function     executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
+           function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
        public
-           constructor create(useSha1: boolean = false; stpFolder: string = 'Setup\');
-           destructor  Destroy; override;
-           function    addSetupToArchive(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
-           function    updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
-           procedure   runCommand(cmd: string);
-           procedure   removeSetupFromArchive(handle: tHandle; folderName: string);
+           constructor  create(useSha1: boolean = false; stpFolder: string = 'Setup\');
+           destructor   Destroy; override;
+           procedure    runCommand(cmd: string);
+           function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
+           function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream):     boolean;
+           function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
     end;
 
     tTaskDownload = class(tTask)
@@ -97,6 +98,16 @@ implementation
         m_hasher.free;
     end;
 
+    function fileManager.fileExistsInPath(fileName: string): boolean;
+    var
+        filePartPtr:   pWideChar;
+        filePart,
+        fullFilePath:  array[0..255] of char;
+    begin
+        filePartPtr := @filePart;
+        result := ( searchPath(nil, pWideChar(fileName), nil, 255, fullFilePath, filePartPtr) > 0 );
+    end;
+
     function fileManager.getFileHash(fileName: string): string;
     var
         msFile: tMemoryStream;
@@ -119,33 +130,44 @@ implementation
         // TODO
     end;
 
-    function fileManager.addSetupToArchive(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
+    function fileManager.insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
     var
         tmpTo,
         tmpFrom,
         tempHash: string;
+        opResult: boolean;
     begin
         result := false;
 
+        opResult := false;
         tempHash := self.getFileHash(fileName);
-        tmpTo    := getCurrentDir + self.m_stpFolder + tempHash;
-        if folderName = '' then
+        if not isArchived(tempHash) then
         begin
-            tmpFrom := fileName;
-            tmpTo   := tmpTo + '\' + extractFileName(fileName);
-        end
-        else
-            tmpFrom := folderName;
+            tmpTo    := getCurrentDir + self.m_stpFolder + tempHash;
+            if folderName = '' then
+            begin
+                tmpFrom := fileName;
+                tmpTo   := tmpTo + '\' + extractFileName(fileName);
+            end
+            else
+                tmpFrom := folderName;
 
-        if sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo) then
+            opResult := sFileMgr.executeFileOperation(handle, FO_COPY, tmpFrom, tmpTo);
+        end;
+
+        if opResult or isArchived(tempHash) then
         begin
             cmdRec.hash := tempHash;
+            if folderName <> '' then
+                cmdRec.cmmd := ansiReplaceStr(fileName, folderName + '\', '')
+            else
+                cmdRec.cmmd := extractFileName(fileName);
             sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
             result := true;
         end;
     end;
 
-    function fileManager.updateSetupInArchive(handle: tHandle; cmdRec: tCmdRecord; data: tMemoryStream; fileName:string): boolean;
+    function fileManager.updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName:string; data: tMemoryStream): boolean;
     var
         i:          integer;
         tmpRec:     tDBRecord;
@@ -157,6 +179,10 @@ implementation
         newHash  := self.getFileHash(data);
         testFile := '';
 
+        // Salvo il file scaricato in temp per lo spostamento
+        data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
+        data.free;
+
         if cmdRec.hash <> '' then
         begin
             // Rinomino il vecchio eseguibile del comando
@@ -166,9 +192,6 @@ implementation
 
             if (testFile = '') or not sFileMgr.executeFileOperation(handle, FO_RENAME, testFile, testFile + '.old') then
                 exit;
-
-            // Salvo il file scaricato in temp per lo spostamento
-            data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
 
             if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + cmdRec.hash + '\' + fileName) then
                 exit;
@@ -183,9 +206,6 @@ implementation
         end
         else
         begin
-            // Salvo il file scaricato in temp per lo spostamento
-            data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
-
             if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + newHash + '\' + fileName) then
                 exit;
 
@@ -213,10 +233,9 @@ implementation
         result := true;
     end;
 
-    procedure fileManager.removeSetupFromArchive(handle: tHandle; folderName: string);
+    function fileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
     begin
-        // usas FillChar
-        sFileMgr.executeFileOperation(handle, FO_DELETE, folderName);
+        result := sFileMgr.executeFileOperation(handle, FO_DELETE, hash);
     end;
 
     function fileManager.getArchivePathFor(cmdGuid: integer): string;
@@ -249,7 +268,7 @@ implementation
                   result.add( tCmdRecord( tSwRecord(swList[i]).commands[j] ) );
     end;
 
-    function fileManager.executeFileOperation(handle: tHandle; op: short; pathFrom: string; pathTo: string = ''): boolean;
+    function fileManager.executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     var
         soFileOperation: tSHFileOpStruct;
         errorCode:       integer;
@@ -259,7 +278,7 @@ implementation
         with soFileOperation do
         begin
             wnd    := handle;
-            wFunc  := op;
+            wFunc  := fileOP;
             pFrom  := pchar(pathFrom + #0);
             pTo    := pchar(pathTo + #0);
             fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
@@ -269,7 +288,7 @@ implementation
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
         begin
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eseguire l''operazione ' + intToStr(op) + ' [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eseguire l''operazione ' + intToStr(fileOP) + ' [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
             result := false;
         end
         else
@@ -280,7 +299,7 @@ implementation
     var
         taskAdded: tTaskAddedToArchive;
     begin
-        if (not sFileMgr.addSetupToArchive(self.formHandle, self.cmdRec, self.fileName, self.folderName)) then
+        if (not sFileMgr.insertArchiveSetup(self.formHandle, self.cmdRec, self.fileName, self.folderName)) then
             exit;
 
         taskAdded                 := tTaskAddedToArchive.create;
@@ -354,7 +373,7 @@ implementation
 
         self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.pRecord.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
         self.dataStream.seek(0, soBeginning);
-        sFileMgr.updateSetupInArchive(self.formHandle, self.pRecord, self.dataStream, self.fileName);
+        sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream);
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
