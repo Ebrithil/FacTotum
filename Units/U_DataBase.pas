@@ -768,13 +768,18 @@ implementation
                                 if ( length(self.dummyTargets) = 2 ) and
                                    (self.dummyTargets[1] is tLabeledEdit) then
                                 begin
-                                    if not ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.selected.data).guid ) then
+                                    if ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.selected.data).guid ) then
+                                    begin
+                                        if self.queryResult then
+                                            (self.dummyTargets[1] as tLabeledEdit).color := $0080FF80 // Verde
+                                        else
+                                            (self.dummyTargets[1] as tLabeledEdit).color := $008080FF; // Rosso
+                                    end
+                                    else if not self.queryResult then
+                                    begin
                                         tvConfig.selected := tvConfig.items[i];
-
-                                    if self.queryResult then
-                                        (self.dummyTargets[1] as tLabeledEdit).color := $0080FF80 // Verde
-                                    else
                                         (self.dummyTargets[1] as tLabeledEdit).color := $008080FF; // Rosso
+                                    end;
                                 end;
                                 break;
                             end;

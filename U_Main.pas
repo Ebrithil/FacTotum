@@ -16,9 +16,6 @@ uses
 
 type
     tfFacTotum = class(tForm)
-        protected
-            lastNode: tTreeNode;
-        public
             pcTabs:         tPageControl;
             tInstaller:     tTabSheet;
             tConfiguration: tTabSheet;
@@ -75,7 +72,6 @@ type
             procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
             procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
             procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
-            procedure tvConfigChanging(sender: tObject; node: tTreeNode; var allowChange: boolean);
             procedure bUpdateClick(sender: tObject);
             procedure pmUpdatePopup(sender: tObject);
             procedure miUpdateClick(sender: tObject);
@@ -84,6 +80,9 @@ type
             procedure fillConfigureSoftwareList;
             procedure sendUpdateSoftwareList;
             procedure fillUpdateSoftwareList;
+
+        protected
+            lastNode: tTreeNode;
     end;
 
 var
@@ -171,11 +170,6 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.tvConfigChanging(sender: tObject; node: tTreeNode; var allowChange: boolean);
-    begin
-        self.lastNode := tvConfig.selected;
-    end;
-
     procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
     var
         taskUpdate: tTaskRecordOP;
@@ -200,6 +194,8 @@ implementation
     var
         node: tTreeNode;
     begin
+        self.lastNode := tvConfig.selected;
+
         node := tvConfig.getNodeAt(X, Y);
 
         if assigned(node) then
