@@ -168,7 +168,7 @@ implementation
         end;
     end;
 
-    function fileManager.updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName:string; data: tMemoryStream): boolean;
+    function fileManager.updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
     var
         i:          integer;
         tmpRec:     tDBRecord;
@@ -235,6 +235,7 @@ implementation
             sdbMgr.updatedbRecord( tmpRec );
         end;
 
+        cmdRecList.free;
         result := true;
     end;
 

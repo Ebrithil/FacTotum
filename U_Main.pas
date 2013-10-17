@@ -16,70 +16,74 @@ uses
 
 type
     tfFacTotum = class(tForm)
-        pcTabs:         tPageControl;
-        tInstaller:     tTabSheet;
-        tConfiguration: tTabSheet;
-        tUpdate:        tTabSheet;
-        pbCmdInst:      tProgressBar;
-        lInstall:       tLabel;
-        clbInstall:     tCheckListBox;
-        ilFacTotum:     tImageList;
-        tvConfig:       ttreeView;
-        rgArchInfo:     tRadioGroup;
-        leCmdInfo:      tLabeledEdit;
-        pmSoftware:     tPopupMenu;
-        miInsert:       tMenuItem;
-        miDelete:       tMenuItem;
-        lUpdate:        tLabel;
-        pbUpdate:       tProgressBar;
-        leVerInfo:      tLabeledEdit;
-        leUrlInfo:      tLabeledEdit;
-        miSetMainCmd:   tMenuItem;
-        lUpdateProg:    tLabel;
-        tLog:           tTabSheet;
-        lCmdInstProg:   tLabel;
-        bInstall:       tButton;
-        bUpdate:        tButton;
-        lvEvents:       tListView;
-        bEmpty:         tButton;
-        ilTasks:        tImageList;
-        bBrowse:        tButton;
-        lvUpdate:       tListView;
-        pbSwInst:       tProgressBar;
-        lSwInstProg:    tLabel;
-        pbEvents:       tProgressBar;
-        lEventsProg:    tLabel;
-        lEvents:        tLabel;
-        pmUpdate:       tPopupMenu;
-        miUpdate:       tMenuItem;
+        protected
+            lastNode: tTreeNode;
+        public
+            pcTabs:         tPageControl;
+            tInstaller:     tTabSheet;
+            tConfiguration: tTabSheet;
+            tUpdate:        tTabSheet;
+            pbCmdInst:      tProgressBar;
+            lInstall:       tLabel;
+            clbInstall:     tCheckListBox;
+            ilFacTotum:     tImageList;
+            tvConfig:       ttreeView;
+            rgArchInfo:     tRadioGroup;
+            leCmdInfo:      tLabeledEdit;
+            pmSoftware:     tPopupMenu;
+            miInsert:       tMenuItem;
+            miDelete:       tMenuItem;
+            lUpdate:        tLabel;
+            pbUpdate:       tProgressBar;
+            leVerInfo:      tLabeledEdit;
+            leUrlInfo:      tLabeledEdit;
+            miSetMainCmd:   tMenuItem;
+            lUpdateProg:    tLabel;
+            tLog:           tTabSheet;
+            lCmdInstProg:   tLabel;
+            bInstall:       tButton;
+            bUpdate:        tButton;
+            lvEvents:       tListView;
+            bEmpty:         tButton;
+            ilTasks:        tImageList;
+            bBrowse:        tButton;
+            lvUpdate:       tListView;
+            pbSwInst:       tProgressBar;
+            lSwInstProg:    tLabel;
+            pbEvents:       tProgressBar;
+            lEventsProg:    tLabel;
+            lEvents:        tLabel;
+            pmUpdate:       tPopupMenu;
+            miUpdate:       tMenuItem;
 
-        procedure formCreate(sender: tObject);
-        procedure applicationIdleEvents(sender: tObject; var done: boolean);
-        procedure bEmptyClick(sender: tObject);
-        procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
-        procedure formClose(sender: tObject; var action: tCloseAction);
-        procedure miInsertClick(sender: tObject);
-        procedure tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
-        procedure pmSoftwarePopup(sender: tObject);
-        procedure miDeleteClick(sender: tObject);
-        procedure leCmdInfoExit(sender: tObject);
-        procedure leVerInfoExit(sender: tObject);
-        procedure leVerInfoKeyPress(sender: tObject; var key: char);
-        procedure leUrlInfoExit(sender: tObject);
-        procedure leCmdInfoKeyPress(sender: tObject; var key: char);
-        procedure leUrlInfoKeyPress(sender: tObject; var key: char);
-        procedure bBrowseClick(sender: tObject);
-        procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
-        procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
-        procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
-        procedure bUpdateClick(sender: tObject);
-        procedure pmUpdatePopup(sender: tObject);
-        procedure miUpdateClick(sender: tObject);
-        procedure rgArchInfoExit(sender: tObject);
+            procedure formCreate(sender: tObject);
+            procedure applicationIdleEvents(sender: tObject; var done: boolean);
+            procedure bEmptyClick(sender: tObject);
+            procedure configureUpdateOnTreeSelect(sender: tObject; node: tTreeNode);
+            procedure formClose(sender: tObject; var action: tCloseAction);
+            procedure miInsertClick(sender: tObject);
+            procedure tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+            procedure pmSoftwarePopup(sender: tObject);
+            procedure miDeleteClick(sender: tObject);
+            procedure leCmdInfoExit(sender: tObject);
+            procedure leVerInfoExit(sender: tObject);
+            procedure leVerInfoKeyPress(sender: tObject; var key: char);
+            procedure leUrlInfoExit(sender: tObject);
+            procedure leCmdInfoKeyPress(sender: tObject; var key: char);
+            procedure leUrlInfoKeyPress(sender: tObject; var key: char);
+            procedure bBrowseClick(sender: tObject);
+            procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
+            procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
+            procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
+            procedure tvConfigChanging(sender: tObject; node: tTreeNode; var allowChange: boolean);
+            procedure bUpdateClick(sender: tObject);
+            procedure pmUpdatePopup(sender: tObject);
+            procedure miUpdateClick(sender: tObject);
+            procedure rgArchInfoExit(sender: tObject);
 
-        procedure fillConfigureSoftwareList;
-        procedure sendUpdateSoftwareList;
-        procedure fillUpdateSoftwareList;
+            procedure fillConfigureSoftwareList;
+            procedure sendUpdateSoftwareList;
+            procedure fillUpdateSoftwareList;
     end;
 
 var
@@ -165,6 +169,11 @@ implementation
 
             node.expand(true);
         end;
+    end;
+
+    procedure tfFacTotum.tvConfigChanging(sender: tObject; node: tTreeNode; var allowChange: boolean);
+    begin
+        self.lastNode := tvConfig.selected;
     end;
 
     procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
@@ -268,22 +277,29 @@ implementation
 
     procedure tfFacTotum.leCmdInfoExit(sender: tObject);
     var
+        tmpNode:    tTreeNode;
         taskUpdate: tTaskRecordOP;
     begin
+        if assigned(self.lastNode) then
+            tmpNode := self.lastNode
+        else
+            tmpNode := tvConfig.selected;
+
         leCmdInfo.text := trim(leCmdInfo.text);
-        if tCmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
+        if tCmdRecord(tmpNode.data).cmmd <> leCmdInfo.text then
         begin
             taskUpdate := tTaskRecordOP.create;
 
-            tCmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
-            taskUpdate.pRecord                      := tvConfig.selected.data;
-            taskUpdate.tOperation                   := DOR_UPDATE;
+            tCmdRecord(tmpNode.data).cmmd := leCmdInfo.text;
+            taskUpdate.pRecord            := tmpNode.data;
+            taskUpdate.tOperation         := DOR_UPDATE;
 
             setLength(taskUpdate.dummyTargets, 2);
             taskUpdate.dummyTargets[0] := tvConfig;
             taskUpdate.dummyTargets[1] := leCmdInfo;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
 
             if length(leCmdInfo.text) > 0 then
                 leCmdInfo.color := $0080FFFF  // Giallo
@@ -303,22 +319,29 @@ implementation
 
     procedure tfFacTotum.leUrlInfoExit(Sender: TObject);
     var
+        tmpNode:    tTreeNode;
         taskUpdate: tTaskRecordOP;
     begin
+        if assigned(self.lastNode) then
+            tmpNode := self.lastNode
+        else
+            tmpNode := tvConfig.selected;
+
         leUrlInfo.text := trim(leUrlInfo.text);
-        if tCmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
+        if tCmdRecord(tmpNode.data).uURL <> leUrlInfo.text then
         begin
             taskUpdate := tTaskRecordOP.create;
 
-            tCmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
-            taskUpdate.pRecord                      := tvConfig.selected.data;
-            taskUpdate.tOperation                   := DOR_UPDATE;
+            tCmdRecord(tmpNode.data).uURL := leUrlInfo.text;
+            taskUpdate.pRecord            := tmpNode.data;
+            taskUpdate.tOperation         := DOR_UPDATE;
 
             setLength(taskUpdate.dummyTargets, 2);
             taskUpdate.dummyTargets[0] := tvConfig;
             taskUpdate.dummyTargets[1] := leUrlInfo;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
 
             if length(leUrlInfo.text) = 0 then
                 leUrlInfo.color := $0080FFFF  // Giallo
@@ -343,24 +366,31 @@ implementation
 
     procedure tfFacTotum.leVerInfoExit(sender: tObject);
     var
+        tmpNode:    tTreeNode;
         taskUpdate: tTaskRecordOP;
     begin
+        if assigned(self.lastNode) then
+            tmpNode := self.lastNode
+        else
+            tmpNode := tvConfig.selected;
+
         leVerInfo.text := trim( leVerInfo.text );
-        if tCmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
+        if tCmdRecord(tmpNode.data).vers <> leVerInfo.text then
         begin
             if ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
             begin
                 taskUpdate := tTaskRecordOP.create;
 
-                tCmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
-                taskUpdate.pRecord                      := tvConfig.selected.data;
-                taskUpdate.tOperation                   := DOR_UPDATE;
+                tCmdRecord(tmpNode.data).vers := leVerInfo.text;
+                taskUpdate.pRecord            := tmpNode.data;
+                taskUpdate.tOperation         := DOR_UPDATE;
 
                 setLength(taskUpdate.dummyTargets, 2);
                 taskUpdate.dummyTargets[0] := tvConfig;
                 taskUpdate.dummyTargets[1] := leVerInfo;
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
+                self.lastNode := nil;
             end;
 
             if ( length(leVerInfo.text) > 0 ) then
@@ -520,20 +550,27 @@ implementation
 
     procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
     var
+        tmpNode:    tTreeNode;
         taskUpdate: tTaskRecordOP;
     begin
-        if tCmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
+        if assigned(self.lastNode) then
+            tmpNode := self.lastNode
+        else
+            tmpNode := tvConfig.selected;
+
+        if tCmdRecord(tmpNode.data).arch <> rgArchInfo.itemIndex then
         begin
-            tCmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
-            taskUpdate                              := tTaskRecordOP.create;
-            taskUpdate.pRecord                      := tvConfig.selected.data;
-            taskUpdate.tOperation                   := DOR_UPDATE;
+            tCmdRecord(tmpNode.data).arch := abs(rgArchInfo.itemIndex);
+            taskUpdate                    := tTaskRecordOP.create;
+            taskUpdate.pRecord            := tmpNode.data;
+            taskUpdate.tOperation         := DOR_UPDATE;
 
             setLength(taskUpdate.dummyTargets, 2);
             taskUpdate.dummyTargets[0] := tvConfig;
             taskUpdate.dummyTargets[1] := rgArchInfo;
 
             sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
         end;
     end;
 
