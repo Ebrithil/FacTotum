@@ -668,30 +668,24 @@ implementation
 
     procedure tfFactotum.sendUpdateSoftwareList;
     var
-        sList,
-        cList:   tList;
         taskVer: tTaskGetVer;
-        i,
-        j:       integer;
+        i:       integer;
     begin
-        sList := sdbMgr.getSoftwareList;
-        for i := 0 to pred(sList.count) do
+        for i := 0 to pred(lvUpdate.items.count) do
         begin
-            cList := tSwRecord(sList.items[i]).commands;
-            for j := 0 to pred(cList.count) do
-            begin
-                if ( tCmdRecord(cList.items[j]).uURL = '' ) or ( tCmdRecord(cList.items[j]).vers = '' ) then // TODO: Da rimuovere quando sarà previsto l'update manuale
-                    continue;
+            // TODO: Da rimuovere quando sarà previsto l'update manuale
+            if ( tCmdRecord(lvUpdate.items[i].data).uURL = '' ) or
+               ( tCmdRecord(lvUpdate.items[i].data).vers = '' ) then
+                continue;
 
-                taskVer                 := tTaskGetVer.create;
-                taskVer.cmdRec          := tCmdRecord(cList.items[j]);
+            taskVer        := tTaskGetVer.create;
+            taskVer.cmdRec := tCmdRecord(lvUpdate.items[i].data);
 
-                setLength(taskVer.dummyTargets, 2);
-                taskVer.dummyTargets[0] := lvUpdate;
-                taskVer.dummyTargets[1] := tUpdate;
+            setLength(taskVer.dummyTargets, 2);
+            taskVer.dummyTargets[0] := lvUpdate.items[i];
+            taskVer.dummyTargets[1] := tUpdate;
 
-                sTaskMgr.pushTaskToInput(taskVer);
-            end;
+            sTaskMgr.pushTaskToInput(taskVer);
         end;
     end;
 

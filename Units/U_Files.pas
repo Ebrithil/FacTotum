@@ -22,7 +22,7 @@ type
            function     getCmdRecordsByHash(const hash: string): tList;
            function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
        public
-           constructor  create(useSha1: boolean = false; stpFolder: string = 'Setup\');
+           constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup\');
            destructor   Destroy; override;
            procedure    runCommand(cmd: string);
            function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
@@ -48,6 +48,7 @@ type
 
     tTaskDownloadReport = class(tTaskOutput)
         public
+            pRecord:  tCmdRecord;
             dlPct:    byte;
             procedure exec; override;
     end;
@@ -175,9 +176,13 @@ implementation
         testFile:   string;
         cmdRecList: tList;
     begin
-        result   := false;
+        result   := true;
         newHash  := self.getFileHash(data);
         testFile := '';
+
+        // Nome di default
+        if fileName = '' then
+            fileName := 'Setup.exe';
 
         // Salvo il file scaricato in temp per lo spostamento
         data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
@@ -330,7 +335,8 @@ implementation
     var
         reportTask: tTaskDownloadReport;
     begin
-        if aWorkCount >= ( self.dlchunk * succ(self.dlcur) ) then
+        if ( aWorkCount >= (self.dlchunk * succ(self.dlcur)) ) and
+           (self.dlchunk > 0) then
         begin
             self.dlcur                 := aWorkCount div self.dlchunk;
 
@@ -341,21 +347,10 @@ implementation
             reportTask.dummyTargets[0] := self.dummyTargets[0];
             reportTask.dummyTargets[1] := self.dummyTargets[1];
 
+            reportTask.pRecord := self.pRecord;
+
             sTaskMgr.pushTaskToOutput(reportTask);
         end
-        else if aWorkCount = self.dlmax then
-        begin
-            self.dlcur       := 100;
-
-            reportTask       := tTaskDownloadReport.create;
-            reportTask.dlPct := self.dlcur;
-
-            setLength(reportTask.dummyTargets, 2);
-            reportTask.dummyTargets[0] := self.dummyTargets[0];
-            reportTask.dummyTargets[1] := self.dummyTargets[1];
-
-            sTaskMgr.pushTaskToOutput(reportTask);
-        end;
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
@@ -366,14 +361,35 @@ implementation
     end;
 
     procedure tTaskDownload.exec;
+    var
+        reportTask: tTaskDownloadReport;
     begin
         if not (self.dummyTargets[0] is tProgressBar) or
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
         self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.pRecord.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+
+        if self.dataStream.size = 0 then
+        begin
+            createEvent('Impossibile aggiornare ' + self.pRecord.name + '. Ricevuto file vuoto.', eiError);
+            exit;
+        end;
+
         self.dataStream.seek(0, soBeginning);
-        sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream);
+        if (sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream)) then
+        begin
+            reportTask       := tTaskDownloadReport.create;
+            reportTask.dlPct := 100;
+
+            reportTask.pRecord := self.pRecord;
+
+            setLength(reportTask.dummyTargets, 2);
+            reportTask.dummyTargets[0] := self.dummyTargets[0];
+            reportTask.dummyTargets[1] := self.dummyTargets[1];
+
+            sTaskMgr.pushTaskToOutput(reportTask);
+        end;
     end;
 
     procedure tTaskDownload.onRedirect(sender: tObject; var dest: string; var numRedirect: integer; var handled: boolean; var vMethod: string);
@@ -386,6 +402,7 @@ implementation
     var
         targetLI: tListItem;
         targetPB: tProgressBar;
+        refresh:  tTaskGetVer;
     begin
         if not (self.dummyTargets[0] is tProgressBar) or
            not (self.dummyTargets[1] is tListItem) then
@@ -394,11 +411,20 @@ implementation
         targetLI                                        := self.dummyTargets[1] as tListItem;
         targetPB                                        := self.dummyTargets[0] as tProgressBar;
         targetLI.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
-        targetPb.position                               := self.dlPct;
+        targetPB.position                               := self.dlPct;
 
         if self.dlPct = 100 then
-            targetLI.stateIndex := tImageIndex(eiDotGreen);
-            // Bisogna far chiamare un task specifico per il refresh di questa singola riga...
+        begin
+            targetLI.subItems[pred( integer(lvColVA) )] := self.pRecord.vers;
+
+            refresh := tTaskGetVer.create;
+            refresh.cmdRec := self.pRecord;
+
+            setLength(refresh.dummyTargets, 1);
+            refresh.dummyTargets[0] := targetLI;
+
+            sTaskMgr.pushTaskToInput(refresh);
+        end;
     end;
 
 end.

@@ -807,41 +807,43 @@ implementation
         returnTask                 := tTaskSetVer.create;
         returnTask.cmdRec          := self.cmdRec;
         returnTask.new_version     := new_version;
-        setLength(returnTask.dummyTargets, 2);
+
+        setLength(returnTask.dummyTargets, length(self.dummyTargets));
         returnTask.dummyTargets[0] := self.dummyTargets[0];
-        returnTask.dummyTargets[1] := self.dummyTargets[1];
+
+        if length(self.dummyTargets) = 2 then        
+            returnTask.dummyTargets[1] := self.dummyTargets[1];
 
         sTaskMgr.pushTaskToOutput(returnTask);
     end;
 
     procedure tTaskSetVer.exec;
     var
-        i:      integer;
-        targetLv: tListView;
-        targetTs: tTabSheet;
+        i:        integer;
+        targetIt: tListItem;
     begin
-        if not (self.dummyTargets[0] is tListView) or
-           not (self.dummyTargets[1] is tTabSheet) then
+        if not (self.dummyTargets[0] is tListItem) then
             exit;
 
-        targetLv := self.dummyTargets[0] as tListView;
-        targetTs := self.dummyTargets[1] as tTabSheet;
+        targetIt := self.dummyTargets[0] as tListItem;
 
-        for i := 0 to pred(targetLv.items.count) do
-            if ( targetLv.items[i].data = self.cmdRec ) then
+        if ( targetIt.data = self.cmdRec ) then
+        begin
+            if targetIt.subItems[pred( integer(lvColVA) )] = self.new_version then
+                targetIt.stateIndex := tImageIndex(eiDotGreen)
+            else if (targetIt.subItems[pred( integer(lvColVA) )] = RemoteVersionNotAvailable) then
+                targetIt.stateIndex := tImageIndex(eiDotYellow)
+            else 
             begin
-                if targetLv.items[i].subItems[ integer(lvColSoftCmd) ] = self.new_version then
-                    targetLv.items[i].stateIndex := tImageIndex(eiDotGreen)
-                else if (targetLv.items[i].subItems[ integer(lvColSoftCmd) ] =  RemoteVersionNotAvailable) then
-                    targetLv.items[i].stateIndex := tImageIndex(eiDotYellow)
-                else
-                begin
-                    targetLv.items[i].stateIndex := tImageIndex(eiDotRed);
-                    targetTs.ImageIndex := tImageIndex(tiUpdateNotif);
-                end;
+                targetIt.stateIndex := tImageIndex(eiDotRed);
 
-               targetLv.items[i].subItems[ integer(lvColVA) ] := self.new_version;
+                if ( length(self.dummyTargets) = 2 ) and
+                   ( not (self.dummyTargets[1] is tTabSheet) ) then
+                    (self.dummyTargets[1] as tTabSheet).ImageIndex := tImageIndex(tiUpdateNotif);
             end;
+
+           targetIt.subItems[ integer(lvColVA) ] := self.new_version;
+        end;
     end;
 
 end.
