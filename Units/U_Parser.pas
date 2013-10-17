@@ -22,8 +22,8 @@ type
     end;
 
 const
-    softwareUpdateBaseURL = 'http://www.filehippo.com/';
-    RemoteVersionNotAvailable = 'N/D';
+    softwareUpdateBaseURL     = 'http://www.filehippo.com/';
+    remoteVersionNotAvailable = 'N/D';
 
 var
     sUpdateParser: updateParser;
@@ -57,8 +57,8 @@ implementation
                     exit;
                 end;
         end;
-        result := RemoteVersionNotAvailable;
-        createEvent('Impossibile ricavare la versione: ' + swName, eiError);
+        result := remoteVersionNotAvailable;
+        createEvent('Impossibile ricavare la versione: ' + swName, eiAlert);
         swParts.free;
     end;
 
@@ -71,7 +71,7 @@ implementation
            ansiContainsText(version, 'beta')  or
            ansiContainsText(version, 'rc')    or
            ansiContainsText(version, 'dev')   or
-          ( self.getVersionFromFileName(version) = RemoteVersionNotAvailable ) then
+          ( self.getVersionFromFileName(version) = remoteVersionNotAvailable ) then
             result := false;
     end;
 
@@ -163,50 +163,57 @@ implementation
         srcTagE: iHTMLElement;
         srcElem: iHTMLElement2;
     begin
-        result  := '';
-
         srcElem := srcCode.getElementById('dlboxinner') as iHTMLElement2;
 
         if not assigned(srcElem) then
         begin
+            createEvent( 'Errore nella ricerca della versione.', eiError);
             result := RemoteVersionNotAvailable;
             exit;
         end;
 
         // verifico se l'ultima versione e' stabile
         srcTags := srcElem.getElementsByTagName('b');
+        if not assigned(srcTags) then
+        begin
+            createEvent( 'Errore nella ricerca della versione.', eiAlert);
+            result := remoteVersionNotAvailable;
+            exit;
+        end;
+
         for i := 0 to pred(srcTags.length) do
         begin
             srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
             if self.isAcceptableVersion(srcTagE.innerText) then
             begin
                 result := self.getVersionFromFileName( trim(srcTagE.innerText) );
-                break;
+                exit;
             end;
         end;
 
         // altrimenti passo alle precedenti
-        if result = '' then
+        srcTags := srcElem.getElementsByTagName('a');
+        if not assigned(srcTags) then
         begin
-            srcTags := srcElem.getElementsByTagName('a');
-            for i := 0 to pred(srcTags.length) do
-            begin
-                srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
-                if self.isAcceptableVersion(srcTagE.innerText) then
-                begin
-                    result := self.getVersionFromFileName( trim(srcTagE.innerText) );
-                    break;
-                end
-                //else
-                //    sEventHdlr.pushEventToList('Versione non stabile: ' + srcTagE.innerText + '.', eiAlert);
-            end;
+            createEvent( 'Errore nella ricerca della versione.', eiAlert);
+            result := RemoteVersionNotAvailable;
+            exit;
         end;
 
-        if result = '' then
+        for i := 0 to pred(srcTags.length) do
         begin
-            createEvent( 'Nessuna versione stabile trovata: ' + srcTagE.innerText + '.', eiError);
-            result := RemoteVersionNotAvailable;
+            srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
+            if self.isAcceptableVersion(srcTagE.innerText) then
+            begin
+                result := self.getVersionFromFileName( trim(srcTagE.innerText) );
+                exit;
+            end
+            //else
+            //    sEventHdlr.pushEventToList('Versione non stabile: ' + srcTagE.innerText + '.', eiAlert);
         end;
+
+        createEvent( 'Nessuna versione stabile trovata: ' + srcTagE.innerText + '.', eiAlert);
+        result := remoteVersionNotAvailable;
     end;
 
     function updateParser.getLastStableLink(baseURL: string): string;
