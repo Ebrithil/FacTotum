@@ -76,7 +76,7 @@ var
 
 implementation
 
-    constructor fileManager.create(useSha1: boolean = false; stpFolder: string = 'Setup\');
+    constructor fileManager.create(useMD5: boolean = false; stpFolder: string = 'Setup\');
     begin
         self.m_stpFolder := stpFolder;
         if not( directoryExists(self.m_stpFolder) ) then
@@ -87,10 +87,10 @@ implementation
                 createEvent('Impossibile creare la cartella d''installazione.', eiError)
         end;
 
-        if useSha1 then
-            m_hasher := tIdHashSHA1.create
+        if useMD5 then
+            m_hasher := tIdHashMessageDigest5.create
         else
-            m_hasher := tIdHashMessageDigest5.create;
+            m_hasher := tIdHashSHA1.create;
     end;
 
     destructor fileManager.Destroy;

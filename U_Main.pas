@@ -16,42 +16,42 @@ uses
 
 type
     tfFacTotum = class(tForm)
-        pcTabs: TPageControl;
-        tInstaller: TTabSheet;
-        tConfiguration: TTabSheet;
-        tUpdate: TTabSheet;
-        pbCmdInst: TProgressBar;
-        lInstall: TLabel;
-        clbInstall: TCheckListBox;
-        ilFacTotum: TImageList;
-        tvConfig: TTreeView;
-        rgArchInfo: TRadioGroup;
-        leCmdInfo: TLabeledEdit;
-        pmSoftware: TPopupMenu;
-        miInsert: TMenuItem;
-        miDelete: TMenuItem;
-        lUpdate: TLabel;
-        pbUpdate: TProgressBar;
-        leVerInfo: TLabeledEdit;
-        leUrlInfo: TLabeledEdit;
-        miSetMainCmd: TMenuItem;
-        lUpdateProg: TLabel;
-        tLog: TTabSheet;
-        lCmdInstProg: TLabel;
-        bInstall: TButton;
-        bUpdate: TButton;
-        lvEvents: TListView;
-        bEmpty: TButton;
-        ilTasks: TImageList;
-        bBrowse: TButton;
-        lvUpdate: TListView;
-        pbSwInst: TProgressBar;
-        lSwInstProg: TLabel;
-        pbEvents: TProgressBar;
-        lEventsProg: TLabel;
-        lEvents: TLabel;
-        pmUpdate: TPopupMenu;
-        miUpdate: TMenuItem;
+        pcTabs:         tPageControl;
+        tInstaller:     tTabSheet;
+        tConfiguration: tTabSheet;
+        tUpdate:        tTabSheet;
+        pbCmdInst:      tProgressBar;
+        lInstall:       tLabel;
+        clbInstall:     tCheckListBox;
+        ilFacTotum:     tImageList;
+        tvConfig:       ttreeView;
+        rgArchInfo:     tRadioGroup;
+        leCmdInfo:      tLabeledEdit;
+        pmSoftware:     tPopupMenu;
+        miInsert:       tMenuItem;
+        miDelete:       tMenuItem;
+        lUpdate:        tLabel;
+        pbUpdate:       tProgressBar;
+        leVerInfo:      tLabeledEdit;
+        leUrlInfo:      tLabeledEdit;
+        miSetMainCmd:   tMenuItem;
+        lUpdateProg:    tLabel;
+        tLog:           tTabSheet;
+        lCmdInstProg:   tLabel;
+        bInstall:       tButton;
+        bUpdate:        tButton;
+        lvEvents:       tListView;
+        bEmpty:         tButton;
+        ilTasks:        tImageList;
+        bBrowse:        tButton;
+        lvUpdate:       tListView;
+        pbSwInst:       tProgressBar;
+        lSwInstProg:    tLabel;
+        pbEvents:       tProgressBar;
+        lEventsProg:    tLabel;
+        lEvents:        tLabel;
+        pmUpdate:       tPopupMenu;
+        miUpdate:       tMenuItem;
 
         procedure formCreate(sender: tObject);
         procedure applicationIdleEvents(sender: tObject; var done: boolean);
@@ -68,7 +68,6 @@ type
         procedure leUrlInfoExit(sender: tObject);
         procedure leCmdInfoKeyPress(sender: tObject; var key: char);
         procedure leUrlInfoKeyPress(sender: tObject; var key: char);
-        procedure rgArchInfoExit(sender: tObject);
         procedure bBrowseClick(sender: tObject);
         procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
         procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
@@ -76,6 +75,7 @@ type
         procedure bUpdateClick(sender: tObject);
         procedure pmUpdatePopup(sender: tObject);
         procedure miUpdateClick(sender: tObject);
+        procedure rgArchInfoExit(sender: tObject);
 
         procedure fillConfigureSoftwareList;
         procedure sendUpdateSoftwareList;
@@ -101,9 +101,9 @@ implementation
         leUrlInfo.enabled  := isChild;
         rgArchInfo.enabled := isChild;
 
-        leCmdInfo.color := clWhite;
-        leVerInfo.color := clWhite;
-        leUrlInfo.color := clWhite;
+        leCmdInfo.color    := clWhite;
+        leVerInfo.color    := clWhite;
+        leUrlInfo.color    := clWhite;
 
         if isChild then
         begin
@@ -164,21 +164,6 @@ implementation
                 tvConfig.items.addChild( node, tCmdRecord( swRec.commands[j]).name ).data := tCmdRecord(swRec.commands[j]);
 
             node.expand(true);
-        end;
-    end;
-
-    procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
-    var
-        taskUpdate: tTaskRecordOP;
-    begin
-        if tCmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
-        begin
-            tCmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
-            taskUpdate                              := tTaskRecordOP.create;
-            taskUpdate.pRecord                      := tvConfig.selected.data;
-            taskUpdate.tOperation                   := DOR_UPDATE;
-
-            sTaskMgr.pushTaskToInput(taskUpdate);
         end;
     end;
 
@@ -262,19 +247,19 @@ implementation
 
     procedure tfFacTotum.formCreate(sender: tObject);
     begin
-        sEventHdlr          := eventHandler.create(lvEvents, tLog);
-        sTaskMgr            := taskManager.create;
-        sUpdateParser       := updateParser.create;
-        sDownloadMgr        := downloadManager.create;
-        sFileMgr            := fileManager.create;
-        sdbMgr              := dbManager.create;
+        sEventHdlr         := eventHandler.create(lvEvents, tLog);
+        sTaskMgr           := taskManager.create;
+        sUpdateParser      := updateParser.create;
+        sDownloadMgr       := downloadManager.create;
+        sFileMgr           := fileManager.create;
+        sdbMgr             := dbManager.create;
 
-        fFacTotum.left      := (Screen.Width - Width)   div 2;
-        fFacTotum.top       := (Screen.Height - Height) div 2;
+        fFacTotum.left     := (Screen.Width - Width)   div 2;
+        fFacTotum.top      := (Screen.Height - Height) div 2;
 
-        fFacTotum.caption   := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
+        fFacTotum.caption  := fFacTotum.caption + ' v' + getFmtFileVersion(application.exeName);
 
-        application.onIdle  := applicationIdleEvents;
+        application.onIdle := applicationIdleEvents;
 
         self.fillConfigureSoftwareList;
         self.fillUpdateSoftwareList;
@@ -287,20 +272,22 @@ implementation
     begin
         leCmdInfo.text := trim(leCmdInfo.text);
         if tCmdRecord(tvConfig.selected.data).cmmd <> leCmdInfo.text then
+        begin
+            taskUpdate := tTaskRecordOP.create;
+
+            tCmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
+            taskUpdate.pRecord                      := tvConfig.selected.data;
+            taskUpdate.tOperation                   := DOR_UPDATE;
+
+            setLength(taskUpdate.dummyTargets, 2);
+            taskUpdate.dummyTargets[0] := tvConfig;
+            taskUpdate.dummyTargets[1] := leCmdInfo;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+
             if length(leCmdInfo.text) > 0 then
-            begin
-                taskUpdate         := tTaskRecordOP.create;
-
-                tCmdRecord(tvConfig.selected.data).cmmd := leCmdInfo.text;
-                taskUpdate.pRecord                      := tvConfig.selected.data;
-                taskUpdate.tOperation                   := DOR_UPDATE;
-
-                sTaskMgr.pushTaskToInput(taskUpdate);
-
-                leCmdInfo.color := $0080FF80; // Verde
-            end
-            else
-                leCmdInfo.color := $008080FF  // Rosso
+                leCmdInfo.color := $0080FFFF  // Giallo
+        end
         else
             leCmdInfo.color := clWhite;
     end;
@@ -320,20 +307,22 @@ implementation
     begin
         leUrlInfo.text := trim(leUrlInfo.text);
         if tCmdRecord(tvConfig.selected.data).uURL <> leUrlInfo.text then
-            if length(leUrlInfo.text) > 0 then
-            begin
-                taskUpdate         := tTaskRecordOP.create;
+        begin
+            taskUpdate := tTaskRecordOP.create;
 
-                tCmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
-                taskUpdate.pRecord                      := tvConfig.selected.data;
-                taskUpdate.tOperation                   := DOR_UPDATE;
+            tCmdRecord(tvConfig.selected.data).uURL := leUrlInfo.text;
+            taskUpdate.pRecord                      := tvConfig.selected.data;
+            taskUpdate.tOperation                   := DOR_UPDATE;
 
-                sTaskMgr.pushTaskToInput(taskUpdate);
+            setLength(taskUpdate.dummyTargets, 2);
+            taskUpdate.dummyTargets[0] := tvConfig;
+            taskUpdate.dummyTargets[1] := leUrlInfo;
 
-                leUrlInfo.color := $0080FF80; // Verde
-            end
-            else
+            sTaskMgr.pushTaskToInput(taskUpdate);
+
+            if length(leUrlInfo.text) = 0 then
                 leUrlInfo.color := $0080FFFF  // Giallo
+        end
         else
             leUrlInfo.color := clWhite;
     end;
@@ -347,8 +336,7 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.leVerInfoContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
+    procedure tfFacTotum.leVerInfoContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
     begin
         handled := true;
     end;
@@ -359,22 +347,25 @@ implementation
     begin
         leVerInfo.text := trim( leVerInfo.text );
         if tCmdRecord(tvConfig.selected.data).vers <> leVerInfo.text then
-            if ( leVerInfo.text <> '.' )                         and
-               ( length(leVerInfo.text) > 0 )                    and
-               ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
+        begin
+            if ( leVerInfo.text[length(leVerInfo.text)] <> '.' ) then
             begin
-                taskUpdate         := tTaskRecordOP.create;
+                taskUpdate := tTaskRecordOP.create;
 
                 tCmdRecord(tvConfig.selected.data).vers := leVerInfo.text;
                 taskUpdate.pRecord                      := tvConfig.selected.data;
                 taskUpdate.tOperation                   := DOR_UPDATE;
 
-                sTaskMgr.pushTaskToInput(taskUpdate);
+                setLength(taskUpdate.dummyTargets, 2);
+                taskUpdate.dummyTargets[0] := tvConfig;
+                taskUpdate.dummyTargets[1] := leVerInfo;
 
-                leVerInfo.color := $0080FF80 // Verde
-            end
-            else
-                leVerInfo.color := $0080FFFF // Giallo
+                sTaskMgr.pushTaskToInput(taskUpdate);
+            end;
+
+            if ( length(leVerInfo.text) > 0 ) then
+                leVerInfo.color := $0080FFFF  // Giallo
+        end
         else
             leVerInfo.color := clWhite;
     end;
@@ -525,6 +516,25 @@ implementation
     procedure tfFacTotum.pmUpdatePopup(Sender: TObject);
     begin
         miUpdate.enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed);
+    end;
+
+    procedure tfFacTotum.rgArchInfoExit(Sender: TObject);
+    var
+        taskUpdate: tTaskRecordOP;
+    begin
+        if tCmdRecord(tvConfig.selected.data).arch <> rgArchInfo.itemIndex then
+        begin
+            tCmdRecord(tvConfig.selected.data).arch := abs(rgArchInfo.itemIndex);
+            taskUpdate                              := tTaskRecordOP.create;
+            taskUpdate.pRecord                      := tvConfig.selected.data;
+            taskUpdate.tOperation                   := DOR_UPDATE;
+
+            setLength(taskUpdate.dummyTargets, 2);
+            taskUpdate.dummyTargets[0] := tvConfig;
+            taskUpdate.dummyTargets[1] := rgArchInfo;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+        end;
     end;
 
     procedure tfFacTotum.miDeleteClick(sender: tObject);
