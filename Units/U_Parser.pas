@@ -8,6 +8,10 @@ uses
     U_Threads, U_Functions, U_Events, U_Download, U_InputTasks, U_OutputTasks;
 
 type
+    lastStableVerIndex = (currentVer, currentURL, maxStableVerIndex);
+
+    lastStableVer = array of string;
+
     updateParser = class // Wrapper di funzioni ed helper per parsare l'html
         protected
             function getVersionFromFileName(swName: string): string;
@@ -15,10 +19,9 @@ type
             function getDirectDownloadLink(swLink: string): string;
             function srcToIHTMLDocument3(srcCode: string): IHTMLDocument3;
             function getLastStableVerFromSrc(srcCode: IHTMLDocument3): string;
-
+            function getLinkFromSrc(srcCode: IHTMLDocument3; version: string): string;
         public
-            function getLastStableVerFromURL(baseURL: string): string;
-            function getLastStableLink(baseURL: string): string;
+            function getLastStableInfoFromURL(baseURL: string): lastStableVer;
     end;
 
 const
@@ -137,13 +140,15 @@ implementation
     end;
 
 
-    function updateParser.getLastStableVerFromURL(baseURL: string): string;
+    function updateParser.getLastStableInfoFromURL(baseURL: string): lastStableVer;
     var
         srcDoc3: iHTMLDocument3;
         V:       array of string;
     begin
-        srcDoc3 := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
-        result  := self.getLastStableVerFromSrc(srcDoc3);
+        setLength( result, integer(maxStableVerIndex) );
+        srcDoc3                       := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
+        result[ integer(currentVer) ] := self.getLastStableVerFromSrc(srcDoc3);
+        result[ integer(currentUrl) ] := self.getLinkFromSrc( srcDoc3, result[integer(currentVer)] );
 
         setLength(V, 1);
         V[0]    := '';
@@ -216,20 +221,16 @@ implementation
         result := remoteVersionNotAvailable;
     end;
 
-    function updateParser.getLastStableLink(baseURL: string): string;
+    function updateParser.getLinkFromSrc(srcCode: IHTMLDocument3; version: string): string;
     var
         i:       byte;
-        targetV: string;
         srcTags: iHTMLElementCollection;
         srcTagE: iHTMLElement;
         srcElem: iHTMLElement2;
-        srcDoc3: iHTMLDocument3;
     begin
         result  := '';
 
-        srcDoc3 := self.srcToIHTMLDocument3( sDownloadMgr.downloadPageSource(baseURL) );
-        targetV := self.getLastStableVerFromSrc(srcDoc3);
-        srcElem := srcDoc3.getElementById('dlbox') as iHTMLElement2;
+        srcElem := srcCode.getElementById('dlbox') as iHTMLElement2;
 
         // cerco il link alla ultima versione stabile
         srcTags := srcElem.getElementsByTagName('a');
@@ -238,7 +239,7 @@ implementation
             srcTagE := srcTags.item(i, EmptyParam) as iHTMLElement;
             if ansiContainsText(srcTagE.innerText, 'scarica') then
                 result := srcTagE.getAttribute('href', 0)
-            else if ansiContainsText( srcTagE.innerText, targetV ) then
+            else if ansiContainsText( srcTagE.innerText, version ) then
                 begin
                     result := srcTagE.getAttribute('href', 0);
                     break;

@@ -369,7 +369,7 @@ implementation
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
-        self.dataStream := sDownloadMgr.downloadLastStableVersion( sUpdateParser.getLastStableLink(self.pRecord.uURL), self.onDownload, self.onDownloadBegin, self.onRedirect );
+        self.dataStream := sDownloadMgr.downloadLastStableVersion( self.pRecord.cURL, self.onDownload, self.onDownloadBegin, self.onRedirect );
 
         if self.dataStream.size = 0 then
         begin
@@ -381,7 +381,7 @@ implementation
         if (sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream)) then
         begin
             reportTask       := tTaskDownloadReport.create;
-            reportTask.dlPct := 100;
+            reportTask.dlPct := 255;
 
             reportTask.pRecord := self.pRecord;
 
@@ -411,12 +411,12 @@ implementation
 
         targetLI                                        := self.dummyTargets[1] as tListItem;
         targetPB                                        := self.dummyTargets[0] as tProgressBar;
-        targetLI.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
-        targetPB.position                               := self.dlPct;
 
-        if self.dlPct = 100 then
+        if self.dlPct = 255 then
         begin
-            targetLI.subItems[pred( integer(lvColVA) )] := self.pRecord.vers;
+            targetPB.position                               := 0;
+            targetLI.subitems[pred( integer(lvColStatus) )] := '';
+            targetLI.subItems[pred( integer(lvColVA) )]     := self.pRecord.vers;
 
             refresh := tTaskGetVer.create;
             refresh.cmdRec := self.pRecord;
@@ -425,6 +425,11 @@ implementation
             refresh.dummyTargets[0] := targetLI;
 
             sTaskMgr.pushTaskToInput(refresh);
+        end
+        else
+        begin
+            targetLI.subItems[pred( integer(lvColStatus) )] := intToStr(self.dlPct) + '%';
+            targetPB.position                               := self.dlPct;
         end;
     end;
 

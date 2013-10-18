@@ -39,6 +39,8 @@ type
         cmmd,
         vers,
         uURL,
+        cURL,
+        cVER,
         hash: string;
     end;
 
@@ -804,14 +806,16 @@ implementation
 
     procedure tTaskGetVer.exec;
     var
-        new_version: string;
+        versionInfo: lastStableVer;
         returnTask:  tTaskSetVer;
     begin
-        new_version := sUpdateParser.getLastStableVerFromURL(self.cmdRec.uURL);
+        versionInfo      := sUpdateParser.getLastStableInfoFromURL(self.cmdRec.uURL);
+        self.cmdRec.cVER := versionInfo[ integer(currentVer) ];
+        self.cmdRec.cURL := versionInfo[ integer(currentUrl) ];
 
         returnTask                 := tTaskSetVer.create;
         returnTask.cmdRec          := self.cmdRec;
-        returnTask.new_version     := new_version;
+        returnTask.new_version     := self.cmdRec.cVER;
 
         setLength(returnTask.dummyTargets, length(self.dummyTargets));
         returnTask.dummyTargets[0] := self.dummyTargets[0];
@@ -824,7 +828,6 @@ implementation
 
     procedure tTaskSetVer.exec;
     var
-        i:        integer;
         targetIt: tListItem;
     begin
         if not (self.dummyTargets[0] is tListItem) then

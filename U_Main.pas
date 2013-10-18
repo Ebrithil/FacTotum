@@ -194,12 +194,13 @@ implementation
     var
         node: tTreeNode;
     begin
-        self.lastNode := tvConfig.selected;
-
         node := tvConfig.getNodeAt(X, Y);
 
         if assigned(node) then
-            node.selected := true;
+        begin
+            self.lastNode     := tvConfig.selected;
+            tvConfig.selected := node;
+        end;
     end;
 
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
