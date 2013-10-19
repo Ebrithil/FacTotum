@@ -605,8 +605,8 @@ implementation
         );
         sqlData := self.queryRes(query);
 
-        result          := tList.create;
-        self.m_software := result;
+        result     := tList.create;
+        m_software := result;
         if not sqlData.isEmpty then
         begin
             sqlData.first;
@@ -637,7 +637,8 @@ implementation
         cmdRec:  tCmdRecord;
         sqlData: tDataSet;
     begin
-        if assigned(self.m_software) then
+        if assigned(self.m_software) and
+           (self.m_software.count > 0) then
         begin
             result := nil;
             for i := 0 to pred(self.m_software.count) do

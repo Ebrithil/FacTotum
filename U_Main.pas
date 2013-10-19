@@ -206,7 +206,7 @@ implementation
     procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
     var
         i,
-        updComp: word;
+        updComp: integer;
         chkJobs: boolean;
         taskOut: tTaskOutput;
     begin

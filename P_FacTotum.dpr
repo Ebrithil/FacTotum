@@ -60,10 +60,22 @@ begin
 
     if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
     begin
+        fname   := sAppPath + 'resources\' + 'erasmd.ttf';
         rStream := tResourceStream.create(hInstance, 'dErasMD', RT_RCDATA);
-        AddFontMemResourceEx(rStream.memory, rStream.size, nil, nil);
+        try
+            fStream := tFileStream.create(fname, fmCreate);
+            try
+                fStream.copyFrom(rStream, 0);
+            finally
+                fStream.free;
+            end;
+            finally
+                rStream.free;
+        end;
 
-        if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
+        addFontResource( pchar(sAppPath + 'resources\' + 'erasmd.ttf') );
+
+        if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
         begin
             messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
             exit;
