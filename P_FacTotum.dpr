@@ -47,8 +47,8 @@ begin
             finally
                 fStream.free;
             end;
-            finally
-                rStream.free;
+        finally
+            rStream.free;
         end;
 
         if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
@@ -69,17 +69,14 @@ begin
             finally
                 fStream.free;
             end;
-            finally
-                rStream.free;
+        finally
+            rStream.free;
         end;
 
         addFontResource( pchar(sAppPath + 'resources\' + 'erasmd.ttf') );
 
         if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
-        begin
             messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
-            exit;
-        end;
     end;
 
     application.mainFormOnTaskbar := true;

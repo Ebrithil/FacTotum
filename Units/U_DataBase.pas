@@ -605,8 +605,8 @@ implementation
         );
         sqlData := self.queryRes(query);
 
-        result     := tList.create;
-        m_software := result;
+        result          := tList.create;
+        self.m_software := result;
         if not sqlData.isEmpty then
         begin
             sqlData.first;
