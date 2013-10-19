@@ -253,12 +253,7 @@ implementation
 
     procedure tfFacTotum.formCreate(sender: tObject);
     begin
-        sEventHdlr         := eventHandler.create(lvEvents, tLog);
-        sTaskMgr           := taskManager.create;
-        sUpdateParser      := updateParser.create;
-        sDownloadMgr       := downloadManager.create;
-        sFileMgr           := fileManager.create;
-        sdbMgr             := dbManager.create;
+        sEventHdlr.initialize(lvEvents, tLog);
 
         fFacTotum.left     := (Screen.Width - Width)   div 2;
         fFacTotum.top      := (Screen.Height - Height) div 2;

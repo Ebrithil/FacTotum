@@ -22,9 +22,9 @@ type
 
     eventHandler = class
         public
-            constructor create(errorList: tListView; errorTab: tTabSheet);
-            function    createEvent(description: string; eventType: tImageIndex): tTaskEvent;
-
+            function  createEvent(description: string; eventType: tImageIndex): tTaskEvent;
+            function  prepare(event: tTaskEvent): boolean;
+            procedure initialize(errorList: tListView; errorTab: tTabSheet);
         protected
             m_errorList: tListView;
             m_errorTab:  tTabSheet;
@@ -34,10 +34,24 @@ var
     sEventHdlr: eventHandler;
 
 implementation
-    constructor eventHandler.create(errorList: tListView; errorTab: tTabSheet);
+    procedure eventHandler.initialize(errorList: tListView; errorTab: tTabSheet);
     begin
         self.m_errorList := errorList;
         self.m_errorTab  := errorTab;
+    end;
+
+    function eventHandler.prepare(event: tTaskEvent): boolean;
+    begin
+        if (not assigned(self.m_errorList)) or
+           (not assigned(self.m_errorTab)) then
+        begin
+            result := false;
+            exit;
+        end;
+
+        event.dummyTargets[0] := self.m_errorList;
+        event.dummyTargets[1] := self.m_errorTab;
+        result := true;
     end;
 
     function eventHandler.createEvent(description: string; eventType: TImageIndex): tTaskEvent;
@@ -62,7 +76,8 @@ implementation
     begin
         if not (self.dummyTargets[0] is tListView) or
            not (self.dummyTargets[1] is tTabSheet) then
-            exit;
+            if not sEventHdlr.prepare(self) then
+                exit;
 
         lvEvents := self.dummyTargets[0] as tListView;
         tLog     := self.dummyTargets[1] as tTabSheet;

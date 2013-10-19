@@ -9,6 +9,7 @@ uses
     Vcl.Themes,
     Vcl.Styles,
     System.UITypes,
+    Winapi.ShellAPI,
     U_Main        in 'U_Main.pas' {fFacTotum},
     U_Functions   in 'Units\U_Functions.pas',
     U_DataBase    in 'Units\U_DataBase.pas',
@@ -24,12 +25,21 @@ uses
 {$R resources.res}
 
 var
- rStream:  tResourceStream;
- fStream:  tFileStream;
- fname:    string;
- sAppPath: string;
+    rStream:  tResourceStream;
+    fStream:  tFileStream;
+    fName,
+    sName:    string;
+    sAppPath: string;
 begin
     application.initialize;
+
+    sEventHdlr         := eventHandler.create;
+    sTaskMgr           := taskManager.create;
+    sUpdateParser      := updateParser.create;
+    sDownloadMgr       := downloadManager.create;
+    sFileMgr           := tFileManager.create;
+    sdbMgr             := dbManager.create;
+
     sAppPath := includeTrailingPathDelimiter(extractFileDir(application.exeName));
 
     if not directoryExists('resources') then
@@ -58,9 +68,10 @@ begin
         end;
     end;
 
-    if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
+    sName := getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf';
+    if not fileExists( sName ) then
     begin
-        fname   := sAppPath + 'resources\' + 'erasmd.ttf';
+        fName   := sAppPath + 'resources\' + 'erasmd.ttf';
         rStream := tResourceStream.create(hInstance, 'dErasMD', RT_RCDATA);
         try
             fStream := tFileStream.create(fname, fmCreate);
@@ -75,8 +86,14 @@ begin
 
         addFontResource( pchar(sAppPath + 'resources\' + 'erasmd.ttf') );
 
-        if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
-            messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
+        if fileExists(fName) then
+        begin
+            if tFileManager.executeFileOperation(application.handle, FO_COPY, fName, sName) then
+                ShowMessage('ok');
+            addFontResource( pchar(sName) );
+        end
+        else
+             messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
     end;
 
     application.mainFormOnTaskbar := true;
