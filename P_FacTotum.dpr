@@ -5,8 +5,10 @@ uses
     SysUtils,
     Classes,
     Windows,
+    Vcl.Dialogs,
     Vcl.Themes,
     Vcl.Styles,
+    System.UITypes,
     U_Main        in 'U_Main.pas' {fFacTotum},
     U_Functions   in 'Units\U_Functions.pas',
     U_DataBase    in 'Units\U_DataBase.pas',
@@ -19,7 +21,7 @@ uses
     U_Files       in 'Units\U_Files.pas';
 
 {$R *.res}
-{$R sqlite.RES}
+{$R resources.res}
 
 var
  rStream:  tResourceStream;
@@ -28,14 +30,15 @@ var
  sAppPath: string;
 begin
     application.initialize;
-    sAppPath:= includeTrailingPathDelimiter(extractFileDir(application.exeName));
+    sAppPath := includeTrailingPathDelimiter(extractFileDir(application.exeName));
+
+    if not directoryExists('resources') then
+        if not createDir('resources') then
+            exit;
+
     if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
     begin
-        if not directoryExists('resources') then
-            if not createDir('resources') then
-                exit;
-
-        fname:= sAppPath + 'resources\' + 'sqlite3.dll';
+        fname   := sAppPath + 'resources\' + 'sqlite3.dll';
         rStream := tResourceStream.create(hInstance, 'dSqlite', RT_RCDATA);
         try
             fStream := tFileStream.create(fname, fmCreate);
@@ -46,6 +49,24 @@ begin
             end;
             finally
                 rStream.free;
+        end;
+
+        if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
+        begin
+            messageDlg('Impossibile caricare la libreria ''sqlite3.dll''', mtError, [mbOK], 0);
+            exit;
+        end;
+    end;
+
+    if not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
+    begin
+        rStream := tResourceStream.create(hInstance, 'dErasMD', RT_RCDATA);
+        AddFontMemResourceEx(rStream.memory, rStream.size, nil, nil);
+
+        if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
+        begin
+            messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
+            exit;
         end;
     end;
 

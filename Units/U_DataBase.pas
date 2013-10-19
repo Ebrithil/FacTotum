@@ -605,10 +605,10 @@ implementation
         );
         sqlData := self.queryRes(query);
 
-        result := nil;
+        result          := tList.create;
+        self.m_software := result;
         if not sqlData.isEmpty then
         begin
-            result := tList.create;
             sqlData.first;
             while not(sqlData.eof) do
             begin
