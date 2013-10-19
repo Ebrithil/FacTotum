@@ -112,7 +112,6 @@
         </DelphiCompile>
         <DCCReference Include="U_Main.pas">
             <Form>fFacTotum</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Units\U_Functions.pas"/>
         <DCCReference Include="Units\U_DataBase.pas"/>

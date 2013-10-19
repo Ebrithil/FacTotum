@@ -48,6 +48,5 @@ __history
 *.map
 *.exe
 *.dll
-*.res
 bin/*
 Win32

@@ -20,14 +20,14 @@ type
            function     getFileHash(fileData: tMemoryStream): string; overload;
            function     getArchivePathFor(cmdGuid: integer):  string;
            function     getCmdRecordsByHash(const hash: string): tList;
-           function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
        public
            constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup\');
            destructor   Destroy; override;
            procedure    runCommand(cmd: string);
            function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
-           function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream):     boolean;
+           function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
            function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
+           function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     end;
 
     tTaskDownload = class(tTask)

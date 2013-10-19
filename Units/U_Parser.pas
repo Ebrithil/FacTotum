@@ -10,7 +10,7 @@ uses
 type
     lastStableVerIndex = (currentVer, currentURL, maxStableVerIndex);
 
-    lastStableVer = array of string;
+    lastStableVer = array[0..integer(maxStableVerIndex)] of string;
 
     updateParser = class // Wrapper di funzioni ed helper per parsare l'html
         protected
@@ -145,7 +145,6 @@ implementation
         srcDoc3: iHTMLDocument3;
         V:       array of string;
     begin
-        setLength( result, integer(maxStableVerIndex) );
         srcDoc3                       := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
         result[ integer(currentVer) ] := self.getLastStableVerFromSrc(srcDoc3);
         result[ integer(currentUrl) ] := self.getLinkFromSrc( srcDoc3, result[integer(currentVer)] );

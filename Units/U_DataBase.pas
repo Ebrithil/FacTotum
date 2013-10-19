@@ -169,7 +169,7 @@ implementation
              createEvent('Il DataBase verra'' ricreato.', eiAlert);
         end;
 
-        //setDllDirectory('.\dll');
+        setDllDirectory('./resources');
         try
             try
                 m_connector.open;
@@ -180,7 +180,7 @@ implementation
                     createEvent('Impossibile connettersi al DataBase: ' + e.Message, eiError);
             end;
         finally
-            //setDllDirectory('');
+            setDllDirectory('');
         end;
     end;
 
