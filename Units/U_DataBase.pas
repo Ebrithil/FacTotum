@@ -169,7 +169,7 @@ implementation
              createEvent('Il DataBase verra'' ricreato.', eiAlert);
         end;
 
-        setDllDirectory('./resources');
+        setDllDirectory('resources');
         try
             try
                 m_connector.open;

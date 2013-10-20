@@ -42,8 +42,8 @@ implementation
 
     function eventHandler.prepare(event: tTaskEvent): boolean;
     begin
-        if (not assigned(self.m_errorList)) or
-           (not assigned(self.m_errorTab)) then
+        if not assigned(self.m_errorList) or
+           not assigned(self.m_errorTab)  then
         begin
             result := false;
             exit;
@@ -51,6 +51,7 @@ implementation
 
         event.dummyTargets[0] := self.m_errorList;
         event.dummyTargets[1] := self.m_errorTab;
+
         result := true;
     end;
 
@@ -59,7 +60,7 @@ implementation
         result := tTaskEvent.create(description, eventType);
         setLength(result.dummyTargets, 2);
         result.dummyTargets[0] := self.m_errorList;
-        result.dummyTargets[1] := Self.m_errorTab;
+        result.dummyTargets[1] := self.m_errorTab;
     end;
 
     constructor tTaskEvent.create(description: string; eventType: tImageIndex);

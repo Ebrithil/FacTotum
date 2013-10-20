@@ -11,23 +11,23 @@ uses
 type
     tFileManager = class
        protected
-            m_hasher:      tIdHash;
-            m_stpFolder:   string;
-            function       fileExistsInPath(fileName: string): boolean;
-            function       isArchived(cmdGuid: integer): boolean; overload;
-            function       isArchived(fileHash: string): boolean; overload;
-            function       getFileHash(fileName: string): string; overload;
-            function       getFileHash(fileData: tMemoryStream): string; overload;
-            function       getArchivePathFor(cmdGuid: integer):  string;
-            function       getCmdRecordsByHash(const hash: string): tList;
+            m_hasher:    tIdHash;
+            m_stpFolder: string;
+            function     isArchived(cmdGuid: integer): boolean; overload;
+            function     isArchived(fileHash: string): boolean; overload;
+            function     getFileHash(fileName: string): string; overload;
+            function     getFileHash(fileData: tMemoryStream): string; overload;
+            function     getArchivePathFor(cmdGuid: integer):  string;
+            function     getCmdRecordsByHash(const hash: string): tList;
        public
-            constructor    create(useMD5: boolean = false; stpFolder: string = 'Setup\');
-            destructor     Destroy; override;
-            procedure      runCommand(cmd: string);
-            function       insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
-            function       updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
-            function       removeArchiveSetup(handle: tHandle; hash: string): boolean;
-            class function executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
+            constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup\');
+            destructor   Destroy; override;
+            procedure    runCommand(cmd: string);
+            function     fileExistsInPath(fileName: string): boolean;
+            function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
+            function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
+            function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
+            function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     end;
 
     tTaskDownload = class(tTask)
@@ -274,7 +274,7 @@ implementation
                   result.add( tCmdRecord( tSwRecord(swList[i]).commands[j] ) );
     end;
 
-    class function tFileManager.executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
+    function tFileManager.executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     var
         soFileOperation: tSHFileOpStruct;
         errorCode:       integer;

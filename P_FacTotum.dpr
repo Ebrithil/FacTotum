@@ -27,9 +27,7 @@ uses
 var
     rStream:  tResourceStream;
     fStream:  tFileStream;
-    fName,
-    sName:    string;
-    sAppPath: string;
+    fName:    string;
 begin
     application.initialize;
 
@@ -38,17 +36,26 @@ begin
     sUpdateParser      := updateParser.create;
     sDownloadMgr       := downloadManager.create;
     sFileMgr           := tFileManager.create;
-    sdbMgr             := dbManager.create;
-
-    sAppPath := includeTrailingPathDelimiter(extractFileDir(application.exeName));
 
     if not directoryExists('resources') then
-        if not createDir('resources') then
-            exit;
-
-    if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
     begin
-        fname   := sAppPath + 'resources\' + 'sqlite3.dll';
+        createEvent('Cartella resources non trovata. ', eiAlert);
+        createEvent('La cartella resources verra'' ricreata. ', eiAlert);
+        if not createDir('resources') then
+        begin
+            messageDlg('Impossibile ricreare la cartella resources.' + #13 + #13
+                     + 'Il programma verra'' terminato.', mtError, [mbOK], 0);
+            exit;
+        end;
+    end;
+
+    fname := 'resources\' + 'sqlite3.dll';
+    if not fileExists(fName) and
+       not sFileMgr.fileExistsInPath('sqlite3.dll') then
+    begin
+        createEvent('Libreria sqlite3.dll non trovata. ', eiAlert);
+        createEvent('La libreria verra'' riestratta. ', eiAlert);
+
         rStream := tResourceStream.create(hInstance, 'dSqlite', RT_RCDATA);
         try
             fStream := tFileStream.create(fname, fmCreate);
@@ -61,17 +68,19 @@ begin
             rStream.free;
         end;
 
-        if not fileExists(sAppPath + 'resources\' + 'sqlite3.dll') then
+        if not fileExists(fName) then
         begin
-            messageDlg('Impossibile caricare la libreria ''sqlite3.dll''', mtError, [mbOK], 0);
+            messageDlg('Impossibile caricare la libreria sqlite3.dll.' + #13 + #13
+                     + 'Il programma verra'' terminato.', mtError, [mbOK], 0);
             exit;
         end;
     end;
+    sdbMgr := dbManager.create;
 
-    sName := getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf';
-    if not fileExists( sName ) then
+    fName := 'resources\' + 'erasmd.ttf';
+    if not fileExists(fName)                                                    and
+       not fileExists( getEnvironmentVariable('WINDIR') + '\fonts\erasmd.ttf' ) then
     begin
-        fName   := sAppPath + 'resources\' + 'erasmd.ttf';
         rStream := tResourceStream.create(hInstance, 'dErasMD', RT_RCDATA);
         try
             fStream := tFileStream.create(fname, fmCreate);
@@ -84,16 +93,13 @@ begin
             rStream.free;
         end;
 
-        addFontResource( pchar(sAppPath + 'resources\' + 'erasmd.ttf') );
-
         if fileExists(fName) then
-        begin
-            if tFileManager.executeFileOperation(application.handle, FO_COPY, fName, sName) then
-                ShowMessage('ok');
-            addFontResource( pchar(sName) );
-        end
+            if (addFontResource( pchar(fName) ) = 0) then
+                createEvent('Impossibile caricare il font erasmd.ttf.', eiAlert)
+            else
+                createEvent('Font erasmd.ttf caricato correttamente.', eiInfo)
         else
-             messageDlg('Impossibile caricare il font ''erasmd.ttf''', mtWarning, [mbOK], 0);
+            createEvent('Impossibile caricare il font erasmd.ttf.', eiAlert);
     end;
 
     application.mainFormOnTaskbar := true;
