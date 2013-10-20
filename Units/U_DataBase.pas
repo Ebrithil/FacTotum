@@ -55,16 +55,16 @@ type
             function      query(qString: string): boolean;
             function      queryRes(qString: string): tDataSet;
             function      getLastInsertedRecordID: integer;
-            function      getCommandList(const swid: integer): tList;
+            function      getCommandList(const swid: integer; const searchInDB: boolean = false): tList;
         public
             constructor   create(dbNamePath: string = 'FacTotum.db');
             destructor    Destroy; override;
-            function      insertDBRecord(var pRecord: tDBRecord): boolean;
-            function      deleteDBRecord(var pRecord: tDBRecord): boolean;
-            function      updateDBRecord(var pRecord: tDBRecord): boolean;
-            function      getSoftwareList: tList;
-            function      getSwRecordByGUID(const guid: integer; const searchInDB: boolean = false):  tSwRecord;
-            function      getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
+            function      insertdbRecord(var pRecord: tdbRecord): boolean;
+            function      deletedbRecord(var pRecord: tdbRecord): boolean;
+            function      updatedbRecord(var pRecord: tdbRecord): boolean;
+            function      getSoftwareList(const searchIndb: boolean = false): tList;
+            function      getSwRecordByGUID(const guid: integer; const searchIndb: boolean = false):  tSwRecord;
+            function      getCmdRecordByGUID(const guid: integer; const searchIndb: boolean = false): tCmdRecord;
     end;
 
     tTaskRecordOP = class(tTask)
@@ -583,13 +583,14 @@ implementation
             sqlData.free;
     end;
 
-    function dbManager.getSoftwareList: tList;
+    function dbManager.getSoftwareList(const searchIndb: boolean = false): tList;
     var
         query:   string;
         swRec:   tSwRecord;
         sqlData: tDataSet;
     begin
-        if assigned(self.m_software) then
+        if assigned(self.m_software) and
+           not searchIndb then
         begin
             result := self.m_software;
             exit;
@@ -618,7 +619,7 @@ implementation
                 begin
                     guid     := sqlData.fieldByName( dbStrings[dbFieldSwGUID] ).value;
                     name     := sqlData.fieldByName( dbStrings[dbFieldSwName] ).value;
-                    commands := self.getCommandList(guid);
+                    commands := self.getCommandList(guid, true);
                 end;
 
                 sqlData.next;
@@ -630,7 +631,7 @@ implementation
             sqlData.free;
     end;
 
-    function dbManager.getCommandList(const swid: integer): tList;
+    function dbManager.getCommandList(const swid: integer; const searchIndb: boolean = false): tList;
     var
         i:       integer;
         query:   string;
@@ -638,7 +639,7 @@ implementation
         sqlData: tDataSet;
     begin
         if assigned(self.m_software) and
-           (self.m_software.count > 0) then
+           not searchInDB then
         begin
             result := nil;
             for i := 0 to pred(self.m_software.count) do

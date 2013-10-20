@@ -80,6 +80,7 @@ type
             procedure fillConfigureSoftwareList;
             procedure sendUpdateSoftwareList;
             procedure fillUpdateSoftwareList;
+            procedure bInstallClick(Sender: TObject);
 
         protected
             lastNode: tTreeNode;
@@ -155,7 +156,7 @@ implementation
             swRec := tSwRecord(software.items[i]);
 
             if swRec.hasValidCommands then
-                clbInstall.items.add(swRec.name);
+                clbInstall.items.addObject(swRec.name, software.items[i]);
 
             node      := tvConfig.items.add(nil, swRec.name);
             node.data := swRec;
@@ -678,6 +679,26 @@ implementation
     begin
         lvEvents.items.clear;
         tLog.imageIndex := tImageIndex(tiEvents);
+    end;
+
+    procedure tfFacTotum.bInstallClick(Sender: TObject);
+    var
+        i:         integer;
+        task:      tTaskRunCommand;
+        pSoftware: tSwRecord;
+    begin
+        clbInstall.enabled := false;
+        bInstall.enabled   := false;
+        for i := 0 to pred(clbInstall.items.count) do
+        begin
+            pSoftware := clbInstall.items.objects[i] as tSwRecord;
+
+            task           := tTaskRunCommand.create;
+            task.handle    := handle;
+            task.pSoftware := pSoftware;
+
+            sTaskMgr.pushTaskToInput(task);
+        end;
     end;
 
     procedure tfFacTotum.bUpdateClick(Sender: TObject);

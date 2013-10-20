@@ -6,7 +6,7 @@ uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
     vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, System.UITypes, Vcl.forms, vcl.comCtrls, IdComponent, IdURI,
 
-    U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser;
+    U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser, U_Functions;
 
 type
     tFileManager = class
@@ -22,7 +22,7 @@ type
        public
             constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup\');
             destructor   Destroy; override;
-            procedure    runCommand(cmd: string);
+            procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
             function     fileExistsInPath(fileName: string): boolean;
             function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
             function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
@@ -70,6 +70,13 @@ type
             selectedFolder: string;
 
             procedure exec; override;
+    end;
+
+    tTaskRunCommand = class(tTask)
+        public
+            pSoftware: tSwRecord;
+            handle:    tHandle;
+            procedure  exec; override;
     end;
 
 var
@@ -126,9 +133,33 @@ implementation
         result := ansiLowerCase( self.m_hasher.hashStreamAsHex(fileData) );
     end;
 
-    procedure tFileManager.runCommand(cmd: string);
+    procedure tFileManager.runCommand(handle: tHandle; cmd: tCmdRecord);
+    var
+        fileName,
+        parameters: string;
+        exInfo:     tShellExecuteInfo;
+        ph:         DWORD;
     begin
-        // TODO
+        extractParametersFromCommand(cmd.cmmd, fileName, parameters);
+        fillChar(exInfo, sizeOf(exInfo), 0);
+        with exInfo do
+        begin
+            cbSize              := sizeOf(exInfo);
+            fMask               := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT or SEE_MASK_NOASYNC;
+            wnd                 := getActiveWindow();
+            exInfo.lpVerb       := 'open';
+            exInfo.lpParameters := pchar(parameters);
+            lpFile              := pchar(fileName);
+            nShow               := SW_SHOWNORMAL;
+        end;
+        if not shellExecuteEx(@exInfo) then
+        begin
+            createEvent(sysErrorMessage(getLastError), eiError);
+            exit;
+        end;
+        ph := exInfo.hProcess;
+        waitForSingleObject(exInfo.hProcess, infinite);
+        closeHandle(ph);
     end;
 
     function tFileManager.insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
@@ -352,6 +383,19 @@ implementation
 
             sTaskMgr.pushTaskToOutput(reportTask);
         end
+    end;
+
+    procedure tTaskRunCommand.exec;
+    var
+        i: integer;
+    begin
+        createEvent('Installazione di ' + self.pSoftware.name + ' iniziata', eiInfo);
+        for i := 0 to pred(self.pSoftware.commands.count) do
+        begin
+            createEvent( 'Esecuzione comando ' + tCmdRecord(self.pSoftware.commands[i]).name, eiInfo );
+            sFileMgr.runCommand(self.handle, self.pSoftware.commands[i]);
+        end;
+        createEvent('Installazione di ' + self.pSoftware.name + ' completata', eiInfo);
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
