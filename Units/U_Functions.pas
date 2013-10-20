@@ -5,7 +5,6 @@ interface
 uses
     winapi.windows, system.strUtils, system.classes, system.sysUtils;
 
-    procedure extractParametersFromCommand(const command: string; var fileName: string; var parameters: string);
     function getFmtFileVersion(const fileName: string = ''; const fmt: string = '%d.%d.%d.%d'): string;
     function split(const strBuf: string; const delimiter: string): tStringList;
 
@@ -67,11 +66,6 @@ begin
     until loopCount > length(strBuf);
 
     result.add( trim(tmpBuf) );
-end;
-
-procedure extractParametersFromCommand(const command: string; var fileName: string; var parameters: string);
-begin
-
 end;
 
 end.

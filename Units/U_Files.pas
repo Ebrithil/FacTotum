@@ -135,12 +135,9 @@ implementation
 
     procedure tFileManager.runCommand(handle: tHandle; cmd: tCmdRecord);
     var
-        fileName,
-        parameters: string;
         exInfo:     tShellExecuteInfo;
         ph:         DWORD;
     begin
-        extractParametersFromCommand(cmd.cmmd, fileName, parameters);
         fillChar(exInfo, sizeOf(exInfo), 0);
         with exInfo do
         begin
@@ -148,13 +145,13 @@ implementation
             fMask               := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT or SEE_MASK_NOASYNC;
             wnd                 := getActiveWindow();
             exInfo.lpVerb       := 'open';
-            exInfo.lpParameters := pchar(parameters);
-            lpFile              := pchar(fileName);
+            exInfo.lpParameters := pchar(cmd.swch);
+            lpFile              := pchar(cmd.cmmd);
             nShow               := SW_SHOWNORMAL;
         end;
         if not shellExecuteEx(@exInfo) then
         begin
-            createEvent(sysErrorMessage(getLastError), eiError);
+            createEvent( sysErrorMessage(getLastError), eiError );
             exit;
         end;
         ph := exInfo.hProcess;

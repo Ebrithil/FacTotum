@@ -99,21 +99,24 @@ implementation
         isChild: boolean;
         cmdRec:  tCmdRecord;
     begin
-        isChild            := assigned(node.parent);
-        bBrowse.enabled    := isChild;
-        leCmdInfo.enabled  := isChild;
-        leVerInfo.enabled  := isChild;
-        leUrlInfo.enabled  := isChild;
-        rgArchInfo.enabled := isChild;
+        isChild              := assigned(node.parent);
+        bBrowse.enabled      := isChild;
+        leCmdInfo.enabled    := isChild;
+        leSwitchInfo.enabled := isChild;
+        leVerInfo.enabled    := isChild;
+        leUrlInfo.enabled    := isChild;
+        rgArchInfo.enabled   := isChild;
 
-        leCmdInfo.color    := clWhite;
-        leVerInfo.color    := clWhite;
-        leUrlInfo.color    := clWhite;
+        leCmdInfo.color      := clWhite;
+        leSwitchInfo.color   := clWhite;
+        leVerInfo.color      := clWhite;
+        leUrlInfo.color      := clWhite;
 
         if isChild then
         begin
             cmdRec               := node.data;
             leCmdInfo.text       := cmdRec.cmmd;
+            leSwitchInfo.text    := cmdRec.swch;
             leVerInfo.text       := cmdRec.vers;
             leUrlInfo.text       := cmdRec.uURL;
             rgArchInfo.itemIndex := cmdRec.arch;
@@ -122,6 +125,7 @@ implementation
         begin
             leUrlInfo.text       := '';
             leCmdInfo.text       := '';
+            leSwitchInfo.text    := '';
             leVerInfo.text       := '';
             rgArchInfo.itemIndex := -1;
         end;
@@ -317,7 +321,7 @@ implementation
         begin
             taskUpdate := tTaskRecordOP.create;
 
-            tCmdRecord(tmpNode.data).swch := leCmdInfo.text;
+            tCmdRecord(tmpNode.data).swch := leSwitchInfo.text;
             taskUpdate.pRecord            := tmpNode.data;
             taskUpdate.tOperation         := DOR_UPDATE;
 
