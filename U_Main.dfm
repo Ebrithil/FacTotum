@@ -104,7 +104,7 @@ object fFacTotum: TfFacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 20
+        ItemHeight = 18
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 1
@@ -174,7 +174,7 @@ object fFacTotum: TfFacTotum
       object leCmdInfo: TLabeledEdit
         Left = 3
         Top = 500
-        Width = 345
+        Width = 240
         Height = 27
         EditLabel.Width = 82
         EditLabel.Height = 22
@@ -199,12 +199,12 @@ object fFacTotum: TfFacTotum
         TabOrder = 1
         StyleElements = [seFont, seBorder]
         OnExit = leCmdInfoExit
-        OnKeyPress = leCmdInfoKeyPress
+        OnKeyPress = ctrlInfoKeyPress
       end
       object leVerInfo: TLabeledEdit
-        Left = 384
+        Left = 416
         Top = 500
-        Width = 117
+        Width = 85
         Height = 27
         EditLabel.Width = 64
         EditLabel.Height = 19
@@ -234,7 +234,7 @@ object fFacTotum: TfFacTotum
       object leUrlInfo: TLabeledEdit
         Left = 3
         Top = 550
-        Width = 286
+        Width = 270
         Height = 27
         EditLabel.Width = 149
         EditLabel.Height = 19
@@ -257,12 +257,12 @@ object fFacTotum: TfFacTotum
         TabOrder = 4
         StyleElements = [seFont, seBorder]
         OnExit = leUrlInfoExit
-        OnKeyPress = leUrlInfoKeyPress
+        OnKeyPress = ctrlInfoKeyPress
       end
       object rgArchInfo: TRadioGroup
-        Left = 295
+        Left = 280
         Top = 534
-        Width = 206
+        Width = 221
         Height = 43
         BiDiMode = bdLeftToRight
         Caption = 'Compatibilit'#224
@@ -286,7 +286,7 @@ object fFacTotum: TfFacTotum
         OnExit = rgArchInfoExit
       end
       object bBrowse: TButton
-        Left = 351
+        Left = 246
         Top = 499
         Width = 27
         Height = 29
@@ -300,6 +300,36 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 2
         OnClick = bBrowseClick
+      end
+      object leSwitchInfo: TLabeledEdit
+        Left = 280
+        Top = 500
+        Width = 130
+        Height = 27
+        EditLabel.Width = 80
+        EditLabel.Height = 22
+        EditLabel.Caption = 'Parametri'
+        EditLabel.Color = clBtnFace
+        EditLabel.Font.Charset = ANSI_CHARSET
+        EditLabel.Font.Color = clWindowText
+        EditLabel.Font.Height = -19
+        EditLabel.Font.Name = 'Eras Medium ITC'
+        EditLabel.Font.Style = []
+        EditLabel.ParentColor = False
+        EditLabel.ParentFont = False
+        EditLabel.Transparent = True
+        Enabled = False
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -16
+        Font.Name = 'Eras Medium ITC'
+        Font.Style = []
+        LabelSpacing = 0
+        ParentFont = False
+        TabOrder = 6
+        StyleElements = [seFont, seBorder]
+        OnExit = leSwitchInfoExit
+        OnKeyPress = ctrlInfoKeyPress
       end
     end
     object tUpdate: TTabSheet
@@ -502,7 +532,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C0101060008023C0220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106000802400220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1556,7 +1586,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 126
     Bitmap = {
-      494C010107004C01400210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010107004C01440210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000100000002000000030000000300000002000000010000

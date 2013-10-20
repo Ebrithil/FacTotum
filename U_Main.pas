@@ -52,6 +52,7 @@ type
             lEvents:        tLabel;
             pmUpdate:       tPopupMenu;
             miUpdate:       tMenuItem;
+            leSwitchInfo:   tLabeledEdit;
 
             procedure formCreate(sender: tObject);
             procedure applicationIdleEvents(sender: tObject; var done: boolean);
@@ -61,14 +62,12 @@ type
             procedure miInsertClick(sender: tObject);
             procedure tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
             procedure pmSoftwarePopup(sender: tObject);
+            procedure bBrowseClick(sender: tObject);
             procedure miDeleteClick(sender: tObject);
             procedure leCmdInfoExit(sender: tObject);
             procedure leVerInfoExit(sender: tObject);
-            procedure leVerInfoKeyPress(sender: tObject; var key: char);
             procedure leUrlInfoExit(sender: tObject);
-            procedure leCmdInfoKeyPress(sender: tObject; var key: char);
-            procedure leUrlInfoKeyPress(sender: tObject; var key: char);
-            procedure bBrowseClick(sender: tObject);
+            procedure leSwitchInfoExit(Sender: TObject);
             procedure leVerInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
             procedure leVerInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
             procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
@@ -76,6 +75,8 @@ type
             procedure pmUpdatePopup(sender: tObject);
             procedure miUpdateClick(sender: tObject);
             procedure rgArchInfoExit(sender: tObject);
+            procedure leVerInfoKeyPress(sender: tObject; var key: char);
+            procedure ctrlInfoKeyPress(sender: tObject; var key: char);
 
             procedure fillConfigureSoftwareList;
             procedure sendUpdateSoftwareList;
@@ -301,13 +302,37 @@ implementation
             leCmdInfo.color := clWhite;
     end;
 
-    procedure tfFacTotum.leCmdInfoKeyPress(Sender: TObject; var Key: Char);
+    procedure tfFacTotum.leSwitchInfoExit(Sender: TObject);
+    var
+        tmpNode:    tTreeNode;
+        taskUpdate: tTaskRecordOP;
     begin
-        if key = #13 then
+        if assigned(self.lastNode) then
+            tmpNode := self.lastNode
+        else
+            tmpNode := tvConfig.selected;
+
+        leSwitchInfo.text := trim(leSwitchInfo.text);
+        if tCmdRecord(tmpNode.data).swch <> leSwitchInfo.text then
         begin
-            selectNext(sender as tWinControl, true, true);
-            key := #0
-        end;
+            taskUpdate := tTaskRecordOP.create;
+
+            tCmdRecord(tmpNode.data).swch := leCmdInfo.text;
+            taskUpdate.pRecord            := tmpNode.data;
+            taskUpdate.tOperation         := DOR_UPDATE;
+
+            setLength(taskUpdate.dummyTargets, 2);
+            taskUpdate.dummyTargets[0] := tvConfig;
+            taskUpdate.dummyTargets[1] := leSwitchInfo;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
+
+            if length(leSwitchInfo.text) > 0 then
+                leSwitchInfo.color := $0080FFFF  // Giallo
+        end
+        else
+            leSwitchInfo.color := clWhite;
     end;
 
     procedure tfFacTotum.leUrlInfoExit(Sender: TObject);
@@ -343,7 +368,7 @@ implementation
             leUrlInfo.color := clWhite;
     end;
 
-    procedure tfFacTotum.leUrlInfoKeyPress(Sender: TObject; var Key: Char);
+    procedure tfFacTotum.ctrlInfoKeyPress(Sender: TObject; var Key: Char);
     begin
         if key = #13 then
         begin

@@ -16,8 +16,8 @@ type
     dbStringsIndex    = ( dbTableCommands, dbTableSoftware,
                           dbFieldSwGUID,   dbFieldSwName,
                           dbFieldCmdGUID,  dbFieldCmdSwID, dbFieldCmdPrty, dbFieldCmdName,
-                          dbFieldCmdCmmd,  dbFieldCmdVers, dbFieldCmdArch, dbFieldCmduURL,
-                          dbFieldCmdHash );
+                          dbFieldCmdCmmd,  dbFieldCmdSwch, dbFieldCmdVers, dbFieldCmdArch,
+                          dbFieldCmduURL,  dbFieldCmdHash );
     lvUpdateColIndex  = ( lvColSoftCmd = 1, lvColVA, lvColUV, lvColProgress, lvColStatus );
 
     tDBRecord = class
@@ -37,6 +37,7 @@ type
         arch: byte;
         name,
         cmmd,
+        swch,
         vers,
         uURL,
         cURL,
@@ -107,6 +108,7 @@ const
         'prty',
         'name',
         'cmmd',
+        'swch',
         'vers',
         'arch',
         'uurl',
@@ -246,8 +248,9 @@ implementation
           + '%s INT(1) NOT NULL DEFAULT 0, '
           + '%s VARCHAR(25) NOT NULL, '
           + '%s VARCHAR(25) NULL, '
-          + '%s TEXT NOT NULL, '
-          + '%s TEXT NULL, '
+          + '%s VARCHAR(255) NOT NULL, '
+          + '%s VARCHAR(255) NULL, '
+          + '%s VARCHAR(255) NULL, '
           + '%s VARCHAR(40) NULL, '
           + 'CONSTRAINT u_command UNIQUE(%s, %s, %s, %s), '
           + 'FOREIGN KEY(%s) REFERENCES %s(%s) ON DELETE CASCADE ON UPDATE CASCADE '
@@ -257,8 +260,8 @@ implementation
           dbStrings[dbTableCommands],
           // Table columns
           dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch],
-          dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdCmmd], dbStrings[dbFieldCmduURL],
-          dbStrings[dbFieldCmdHash],
+          dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdCmmd], dbStrings[dbFieldCmdSwch],
+          dbStrings[dbFieldCmduURL], dbStrings[dbFieldCmdHash],
           // Table constraints
           dbStrings[dbFieldCmdGUID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmdName],
           // Table foreign keys
@@ -320,17 +323,19 @@ implementation
         begin
             tmpCmdRec := pRecord as tCmdRecord;
             query := format(
-              'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s) '
-            + 'VALUES (''%d'', ''%u'', ''%s'', ''%s'', ''%s'', ''%u'', ''%s'', ''%s'');',
+              'INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s, %s) '
+            + 'VALUES (''%d'', ''%u'', ''%u'', ''%s'', ''%s'', ''%s'', ''%s'', ''%s'', ''%s'');',
               [
               // Table
               dbStrings[dbTableCommands],
               // Columns
-              dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdName], dbStrings[dbFieldCmdCmmd],
-              dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmduURL], dbStrings[dbFieldCmdHash],
+              dbStrings[dbFieldCmdSwID], dbStrings[dbFieldCmdPrty], dbStrings[dbFieldCmdArch], dbStrings[dbFieldCmdName],
+              dbStrings[dbFieldCmdVers], dbStrings[dbFieldCmdCmmd], dbStrings[dbFieldCmdSwch], dbStrings[dbFieldCmduURL],
+              dbStrings[dbFieldCmdHash],
               // Values
-              (pRecord as tCmdRecord).swid, (pRecord as tCmdRecord).prty, (pRecord as tCmdRecord).name, (pRecord as tCmdRecord).cmmd,
-              (pRecord as tCmdRecord).vers, (pRecord as tCmdRecord).arch, (pRecord as tCmdRecord).uURL, (pRecord as tCmdRecord).hash
+              (pRecord as tCmdRecord).swid, (pRecord as tCmdRecord).prty, (pRecord as tCmdRecord).arch, (pRecord as tCmdRecord).name,
+              (pRecord as tCmdRecord).vers, (pRecord as tCmdRecord).cmmd, (pRecord as tCmdRecord).swch, (pRecord as tCmdRecord).uURL,
+              (pRecord as tCmdRecord).hash
               ]
             );
             if self.query(query) then
@@ -383,6 +388,7 @@ implementation
             + '%s = ''%s'', '
             + '%s = ''%s'', '
             + '%s = ''%s'', '
+            + '%s = ''%s'', '
             + '%s = ''%s'' '
             + 'WHERE %s = ''%d'';',
               [
@@ -392,8 +398,9 @@ implementation
               dbStrings[dbFieldCmdPrty], (pRecord as tCmdRecord).prty,
               dbStrings[dbFieldCmdArch], (pRecord as tCmdRecord).arch,
               dbStrings[dbFieldCmdName], (pRecord as tCmdRecord).name,
-              dbStrings[dbFieldCmdCmmd], (pRecord as tCmdRecord).cmmd,
               dbStrings[dbFieldCmdVers], (pRecord as tCmdRecord).vers,
+              dbStrings[dbFieldCmdCmmd], (pRecord as tCmdRecord).cmmd,
+              dbStrings[dbFieldCmdSwch], (pRecord as tCmdRecord).swch,
               dbStrings[dbFieldCmduURL], (pRecord as tCmdRecord).uURL,
               dbStrings[dbFieldCmdHash], (pRecord as tCmdRecord).hash,
               // Where
@@ -406,8 +413,9 @@ implementation
                 (pRecord as tCmdRecord).prty := (tmpRecord as tCmdRecord).prty;
                 (pRecord as tCmdRecord).arch := (tmpRecord as tCmdRecord).arch;
                 (pRecord as tCmdRecord).name := (tmpRecord as tCmdRecord).name;
-                (pRecord as tCmdRecord).cmmd := (tmpRecord as tCmdRecord).cmmd;
                 (pRecord as tCmdRecord).vers := (tmpRecord as tCmdRecord).vers;
+                (pRecord as tCmdRecord).cmmd := (tmpRecord as tCmdRecord).cmmd;
+                (pRecord as tCmdRecord).swch := (tmpRecord as tCmdRecord).swch;
                 (pRecord as tCmdRecord).uURL := (tmpRecord as tCmdRecord).uURL;
                 (pRecord as tCmdRecord).hash := (tmpRecord as tCmdRecord).hash;
                 tmpRecord.free;
@@ -573,8 +581,9 @@ implementation
                 prty := sqlData.fieldByName( dbStrings[dbFieldCmdPrty] ).value;
                 arch := sqlData.fieldByName( dbStrings[dbFieldCmdArch] ).value;
                 name := sqlData.fieldByName( dbStrings[dbFieldCmdName] ).value;
-                cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
                 vers := sqlData.fieldByName( dbStrings[dbFieldCmdVers] ).value;
+                cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
+                swch := sqlData.fieldByName( dbStrings[dbFieldCmdSwch] ).value;
                 uURL := sqlData.fieldByName( dbStrings[dbFieldCmduURL] ).value;
                 hash := sqlData.fieldByName( dbStrings[dbFieldCmdHash] ).value;
             end;
@@ -682,8 +691,9 @@ implementation
                     prty := sqlData.fieldByName( dbStrings[dbFieldCmdPrty] ).value;
                     arch := sqlData.fieldByName( dbStrings[dbFieldCmdArch] ).value;
                     name := sqlData.fieldByName( dbStrings[dbFieldCmdName] ).value;
-                    cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
                     vers := sqlData.fieldByName( dbStrings[dbFieldCmdVers] ).value;
+                    cmmd := sqlData.fieldByName( dbStrings[dbFieldCmdCmmd] ).value;
+                    swch := sqlData.fieldByName( dbStrings[dbFieldCmdSwch] ).value;
                     uURL := sqlData.fieldByName( dbStrings[dbFieldCmduURL] ).value;
                     hash := sqlData.fieldByName( dbStrings[dbFieldCmdHash] ).value;
                 end;
@@ -775,14 +785,14 @@ implementation
                                     if ( tCmdRecord(self.pRecord).guid = tCmdRecord(tvConfig.selected.data).guid ) then
                                     begin
                                         if self.queryResult then
-                                            (self.dummyTargets[1] as tLabeledEdit).color := $0080FF80 // Verde
+                                            (self.dummyTargets[1] as tLabeledEdit).color := $0080FF80  // Verde
                                         else
                                             (self.dummyTargets[1] as tLabeledEdit).color := $008080FF; // Rosso
                                     end
                                     else if not self.queryResult then
                                     begin
                                         tvConfig.selected := tvConfig.items[i];
-                                        (self.dummyTargets[1] as tLabeledEdit).color := $008080FF; // Rosso
+                                        (self.dummyTargets[1] as tLabeledEdit).color := $008080FF;     // Rosso
                                     end;
                                 end;
                                 break;
