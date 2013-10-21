@@ -315,13 +315,13 @@ implementation
                     end;
 
                     result := true;
-                    createEvent('Database: Software [' + tmpSwRec.guid + '] inserito correttamente.', eiInfo);
+                    createEvent('Database: Software [' + intToStr(tmpSwRec.guid) + '] inserito correttamente.', eiInfo);
                 end;
             end
             else
             begin
                 freeAndNil(pRecord);
-                createEvent('Database: Errore nell''inserimento del Software [' + tmpSwRec.guid + '].', eiError);
+                createEvent('Database: Errore nell''inserimento del Software [' + intToStr(tmpSwRec.guid) + '].', eiError);
             end;
         end
         else if pRecord is tCmdRecord then
@@ -347,11 +347,11 @@ implementation
             begin
                 tmpCmdRec.guid := self.getLastInsertedRecordID;
                 result := true;
-                createEvent('Database: Comando [' + tmpCmdRec.guid + '] inserito correttamente.', eiInfo);
+                createEvent('Database: Comando [' + intToStr(tmpCmdRec.guid) + '] inserito correttamente.', eiInfo);
             end
             else
             begin
-                createEvent('Database: Errore nell''inserimento del Comando [' + tmpCmdRec.guid + '].', eiError);
+                createEvent('Database: Errore nell''inserimento del Comando [' + intToStr(tmpCmdRec.guid) + '].', eiError);
                 freeAndNil(pRecord);
             end;
         end;
@@ -383,12 +383,12 @@ implementation
                 tmpRecord                   := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
                 (pRecord as tSwRecord).name := (tmpRecord as tSwRecord).name;
                 tmpRecord.free;
-                createEvent('Database: Errore nell''aggiornamento del Software [' + (pRecord as tSwRecord).guid + '].', eiError);
+                createEvent('Database: Errore nell''aggiornamento del Software [' + intToStr( (pRecord as tSwRecord).guid ) + '].', eiError);
             end
             else
             begin
                 result := true;
-                createEvent('Database: Software [' + (pRecord as tSwRecord).guid + '] aggiornato correttamente.', eiInfo);
+                createEvent('Database: Software [' + intToStr( (pRecord as tSwRecord).guid ) + '] aggiornato correttamente.', eiInfo);
             end;
         end
         else if pRecord is tCmdRecord then
@@ -432,12 +432,12 @@ implementation
                 (pRecord as tCmdRecord).uURL := (tmpRecord as tCmdRecord).uURL;
                 (pRecord as tCmdRecord).hash := (tmpRecord as tCmdRecord).hash;
                 tmpRecord.free;
-                createEvent('Database: Errore nell''aggiornamento del Comando [' + (pRecord as tCmdRecord).guid + '].', eiError);
+                createEvent('Database: Errore nell''aggiornamento del Comando [' + intToStr( (pRecord as tCmdRecord).guid ) + '].', eiError);
             end
             else
             begin
                 result := true;
-                createEvent('Database: Comando [' + (pRecord as tCmdRecord).guid + '] aggiornato correttamente.', eiInfo);
+                createEvent('Database: Comando [' + intToStr( (pRecord as tCmdRecord).guid ) + '] aggiornato correttamente.', eiInfo);
             end;
         end;
     end;
