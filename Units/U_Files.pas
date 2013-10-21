@@ -491,7 +491,7 @@ implementation
            not (self.dummyTargets[1] is tListItem) then
             exit;
 
-        self.dataStream := sDownloadMgr.downloadLastStableVersion( self.pRecord.cURL, self.onDownload, self.onDownloadBegin, self.onRedirect );
+        self.dataStream := sDownloadMgr.downloadLastStableVersion(self.pRecord.cURL, self.onDownload, self.onDownloadBegin, self.onRedirect);
 
         if self.dataStream.size = 0 then
         begin

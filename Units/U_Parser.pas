@@ -143,9 +143,19 @@ implementation
     function updateParser.getLastStableInfoFromURL(baseURL: string): lastStableVer;
     var
         srcDoc3: iHTMLDocument3;
+        srcStr:  string;
         V:       array of string;
     begin
-        srcDoc3                       := self.srcToIHTMLDocument3(sDownloadMgr.downloadPageSource(baseURL));
+        srcStr := sDownloadMgr.downloadPageSource(baseURL);
+
+        if srcStr = '' then
+        begin
+            result[ integer(currentVer) ] := remoteVersionNotAvailable;
+            exit;
+        end;
+
+        srcDoc3                       := self.srcToIHTMLDocument3(srcStr);
+
         result[ integer(currentVer) ] := self.getLastStableVerFromSrc(srcDoc3);
         result[ integer(currentUrl) ] := self.getLinkFromSrc( srcDoc3, result[integer(currentVer)] );
 

@@ -101,6 +101,7 @@ type
             procedure leVersInfoKeyPress(sender: tObject; var key: char);
             procedure leVersInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
             procedure formClose(sender: tObject; var action: tCloseAction);
+            procedure lvUpdateMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
 
         protected
             lastNode: tTreeNode;
@@ -805,7 +806,7 @@ implementation
     var
         node: tTreeNode;
     begin
-        node := tvConfig.getNodeAt(X, Y);
+        node := tvConfig.getNodeAt(x, y);
 
         if assigned(node) then
         begin
@@ -874,6 +875,11 @@ implementation
                 key := #0;
                 exit;
             end;
+    end;
+
+    procedure tfFacTotum.lvUpdateMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+    begin
+        lvUpdate.selected := lvUpdate.getItemAt(x, y);
     end;
 
     procedure tfFacTotum.leVersInfoContextPopup(sender: tObject; mousePos: TPoint; var handled: boolean);

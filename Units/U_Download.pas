@@ -61,13 +61,14 @@ implementation
     begin
         result := '';
         tries  := 0;
-        http   := tIdHTTP.Create;
+        http   := tIdHTTP.create;
         try
             repeat
                 inc(tries);
                 try
-                    result  := http.get(URL);
+                    result := http.get(URL);
                     http.disconnect;
+                    break;
                 except
                     on e: exception do
                         createEvent('Impossibile caricare la pagina: ' + e.Message, eiError);

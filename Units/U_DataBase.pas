@@ -886,10 +886,10 @@ implementation
 
         if ( targetIt.data = self.cmdRec ) then
         begin
-            if targetIt.subItems[pred( integer(lvColVA) )] = self.new_version then
-                targetIt.stateIndex := tImageIndex(eiDotGreen)
-            else if (targetIt.subItems[pred( integer(lvColVA) )] = RemoteVersionNotAvailable) then
+            if self.new_version = RemoteVersionNotAvailable then
                 targetIt.stateIndex := tImageIndex(eiDotYellow)
+            else if targetIt.subItems[pred( integer(lvColVA) )] = self.new_version then
+                targetIt.stateIndex := tImageIndex(eiDotGreen)
             else 
             begin
                 targetIt.stateIndex := tImageIndex(eiDotRed);
