@@ -104,7 +104,7 @@ object fFacTotum: TfFacTotum
         Font.Style = []
         HeaderColor = clBlack
         HeaderBackgroundColor = clDefault
-        ItemHeight = 18
+        ItemHeight = 20
         ParentBiDiMode = False
         ParentFont = False
         TabOrder = 1
@@ -167,11 +167,11 @@ object fFacTotum: TfFacTotum
         RightClickSelect = True
         ShowHint = False
         TabOrder = 0
-        OnChange = configureUpdateOnTreeSelect
+        OnChange = tvConfigChange
         OnEdited = tvConfigEdited
         OnMouseDown = tvConfigMouseDown
       end
-      object leCmdInfo: TLabeledEdit
+      object leCmmdInfo: TLabeledEdit
         Left = 3
         Top = 500
         Width = 240
@@ -198,10 +198,10 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 1
         StyleElements = [seFont, seBorder]
-        OnExit = leCmdInfoExit
+        OnExit = leCmmdInfoExit
         OnKeyPress = ctrlInfoKeyPress
       end
-      object leVerInfo: TLabeledEdit
+      object leVersInfo: TLabeledEdit
         Left = 416
         Top = 500
         Width = 85
@@ -226,12 +226,12 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 3
         StyleElements = [seFont, seBorder]
-        OnContextPopup = leVerInfoContextPopup
-        OnExit = leVerInfoExit
-        OnKeyDown = leVerInfoKeyDown
-        OnKeyPress = leVerInfoKeyPress
+        OnContextPopup = leVersInfoContextPopup
+        OnExit = leVersInfoExit
+        OnKeyDown = leVersInfoKeyDown
+        OnKeyPress = leVersInfoKeyPress
       end
-      object leUrlInfo: TLabeledEdit
+      object leuUrlInfo: TLabeledEdit
         Left = 3
         Top = 550
         Width = 270
@@ -256,7 +256,7 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 4
         StyleElements = [seFont, seBorder]
-        OnExit = leUrlInfoExit
+        OnExit = leuUrlInfoExit
         OnKeyPress = ctrlInfoKeyPress
       end
       object rgArchInfo: TRadioGroup
@@ -301,7 +301,7 @@ object fFacTotum: TfFacTotum
         TabOrder = 2
         OnClick = bBrowseClick
       end
-      object leSwitchInfo: TLabeledEdit
+      object leSwchInfo: TLabeledEdit
         Left = 280
         Top = 500
         Width = 130
@@ -328,7 +328,7 @@ object fFacTotum: TfFacTotum
         ParentFont = False
         TabOrder = 6
         StyleElements = [seFont, seBorder]
-        OnExit = leSwitchInfoExit
+        OnExit = leSwchInfoExit
         OnKeyPress = ctrlInfoKeyPress
       end
     end
@@ -532,7 +532,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C010106000802400220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106000802480220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1586,7 +1586,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 126
     Bitmap = {
-      494C010107004C01440210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010107004C014C0210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000100000002000000030000000300000002000000010000

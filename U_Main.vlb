@@ -19,9 +19,6 @@ Coordinates=144,1,91,36
 [pcTabs]
 Coordinates=97,10,46,36
 
-[leCmdInfo]
-Coordinates=240,1,86,58
-
 [clbInstall]
 Coordinates=374,111,97,36
 
@@ -42,4 +39,7 @@ Coordinates=101,174,131,36
 
 [miDelete]
 Coordinates=374,1,136,36
+
+[leCmmdInfo]
+Coordinates=240,1,86,58
 
