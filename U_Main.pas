@@ -412,18 +412,19 @@ implementation
     procedure tfFacTotum.bInstallClick(sender: tObject);
     var
         i:         integer;
-        task:      tTaskRunCommand;
-        pSoftware: tSwRecord;
+        task:      tTaskRunCommands;
+        lSoftware: tList;
     begin
         clbInstall.enabled := false;
         bInstall.enabled   := false;
+        lSoftware          := tList.create;
         for i := 0 to pred(clbInstall.items.count) do
         begin
-            pSoftware := clbInstall.items.objects[i] as tSwRecord;
+            lSoftware.add(clbInstall.items.objects[i]);
 
-            task           := tTaskRunCommand.create;
+            task           := tTaskRunCommands.create;
             task.handle    := handle;
-            task.pSoftware := pSoftware;
+            task.lSoftware := lSoftware;
 
             sTaskMgr.pushTaskToInput(task);
         end;

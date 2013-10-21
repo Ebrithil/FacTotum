@@ -73,9 +73,9 @@ type
             procedure exec; override;
     end;
 
-    tTaskRunCommand = class(tTask)
+    tTaskRunCommands = class(tTask)
         public
-            pSoftware: tSwRecord;
+            lSoftware: tList;
             handle:    tHandle;
             procedure  exec; override;
     end;
@@ -389,17 +389,24 @@ implementation
         end
     end;
 
-    procedure tTaskRunCommand.exec;
+    procedure tTaskRunCommands.exec;
     var
-        i: integer;
+        i,
+        j:         integer;
+        pSoftware: tSwRecord;
     begin
-        createEvent('Installazione di ' + self.pSoftware.name + ' iniziata', eiInfo);
-        for i := 0 to pred(self.pSoftware.commands.count) do
+        for i := 0 to pred(self.lSoftware.count) do
         begin
-            createEvent( 'Esecuzione comando ' + tCmdRecord(self.pSoftware.commands[i]).name, eiInfo );
-            sFileMgr.runCommand(self.handle, self.pSoftware.commands[i]);
+            pSoftware := tSwRecord(self.lSoftware[i]);
+            createEvent('Installazione di ' + pSoftware.name + ' iniziata', eiInfo);
+            for j := 0 to pred(pSoftware.commands.count) do
+            begin
+                createEvent( 'Esecuzione comando ' + tCmdRecord(pSoftware.commands[j]).name, eiInfo );
+                sFileMgr.runCommand(self.handle, pSoftware.commands[j]);
+            end;
+            createEvent('Installazione di ' + pSoftware.name + ' completata', eiInfo);
         end;
-        createEvent('Installazione di ' + self.pSoftware.name + ' completata', eiInfo);
+        self.lSoftware.free;
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
