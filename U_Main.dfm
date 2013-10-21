@@ -1564,7 +1564,7 @@ object fFacTotum: TfFacTotum
   object pmSoftware: TPopupMenu
     OnPopup = pmSoftwarePopup
     Left = 452
-    Top = 175
+    Top = 179
     object miInsert: TMenuItem
       Caption = 'Inserisci Software'
       ShortCut = 16457
@@ -1585,7 +1585,7 @@ object fFacTotum: TfFacTotum
     DrawingStyle = dsTransparent
     Masked = False
     Left = 452
-    Top = 126
+    Top = 128
     Bitmap = {
       494C010107004C01540210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
@@ -1851,12 +1851,19 @@ object fFacTotum: TfFacTotum
     Images = ilTasks
     OnPopup = pmUpdatePopup
     Left = 452
-    Top = 225
+    Top = 230
     object miUpdate: TMenuItem
       Caption = 'Aggiorna'
       ImageIndex = 6
       ShortCut = 16469
       OnClick = miUpdateClick
     end
+  end
+  object tRefresh: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = tRefreshTimer
+    Left = 452
+    Top = 281
   end
 end

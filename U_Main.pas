@@ -37,7 +37,6 @@ uses
 
 type
     tfFacTotum = class(tForm)
-            pcTabs:         tPageControl;
             lUpdate:        tLabel;
             lEvents:        tLabel;
             lInstall:       tLabel;
@@ -45,6 +44,7 @@ type
             lSwInstProg:    tLabel;
             lEventsProg:    tLabel;
             lCmdInstProg:   tLabel;
+            tRefresh:       tTimer;
             bEmpty:         tButton;
             bUpdate:        tButton;
             bBrowse:        tButton;
@@ -65,6 +65,7 @@ type
             pmUpdate:       tPopupMenu;
             pmSoftware:     tPopupMenu;
             rgArchInfo:     tRadioGroup;
+            pcTabs:         tPageControl;
             pbUpdate:       tProgressBar;
             pbEvents:       tProgressBar;
             pbSwInst:       tProgressBar;
@@ -76,6 +77,7 @@ type
             clbInstall:     tCheckListBox;
 
             procedure applicationIdleEvents(sender: tObject; var done: boolean);
+            procedure tRefreshTimer(sender: tObject);
             procedure formCreate(sender: tObject);
             procedure bEmptyClick(sender: tObject);
             procedure bBrowseClick(sender: tObject);
@@ -281,6 +283,14 @@ implementation
         end;
     end;
 
+    procedure tfFacTotum.tRefreshTimer(sender: tObject);
+    var
+        jobStatus: boolean;
+    begin
+        jobStatus := false;
+        self.applicationIdleEvents(sender, jobStatus);
+    end;
+
 //------------------------------------------------------------------------------
 // End implementation of idle operations
 
@@ -299,6 +309,7 @@ implementation
         // Visualizzo la versione attuale ed inizio le procedure in background
         fFacTotum.caption  := fFacTotum.caption + ' v' + getFmtFileVersion;
         application.onIdle := applicationIdleEvents;
+        tRefresh.enabled   := true;
 
         // Popolo le liste di software e controllo gli aggiornamenti
         self.fillConfigureSoftwareList;

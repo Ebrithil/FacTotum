@@ -149,8 +149,13 @@ implementation
     procedure tFileManager.runCommand(handle: tHandle; cmd: tCmdRecord);
     var
         exInfo:     tShellExecuteInfo;
+        tmpCmd:     string;
         ph:         DWORD;
     begin
+        tmpCmd := self.m_stpFolder + cmd.hash + '\' + cmd.cmmd;
+        if not fileExists(tmpCmd) then
+            tmpCmd := cmd.cmmd;  // Se non è in archivio, dev'essere nella path
+
         fillChar(exInfo, sizeOf(exInfo), 0);
         with exInfo do
         begin
@@ -158,8 +163,8 @@ implementation
             fMask               := SEE_MASK_NOCLOSEPROCESS or SEE_MASK_FLAG_DDEWAIT or SEE_MASK_NOASYNC;
             wnd                 := getActiveWindow();
             exInfo.lpVerb       := 'open';
-            exInfo.lpParameters := pchar(cmd.swch);
-            lpFile              := pchar(cmd.cmmd);
+            exInfo.lpParameters := pChar(cmd.swch);
+            lpFile              := pChar(tmpCmd);
             nShow               := SW_SHOWNORMAL;
         end;
         if not shellExecuteEx(@exInfo) then
