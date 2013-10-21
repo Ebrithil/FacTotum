@@ -296,15 +296,13 @@ implementation
             );
             if self.query(query) then
             begin
-                result := true;
                 tmpSwRec.guid := self.getLastInsertedRecordID;
                 for i := 0 to pred( tmpSwRec.commands.count ) do
                 begin
                     tmpCmdRec      := tCmdRecord( tmpSwRec.commands[i] );
                     tmpCmdRec.swid := tmpSwRec.guid;
 
-                    self.insertDBRecord( tDBRecord(tmpCmdRec) );
-                    if not assigned(tmpCmdRec) then
+                    if not self.insertDBRecord( tDBRecord(tmpCmdRec) ) then
                     begin
                         while tmpSwRec.commands.count > 0 do
                         begin
@@ -313,11 +311,18 @@ implementation
                             tmpSwRec.commands.remove(tmpSwRec.commands.first);
                         end;
                         freeAndNil(tmpSwRec);
+                        exit;
                     end;
+
+                    result := true;
+                    createEvent('Database: Software [' + tmpSwRec.guid + '] inserito correttamente.', eiInfo);
                 end;
             end
             else
+            begin
                 freeAndNil(pRecord);
+                createEvent('Database: Errore nell''inserimento del Software [' + tmpSwRec.guid + '].', eiError);
+            end;
         end
         else if pRecord is tCmdRecord then
         begin
@@ -342,9 +347,13 @@ implementation
             begin
                 tmpCmdRec.guid := self.getLastInsertedRecordID;
                 result := true;
+                createEvent('Database: Comando [' + tmpCmdRec.guid + '] inserito correttamente.', eiInfo);
             end
             else
-                freeAndNil(tmpCmdRec);
+            begin
+                createEvent('Database: Errore nell''inserimento del Comando [' + tmpCmdRec.guid + '].', eiError);
+                freeAndNil(pRecord);
+            end;
         end;
     end;
 
@@ -374,9 +383,13 @@ implementation
                 tmpRecord                   := self.getSwRecordByGUID( (pRecord as tSwRecord).guid, true );
                 (pRecord as tSwRecord).name := (tmpRecord as tSwRecord).name;
                 tmpRecord.free;
+                createEvent('Database: Errore nell''aggiornamento del Software [' + (pRecord as tSwRecord).guid + '].', eiError);
             end
             else
+            begin
                 result := true;
+                createEvent('Database: Software [' + (pRecord as tSwRecord).guid + '] aggiornato correttamente.', eiInfo);
+            end;
         end
         else if pRecord is tCmdRecord then
         begin
@@ -419,9 +432,13 @@ implementation
                 (pRecord as tCmdRecord).uURL := (tmpRecord as tCmdRecord).uURL;
                 (pRecord as tCmdRecord).hash := (tmpRecord as tCmdRecord).hash;
                 tmpRecord.free;
+                createEvent('Database: Errore nell''aggiornamento del Comando [' + (pRecord as tCmdRecord).guid + '].', eiError);
             end
             else
+            begin
                 result := true;
+                createEvent('Database: Comando [' + (pRecord as tCmdRecord).guid + '] aggiornato correttamente.', eiInfo);
+            end;
         end;
     end;
 
@@ -429,6 +446,7 @@ implementation
     var
         varValue: integer;
         query,
+        varEvent,
         varTable,
         varField:  string;
         tmpSwRec:  tSwRecord;
@@ -443,12 +461,15 @@ implementation
             varTable := dbStrings[dbTableSoftware];
             varField := dbStrings[dbFieldSwGUID];
             varValue := (pRecord as tSwRecord).guid;
+            varEvent := 'Software [' + intToStr(tmpSwRec.guid) + ']';
             while pred(tmpSwRec.commands.count) > -1 do
             begin
                 tmpCmdRec := tmpSwRec.commands.first;
-                self.deleteDBRecord(tmpCmdRec);
-                if assigned(tmpCmdRec) then
+                if not self.deleteDBRecord(tmpCmdRec) then
+                begin
+                    createEvent('Database: Errore nella cancellazione del ' + varEvent + '.', eiError);
                     exit;
+                end;
                 tmpSwRec.commands.remove(tmpSwRec.commands.first);
             end;
         end
@@ -457,6 +478,7 @@ implementation
             varTable := dbStrings[dbTableCommands];
             varField := dbStrings[dbFieldCmdGUID];
             varValue := (pRecord as tCmdRecord).guid;
+            varEvent := 'Comando [' + intToStr( (pRecord as tCmdRecord).guid ) + ']';
         end;
 
         query := format(
@@ -474,7 +496,10 @@ implementation
         begin
             result := true;
             freeAndNil(pRecord);
-        end;
+            createEvent('Database: ' + varEvent + ' cancellato correttamente.', eiInfo);
+        end
+        else
+            createEvent('Database: Errore nella cancellazione del ' + varEvent + '.', eiError);
     end;
 
     function dbManager.getLastInsertedRecordID: integer;
@@ -533,7 +558,10 @@ implementation
             end;
         end
         else
+        begin
             sqlData.free;
+            createEvent('Database: Errore nella ricerca del Software [' + intToStr(guid) + '].', eiError);
+        end;
     end;
 
     function dbManager.getCmdRecordByGUID(const guid: integer; const searchInDB: boolean = false): tCmdRecord;
@@ -589,7 +617,10 @@ implementation
             end;
         end
         else
+        begin
             sqlData.free;
+            createEvent('Database: Errore nella ricerca del Comando [' + intToStr(guid) + '].', eiError);
+        end;
     end;
 
     function dbManager.getSoftwareList(const searchIndb: boolean = false): tList;
@@ -637,7 +668,10 @@ implementation
             self.m_software := result;
         end
         else
+        begin
             sqlData.free;
+            createEvent('Database: Errore nel caricamento della lista Software.', eiError);
+        end;
     end;
 
     function dbManager.getCommandList(const swid: integer; const searchIndb: boolean = false): tList;
@@ -702,7 +736,10 @@ implementation
             end;
         end
         else
+        begin
             sqlData.free;
+            createEvent('Database: Errore nel caricamento della lista Comandi.', eiError);
+        end;
     end;
 
 //------------------------------------------------------------------------------
