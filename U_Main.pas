@@ -552,23 +552,27 @@ implementation
 
         leCmmdInfo.text := trim(leCmmdInfo.text);
         if tCmdRecord(tmpNode.data).cmmd <> leCmmdInfo.text then
-        begin
-            taskUpdate := tTaskRecordOP.create;
+            if sFileMgr.isAvailable(leCmmdInfo.text, tCmdRecord(tmpNode.data).hash) or
+               (leCmmdInfo.text = '')                                              then
+            begin
+                taskUpdate := tTaskRecordOP.create;
 
-            tCmdRecord(tmpNode.data).cmmd := leCmmdInfo.text;
-            taskUpdate.pRecord            := tmpNode.data;
-            taskUpdate.tOperation         := DOR_UPDATE;
+                tCmdRecord(tmpNode.data).cmmd := leCmmdInfo.text;
+                taskUpdate.pRecord            := tmpNode.data;
+                taskUpdate.tOperation         := DOR_UPDATE;
 
-            setLength(taskUpdate.dummyTargets, 2);
-            taskUpdate.dummyTargets[0] := tvConfig;
-            taskUpdate.dummyTargets[1] := leCmmdInfo;
+                setLength(taskUpdate.dummyTargets, 2);
+                taskUpdate.dummyTargets[0] := tvConfig;
+                taskUpdate.dummyTargets[1] := leCmmdInfo;
 
-            sTaskMgr.pushTaskToInput(taskUpdate);
-            self.lastNode := nil;
+                sTaskMgr.pushTaskToInput(taskUpdate);
+                self.lastNode := nil;
 
-            if length(leCmmdInfo.text) > 0 then
-                leCmmdInfo.color := $0080FFFF  // Giallo
-        end
+                if leCmmdInfo.text = '' then
+                    leCmmdInfo.color := $0080FFFF  // Giallo
+            end
+            else
+                leCmmdInfo.color := $008080FF      // Rosso
         else
             leCmmdInfo.color := clWhite;
     end;
@@ -585,8 +589,7 @@ implementation
 
         leVersInfo.text := trim( leVersInfo.text );
         if tCmdRecord(tmpNode.data).vers <> leVersInfo.text then
-        begin
-            if ( leVersInfo.text[length(leVersInfo.text)] <> '.' ) then
+            if leVersInfo.text[length(leVersInfo.text)] <> '.' then
             begin
                 taskUpdate := tTaskRecordOP.create;
 
@@ -600,11 +603,12 @@ implementation
 
                 sTaskMgr.pushTaskToInput(taskUpdate);
                 self.lastNode := nil;
-            end;
 
-            if ( length(leVersInfo.text) > 0 ) then
-                leVersInfo.color := $0080FFFF  // Giallo
-        end
+                if leVersInfo.text = '' then
+                    leVersInfo.color := $0080FFFF  // Giallo
+            end
+            else
+                leVersInfo.color := $008080FF      // Rosso
         else
             leVersInfo.color := clWhite;
     end;
@@ -635,7 +639,7 @@ implementation
             sTaskMgr.pushTaskToInput(taskUpdate);
             self.lastNode := nil;
 
-            if length(leuUrlInfo.text) = 0 then
+            if leuUrlInfo.text = '' then
                 leuUrlInfo.color := $0080FFFF  // Giallo
         end
         else
@@ -668,7 +672,7 @@ implementation
             sTaskMgr.pushTaskToInput(taskUpdate);
             self.lastNode := nil;
 
-            if length(leSwchInfo.text) > 0 then
+            if leSwchInfo.text = '' then
                 leSwchInfo.color := $0080FFFF  // Giallo
         end
         else

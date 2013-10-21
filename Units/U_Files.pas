@@ -20,10 +20,11 @@ type
             function     getArchivePathFor(cmdGuid: integer):  string;
             function     getCmdRecordsByHash(const hash: string): tList;
        public
-            constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup\');
+            constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup');
             destructor   Destroy; override;
-            procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
+            function     isAvailable(const fileName, fileHash: string): boolean;
             function     fileExistsInPath(fileName: string): boolean;
+            procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
             function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
             function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
             function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
@@ -84,9 +85,9 @@ var
 
 implementation
 
-    constructor tFileManager.create(useMD5: boolean = false; stpFolder: string = 'Setup\');
+    constructor tFileManager.create(useMD5: boolean = false; stpFolder: string = 'Setup');
     begin
-        self.m_stpFolder := stpFolder;
+        self.m_stpFolder := includeTrailingPathDelimiter(stpFolder);
         if not( directoryExists(self.m_stpFolder) ) then
         begin
             createEvent('Cartella d''installazione non trovata.', eiAlert);
@@ -285,6 +286,12 @@ implementation
     function tFileManager.isArchived(fileHash: string): boolean;
     begin
         result := directoryExists(fileHash);
+    end;
+
+    function tFileManager.isAvailable(const fileName, fileHash: string): boolean;
+    begin
+        result := fileExists(self.m_stpFolder + fileHash + '\' + fileName) or
+                  fileExistsInPath(fileName);
     end;
 
     function tFileManager.getCmdRecordsByHash(const hash: string): tList;
