@@ -563,13 +563,14 @@ implementation
 
                 setLength(taskUpdate.dummyTargets, 2);
                 taskUpdate.dummyTargets[0] := tvConfig;
-                taskUpdate.dummyTargets[1] := leCmmdInfo;
-
-                sTaskMgr.pushTaskToInput(taskUpdate);
-                self.lastNode := nil;
 
                 if leCmmdInfo.text = '' then
                     leCmmdInfo.color := $0080FFFF  // Giallo
+                else
+                    taskUpdate.dummyTargets[1] := leCmmdInfo;
+
+                sTaskMgr.pushTaskToInput(taskUpdate);
+                self.lastNode := nil;
             end
             else
                 leCmmdInfo.color := $008080FF      // Rosso
@@ -599,13 +600,14 @@ implementation
 
                 setLength(taskUpdate.dummyTargets, 2);
                 taskUpdate.dummyTargets[0] := tvConfig;
-                taskUpdate.dummyTargets[1] := leVersInfo;
-
-                sTaskMgr.pushTaskToInput(taskUpdate);
-                self.lastNode := nil;
 
                 if leVersInfo.text = '' then
                     leVersInfo.color := $0080FFFF  // Giallo
+                else
+                    taskUpdate.dummyTargets[1] := leVersInfo;
+
+                sTaskMgr.pushTaskToInput(taskUpdate);
+                self.lastNode := nil;
             end
             else
                 leVersInfo.color := $008080FF      // Rosso
@@ -634,13 +636,14 @@ implementation
 
             setLength(taskUpdate.dummyTargets, 2);
             taskUpdate.dummyTargets[0] := tvConfig;
-            taskUpdate.dummyTargets[1] := leuUrlInfo;
-
-            sTaskMgr.pushTaskToInput(taskUpdate);
-            self.lastNode := nil;
 
             if leuUrlInfo.text = '' then
                 leuUrlInfo.color := $0080FFFF  // Giallo
+            else
+                taskUpdate.dummyTargets[1] := leuUrlInfo;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
         end
         else
             leuUrlInfo.color := clWhite;
@@ -667,13 +670,14 @@ implementation
 
             setLength(taskUpdate.dummyTargets, 2);
             taskUpdate.dummyTargets[0] := tvConfig;
-            taskUpdate.dummyTargets[1] := leSwchInfo;
-
-            sTaskMgr.pushTaskToInput(taskUpdate);
-            self.lastNode := nil;
 
             if leSwchInfo.text = '' then
                 leSwchInfo.color := $0080FFFF  // Giallo
+            else
+                taskUpdate.dummyTargets[1] := leSwchInfo;
+
+            sTaskMgr.pushTaskToInput(taskUpdate);
+            self.lastNode := nil;
         end
         else
             leSwchInfo.color := clWhite;
