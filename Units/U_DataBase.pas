@@ -646,8 +646,7 @@ implementation
         );
         sqlData := self.queryRes(query);
 
-        result          := tList.create;
-        self.m_software := result;
+        self.m_software := tList.create;
         if not sqlData.isEmpty then
         begin
             sqlData.first;
@@ -663,15 +662,15 @@ implementation
                 end;
 
                 sqlData.next;
-                result.add(swRec);
+                self.m_software.add(swRec);
             end;
-            self.m_software := result;
         end
         else
         begin
             sqlData.free;
             createEvent('Database: Errore nel caricamento della lista Software.', eiError);
         end;
+        result := self.m_software;
     end;
 
     function dbManager.getCommandList(const swid: integer; const searchIndb: boolean = false): tList;
@@ -794,7 +793,8 @@ implementation
 
                     if (self.pRecord is tCmdRecord) then
                         for i := 0 to pred(tvConfig.items.count) do
-                            if tCmdRecord(self.pRecord).swid = tSwRecord(tvConfig.items[i]).guid then
+                            if tvConfig.items[i].hasChildren then
+                               if (tCmdRecord(self.pRecord).swid = tSwRecord(tvConfig.items[i].data).guid) then
                             begin
                                 tvConfig.items.addChild( tvConfig.items[i], tCmdRecord(self.pRecord).name ).data := self.pRecord;
                                 exit;
