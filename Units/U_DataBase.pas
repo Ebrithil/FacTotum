@@ -668,7 +668,7 @@ implementation
         else
         begin
             sqlData.free;
-            createEvent('Database: Errore nel caricamento della lista Software.', eiError);
+            createEvent('Database: La lista Software e'' vuota.', eiAlert);
         end;
         result := self.m_software;
     end;
@@ -737,7 +737,7 @@ implementation
         else
         begin
             sqlData.free;
-            createEvent('Database: Errore nel caricamento della lista Comandi.', eiError);
+            createEvent('Database: La lista Comandi e'' vuota.', eiError);
         end;
     end;
 

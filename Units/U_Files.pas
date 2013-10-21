@@ -14,11 +14,9 @@ type
        protected
             m_hasher:    tIdHash;
             m_stpFolder: string;
-            function     isArchived(cmdGuid: integer): boolean; overload;
-            function     isArchived(fileHash: string): boolean; overload;
+            function     isArchived(fileHash: string): boolean;
             function     getFileHash(fileName: string): string; overload;
             function     getFileHash(fileData: tMemoryStream): string; overload;
-            function     getArchivePathFor(cmdGuid: integer):  string;
             function     getCmdRecordsByHash(const hash: string): tList;
        public
             constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup');
@@ -190,7 +188,7 @@ implementation
         tempHash := self.getFileHash(fileName);
         if not isArchived(tempHash) then
         begin
-            tmpTo    := getCurrentDir + self.m_stpFolder + tempHash;
+            tmpTo    := includeTrailingPathDelimiter(getCurrentDir) + self.m_stpFolder + tempHash;
             if folderName = '' then
             begin
                 tmpFrom := fileName;
@@ -209,8 +207,8 @@ implementation
                 cmdRec.cmmd := ansiReplaceStr(fileName, folderName + '\', '')
             else
                 cmdRec.cmmd := extractFileName(fileName);
-            sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
-            result := true;
+
+            result := sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
         end;
     end;
 
@@ -219,45 +217,45 @@ implementation
         i:          integer;
         tmpRec:     tDBRecord;
         newHash,
-        testFile:   string;
+        tmpFile:    string;
         cmdRecList: tList;
     begin
         result   := true;
         newHash  := self.getFileHash(data);
-        testFile := '';
 
         // Nome di default
         if fileName = '' then
             fileName := 'Setup.exe';
 
         // Salvo il file scaricato in temp per lo spostamento
-        data.saveToFile(getEnvironmentVariable('TEMP') + '\' + fileName);
+        tmpFile := includeTrailingPathDelimiter( getEnvironmentVariable('TEMP') ) + fileName;
+        data.saveToFile(tmpFile);
         data.free;
 
-        if cmdRec.hash <> '' then
+        if not self.isAvailable(cmdRec.cmmd, cmdRec.hash) then
+            if not self.insertArchiveSetup(handle, cmdRec, tmpFile) then
+                exit
+            else
+        else if (cmdRec.hash <> '') then
         begin
             // Rinomino il vecchio eseguibile del comando
-            testFile := m_stpFolder + cmdRec.hash + '\' + cmdRec.Cmmd;
-            while not fileExists(testFile) and (testFile <> '') do
-                delete(testFile, length(testFile), 1);
-
-            if (testFile = '') or not sFileMgr.executeFileOperation(handle, FO_RENAME, testFile, testFile + '.old') then
+            if not self.executeFileOperation(handle, FO_RENAME, cmdRec.cmmd, cmdRec.cmmd + '.old') then
                 exit;
 
-            if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + cmdRec.hash + '\' + fileName) then
+            // Sposto il nuovo eseguibile nella vecchia cartella
+            if not self.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + cmdRec.hash + '\' + fileName) then
                 exit;
 
             // Rinomino la vecchia cartella con il nuovo hash
-            if not sFileMgr.executeFileOperation(handle, FO_RENAME, m_stpFolder + cmdRec.hash, m_stpFolder + newHash) then
+            if not self.executeFileOperation(handle, FO_RENAME, m_stpFolder + cmdRec.hash, m_stpFolder + newHash) then
                 exit;
 
             // Aggiorno il database con le nuove informazioni
-            testFile    := copy(testFile, lastDelimiter('\', testFile) + 1, testFile.length);
-            cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, testFile, fileName);
+            cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, cmdRec.cmmd, fileName);
         end
         else
         begin
-            if not sFileMgr.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + newHash + '\' + fileName) then
+            if not self.executeFileOperation(handle, FO_MOVE, tmpFile, m_stpFolder + newHash + '\' + fileName) then
                 exit;
 
             // Aggiorno il database con le nuove informazioni
@@ -266,16 +264,16 @@ implementation
         cmdRec.hash := newHash;
         sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
 
-        // Aggiorno allo stesso modo tutti gli altri comandi con lo stesso hash (preservando gli switch se possibile)
-        cmdRecList := sFileMgr.getCmdRecordsByHash(newHash);
+        // Aggiorno allo stesso modo tutti gli altri comandi con lo stesso hash
+        cmdRecList := self.getCmdRecordsByHash(newHash);
         for i := 0 to pred( cmdRecList.count ) do
         begin
             tCmdRecord(cmdRecList[i]).hash := cmdRec.hash;
             tCmdRecord(cmdRecList[i]).vers := cmdRec.vers;
-            if testFile <> '' then
-                tCmdRecord(cmdRecList[i]).cmmd := ansiReplaceStr( tCmdRecord(cmdRecList[i]).cmmd, testFile, fileName)
-            else
-                tCmdRecord(cmdRecList[i]).cmmd := fileName;
+            tCmdRecord(cmdRecList[i]).cmmd := ansiReplaceStr(
+                                                  tCmdRecord(cmdRecList[i]).cmmd,
+                                                  tCmdRecord(cmdRecList[i]).cmmd,
+                                                  fileName);
 
             tmpRec := tDBRecord(cmdRecList[i]);
             sdbMgr.updatedbRecord( tmpRec );
@@ -287,17 +285,7 @@ implementation
 
     function tFileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
     begin
-        result := sFileMgr.executeFileOperation(handle, FO_DELETE, hash);
-    end;
-
-    function tFileManager.getArchivePathFor(cmdGuid: integer): string;
-    begin
-        result := self.m_stpFolder + tCmdRecord( sdbMgr.getCmdRecordByGUID(cmdGuid) ).hash;
-    end;
-
-    function tFileManager.isArchived(cmdGuid: integer): boolean;
-    begin
-        result := directoryExists( self.getArchivePathFor(cmdGuid) );
+        result := self.executeFileOperation(handle, FO_DELETE, hash);
     end;
 
     function tFileManager.isArchived(fileHash: string): boolean;
@@ -500,7 +488,7 @@ implementation
         end;
 
         self.dataStream.seek(0, soBeginning);
-        if (sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream)) then
+        if ( sFileMgr.updateArchiveSetup(self.formHandle, self.pRecord, self.fileName, self.dataStream) ) then
         begin
             reportTask       := tTaskDownloadReport.create;
             reportTask.dlPct := 255;
