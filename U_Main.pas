@@ -415,16 +415,30 @@ implementation
         task:      tTaskRunCommands;
         lSoftware: tList;
     begin
-        clbInstall.enabled := false;
-        bInstall.enabled   := false;
+        pbSwInst.max       := 100;
+        pbCmdInst.max      := 100;
         lSoftware          := tList.create;
         for i := 0 to pred(clbInstall.items.count) do
         begin
+            if not clbInstall.checked[i] then
+                continue;
+
+            clbInstall.enabled := false;
+            bInstall.enabled   := false;
+
             lSoftware.add(clbInstall.items.objects[i]);
 
             task           := tTaskRunCommands.create;
             task.handle    := handle;
             task.lSoftware := lSoftware;
+
+            setLength(task.dummyTargets, 6);
+            task.dummyTargets[0] := bInstall;
+            task.dummyTargets[1] := clbInstall;
+            task.dummyTargets[2] := pbSwInst;
+            task.dummyTargets[3] := pbCmdInst;
+            task.dummyTargets[4] := lSwInstProg;
+            task.dummyTargets[5] := lCmdInstProg;
 
             sTaskMgr.pushTaskToInput(task);
         end;

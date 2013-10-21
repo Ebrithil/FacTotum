@@ -62,7 +62,7 @@ object fFacTotum: TfFacTotum
         Height = 19
         Alignment = taRightJustify
         AutoSize = False
-        Caption = '100%'
+        Caption = '0%'
         Font.Charset = ANSI_CHARSET
         Font.Color = clRed
         Font.Height = -16
@@ -78,7 +78,7 @@ object fFacTotum: TfFacTotum
         Height = 19
         Alignment = taRightJustify
         AutoSize = False
-        Caption = '100%'
+        Caption = '0%'
         Font.Charset = ANSI_CHARSET
         Font.Color = clRed
         Font.Height = -16
@@ -127,6 +127,7 @@ object fFacTotum: TfFacTotum
         Height = 42
         Caption = 'Installa'
         TabOrder = 2
+        OnClick = bInstallClick
       end
       object pbSwInst: TProgressBar
         Left = 108
@@ -532,7 +533,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 77
     Bitmap = {
-      494C0101060008024C0220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010106000802500220002000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1586,7 +1587,7 @@ object fFacTotum: TfFacTotum
     Left = 452
     Top = 126
     Bitmap = {
-      494C010107004C01500210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
+      494C010107004C01540210001000FFFFFFFF2000FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000100000002000000030000000300000002000000010000

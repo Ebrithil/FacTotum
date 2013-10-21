@@ -5,6 +5,7 @@ interface
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
     vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, System.UITypes, Vcl.forms, vcl.comCtrls, IdComponent, IdURI,
+    vcl.checklst,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser, U_Functions;
 
@@ -78,6 +79,17 @@ type
             lSoftware: tList;
             handle:    tHandle;
             procedure  exec; override;
+    end;
+
+    tTaskProgressRun = class(tTaskOutput)
+        public
+            pct:      integer;
+            procedure exec; override;
+    end;
+
+    tTaskRanCommands = class(tTaskOutput)
+        public
+            procedure exec; override;
     end;
 
 var
@@ -392,8 +404,10 @@ implementation
     procedure tTaskRunCommands.exec;
     var
         i,
-        j:         integer;
-        pSoftware: tSwRecord;
+        j:          integer;
+        pSoftware:  tSwRecord;
+        taskPrg:    tTaskProgressRun;
+        taskRan:    tTaskRanCommands;
     begin
         for i := 0 to pred(self.lSoftware.count) do
         begin
@@ -403,10 +417,58 @@ implementation
             begin
                 createEvent( 'Esecuzione comando ' + tCmdRecord(pSoftware.commands[j]).name, eiInfo );
                 sFileMgr.runCommand(self.handle, pSoftware.commands[j]);
+
+                taskPrg     := tTaskProgressRun.create;
+                taskPrg.pct := trunc( (succ(j) / pSoftware.commands.count) * 100 );
+                setLength(taskPrg.dummyTargets, 2);
+                taskPrg.dummyTargets[0] := self.dummyTargets[3];
+                taskPrg.dummyTargets[1] := self.dummyTargets[5];
+                sTaskMgr.pushTaskToOutput(taskPrg);
             end;
             createEvent('Installazione di ' + pSoftware.name + ' completata', eiInfo);
+
+            taskPrg     := tTaskProgressRun.create;
+            taskPrg.pct := trunc( (succ(i) / self.lSoftware.count) * 100 );
+            setLength(taskPrg.dummyTargets, 2);
+            taskPrg.dummyTargets[0] := self.dummyTargets[2];
+            taskPrg.dummyTargets[1] := self.dummyTargets[4];
+            sTaskMgr.pushTaskToOutput(taskPrg);
         end;
-        self.lSoftware.free;
+        sleep(500);
+        taskRan := tTaskRanCommands.create;
+        setLength( taskRan.dummyTargets, length(self.dummyTargets) );
+        for i := 0 to pred( length(self.dummyTargets) ) do
+            taskRan.dummyTargets[i] := self.dummyTargets[i];
+        sTaskMgr.pushTaskToOutput(taskRan);
+        self.lSoftware.clear;
+    end;
+
+    procedure tTaskProgressRun.exec;
+    begin
+        if not (self.dummyTargets[0] is tProgressBar) or
+           not (self.dummyTargets[1] is tLabel)       then
+            exit;
+
+        (self.dummyTargets[0] as tProgressBar).position := self.pct;
+        (self.dummyTargets[1] as tLabel).caption        := intToStr(self.pct) + '%';
+    end;
+
+    procedure tTaskRanCommands.exec;
+    begin
+        if not (self.dummyTargets[0] is tButton)       or
+           not (self.dummyTargets[1] is tCheckListBox) or
+           not (self.dummyTargets[2] is tProgressBar)  or
+           not (self.dummyTargets[3] is tProgressBar)  or
+           not (self.dummyTargets[4] is tLabel)        or
+           not (self.dummyTargets[5] is tLabel)        then
+            exit;
+
+        (self.dummyTargets[0] as tButton).enabled       := true;
+        (self.dummyTargets[1] as tCheckListBox).enabled := true;
+        (self.dummyTargets[2] as tProgressBar).position := 0;
+        (self.dummyTargets[3] as tProgressBar).position := 0;
+        (self.dummyTargets[4] as tLabel).caption        := '0%';
+        (self.dummyTargets[5] as tLabel).caption        := '0%';
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
