@@ -60,6 +60,7 @@ type
         public
             constructor   create(dbNamePath: string = 'FacTotum.db');
             destructor    Destroy; override;
+            function      isUniqueHash(const hash: string): boolean;
             function      insertdbRecord(var pRecord: tdbRecord): boolean;
             function      deletedbRecord(var pRecord: tdbRecord): boolean;
             function      updatedbRecord(var pRecord: tdbRecord): boolean;
@@ -269,6 +270,48 @@ implementation
           ]
         );
         self.query(query);
+    end;
+
+    function dbManager.isUniqueHash(const hash: string): boolean;
+    var
+        i,
+        j:       integer;
+        query:   string;
+        sqlData: tDataSet;
+    begin
+        result := true;
+        if assigned(self.m_software) then
+            for i := 0 to pred(self.m_software.count) do
+                for j := 0 to pred( tSwRecord(self.m_software[i]).commands.count) do
+                    if tCmdRecord( tSwRecord(self.m_software[i]).commands[j]).hash = hash then
+                    begin
+                        result := false;
+                        exit;
+                    end;
+
+        query := format(
+          'SELECT COUNT(*) AS cmdCount '
+        + 'FROM %s '
+        + 'WHERE %s = %d;',
+          [
+          // Select
+          dbStrings[dbTableCommands],
+          // Where
+          dbStrings[dbFieldCmdHash], hash
+          ]
+        );
+        sqlData := self.queryRes(query);
+
+        if not sqlData.isEmpty then
+        begin
+            sqlData.first;
+            result := integer(sqlData.fieldByName( 'cmdCount' ).value) <= 1;
+        end
+        else
+        begin
+            sqlData.free;
+            createEvent('Database: Errore nella ricerca dell''Hash [' + hash + '].', eiError);
+        end;
     end;
 
     function dbManager.insertDBRecord(var pRecord: tDBRecord): boolean;

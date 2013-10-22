@@ -330,11 +330,16 @@ implementation
         odSelectCombo:  tFileOpenDialog;
         selectedFolder,
         selectedFile:   string;
-        taskAdd:        tTaskAddToArchive;
+        taskAdd:        tTaskInsertArchiveSetup;
+        taskRem:        tTaskRemoveArchiveSetup;
    begin
         selectedFile   := '';
         selectedFolder := '';
 
+        // Chiedo all'utente di selezionare il file, ed eventualmente la
+        // cartella del file che desidera importare
+
+        // Componenti utilizzabili solo da Windows Vista in poi
         if tOSVersion.major >= 6 then
         begin
             odSelectCombo                   := tFileOpenDialog.create(self);
@@ -360,7 +365,7 @@ implementation
             begin
                 odSelectCombo.title         := 'Seleziona la cartella d''installazione';
                 odSelectCombo.options       := [fdoPickFolders, fdoPathMustExist];
-                odSelectCombo.defaultFolder := extractFileName(selectedFile);
+                odSelectCombo.defaultFolder := extractFileDir(selectedFile);
                 odSelectCombo.fileTypes.clear;
 
                 if odSelectCombo.execute then
@@ -369,7 +374,7 @@ implementation
 
             odSelectCombo.free;
         end
-        else
+        else  // Altrimenti, rollback a componenti compatibili con XP
         begin
             odSelectFile            := tOpenDialog.create(self);
             odSelectFile.title      := 'Seleziona il file d''installazione';
@@ -386,23 +391,39 @@ implementation
             odSelectFile.free;
         end;
 
+        // Verifico che l'utente non abbia chiuso la finestra senza selezionare
         if selectedFile <> '' then
         begin
-            taskAdd            := tTaskAddToArchive.create;
+            // Se il file esiste nella path, la cartella non puo' essere
+            // importata, ed e' sufficiente aggiornare il campo del comando
+            if sFileMgr.fileExistsInPath(selectedFile) then
+            begin
+                selectedFolder  := '';
+                leCmmdInfo.text := extractFileName(selectedFile);
+                leCmmdInfoExit(sender);
+                leCmmdInfo.setFocus;
+
+                // Ma devo anche ripulire l'hash memorizzato e rimuovere il
+                // file precedente dal DataBase se nessun altro lo usa ancora
+                taskRem        := tTaskRemoveArchiveSetup.create;
+                taskRem.handle := handle;
+                taskRem.cmdRec := tvConfig.selected.data;
+
+                sTaskMgr.pushTaskToInput(taskRem);
+            end;
+
+            // La cartella deve contenere il file, oppure non verrà considerata
+            if selectedFolder <> '' then
+                if not ansiContainsText(selectedFile, selectedFolder) then
+                    selectedFolder := '';
+
+            taskAdd            := tTaskInsertArchiveSetup.create;
             taskAdd.formHandle := handle;
             taskAdd.cmdRec     := tvConfig.selected.data;
             taskAdd.fileName   := selectedFile;
             taskAdd.folderName := selectedFolder;
 
             sTaskMgr.pushTaskToInput(taskAdd);
-
-            // Da controllare, se il task fallisce la parte sotto non deve avvenire!
-            if selectedFolder <> '' then
-                leCmmdInfo.text := ansiReplaceStr(selectedFile, selectedFolder + '\', '')
-            else
-                leCmmdInfo.text := extractFileName(selectedFile);
-
-            leCmmdInfo.setFocus;
         end;
     end;
 

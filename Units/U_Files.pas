@@ -14,7 +14,8 @@ type
        protected
             m_hasher:    tIdHash;
             m_stpFolder: string;
-            function     isArchived(fileHash: string): boolean;
+            function     isArchived(hash: string): boolean;
+            function     isUniqueSetup(hash: string): boolean;
             function     getFileHash(fileName: string): string; overload;
             function     getFileHash(fileData: tMemoryStream): string; overload;
             function     getCmdRecordsByHash(const hash: string): tList;
@@ -26,7 +27,7 @@ type
             procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
             function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
             function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
-            function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
+            function     removeArchiveSetup(handle: tHandle; cmdRec: tCmdRecord): boolean;
             function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     end;
 
@@ -53,21 +54,29 @@ type
             procedure exec; override;
     end;
 
-    tTaskAddToArchive = class(tTask)
+    tTaskInsertArchiveSetup = class(tTask)
         public
             formHandle: tHandle;
             cmdRec:     tCmdRecord;
-            fileName:   string;
+            fileName,
             folderName: string;
             pReturn:    tLabeledEdit;
 
             procedure exec; override;
     end;
 
-    tTaskAddedToArchive = class(tTaskOutput)
+    tOutTaskInsertArchiveSetup = class(tTaskOutput)
         public
-            selectedFile:   string;
+            selectedFile,
             selectedFolder: string;
+
+            procedure exec; override;
+    end;
+
+    tTaskRemoveArchiveSetup = class(tTask)
+        public
+            handle: tHandle;
+            cmdRec: tCmdRecord;
 
             procedure exec; override;
     end;
@@ -283,20 +292,34 @@ implementation
         result := true;
     end;
 
-    function tFileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
+    function tFileManager.removeArchiveSetup(handle: tHandle; cmdRec: tCmdRecord): boolean;
     begin
-        result := self.executeFileOperation(handle, FO_DELETE, hash);
+        result := false;
+
+        if cmdRec.hash <> '' then
+        begin
+            if self.isUniqueSetup(cmdRec.hash) then
+                result := self.executeFileOperation(handle, FO_DELETE, cmdRec.hash);
+
+            cmdRec.hash := '';
+            result := sdbMgr.updatedbRecord(cmdRec);
+        end;
     end;
 
-    function tFileManager.isArchived(fileHash: string): boolean;
+    function tFileManager.isArchived(hash: string): boolean;
     begin
-        result := directoryExists(fileHash);
+        result := directoryExists(hash);
     end;
 
     function tFileManager.isAvailable(const fileName, fileHash: string): boolean;
     begin
         result := fileExists(self.m_stpFolder + fileHash + '\' + fileName) or
                   fileExistsInPath(fileName);
+    end;
+
+    function tFileManager.isUniqueSetup(cmdRec: tCmdRecord): boolean;
+    begin
+        result := sdbMgr.isUniqueHash(hash);
     end;
 
     function tFileManager.getCmdRecordsByHash(const hash: string): tList;
@@ -341,14 +364,16 @@ implementation
             result := true;
     end;
 
-    procedure tTaskAddToArchive.exec;
+    procedure tTaskInsertArchiveSetup.exec;
     var
-        taskAdded: tTaskAddedToArchive;
+        taskAdded: tOutTaskInsertArchiveSetup;
     begin
-        if (not sFileMgr.insertArchiveSetup(self.formHandle, self.cmdRec, self.fileName, self.folderName)) then
+        if not sFileMgr.insertArchiveSetup(self.formHandle, self.cmdRec,
+                                           self.fileName,   self.folderName)
+        then
             exit;
 
-        taskAdded                 := tTaskAddedToArchive.create;
+        taskAdded                 := tOutTaskInsertArchiveSetup.create;
         taskAdded.selectedFile    := self.fileName;
         taskAdded.selectedFolder  := self.folderName;
         setLength(taskAdded.dummyTargets, 1);
@@ -357,7 +382,7 @@ implementation
         sTaskMgr.pushTaskToOutput(taskAdded);
     end;
 
-    procedure tTaskAddedToArchive.exec;
+    procedure tOutTaskInsertArchiveSetup.exec;
     var
         targetLe: tLabeledEdit;
     begin
@@ -370,6 +395,11 @@ implementation
             targetLe.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
         else
             targetLe.text := extractFileName(selectedFile);
+    end;
+
+    procedure tTaskRemoveArchiveSetup.exec;
+    begin
+        sFileMgr.removeArchiveSetup(self.handle, self.cmdRec);
     end;
 
     procedure tTaskDownload.onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);
