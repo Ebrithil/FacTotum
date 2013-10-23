@@ -302,7 +302,7 @@ implementation
                 result := self.executeFileOperation(handle, FO_DELETE, cmdRec.hash);
 
             cmdRec.hash := '';
-            result := sdbMgr.updatedbRecord(cmdRec);
+            result := sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
         end;
     end;
 
@@ -317,7 +317,7 @@ implementation
                   fileExistsInPath(fileName);
     end;
 
-    function tFileManager.isUniqueSetup(cmdRec: tCmdRecord): boolean;
+    function tFileManager.isUniqueSetup(hash: string): boolean;
     begin
         result := sdbMgr.isUniqueHash(hash);
     end;

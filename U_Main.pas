@@ -164,6 +164,8 @@ implementation
       progBar: tProgressBar;
       progRec: tRect;
     begin
+        lvUpdate.clear;
+
         sList := sdbMgr.getSoftwareList;
         for i := 0 to pred(sList.count) do
         begin
@@ -565,7 +567,10 @@ implementation
 
     procedure tfFacTotum.pmUpdatePopup(sender: tObject);
     begin
-        miUpdate.enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed);
+        if assigned(lvUpdate.selected) then
+            miUpdate.enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed)
+        else
+            miUpdate.enabled := false;
     end;
 
     procedure tfFacTotum.pmSoftwarePopup(sender: tObject);

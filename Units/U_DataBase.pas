@@ -340,6 +340,7 @@ implementation
             if self.query(query) then
             begin
                 tmpSwRec.guid := self.getLastInsertedRecordID;
+                m_software.add(tmpSwRec);
                 for i := 0 to pred( tmpSwRec.commands.count ) do
                 begin
                     tmpCmdRec      := tCmdRecord( tmpSwRec.commands[i] );
