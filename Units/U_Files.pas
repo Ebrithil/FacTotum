@@ -5,7 +5,7 @@ interface
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
     vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, System.UITypes, Vcl.forms, vcl.comCtrls, IdComponent, IdURI,
-    vcl.checklst, Dialogs,
+    vcl.checklst, Dialogs, Messages,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser, U_Functions;
 
@@ -101,6 +101,7 @@ type
 
     tTaskCheckStuck = class(tTaskOutput)
         public
+            class var window: tForm;
             process:  integer;
             procedure exec; override;
     end;
@@ -203,10 +204,14 @@ implementation
             if waitSt = WAIT_OBJECT_0 then
                 break;
 
-            taskSt := tTaskCheckStuck.create;
+            taskSt         := tTaskCheckStuck.create;
             taskSt.process := ph;
             sTaskMgr.pushTaskToOutput(taskSt);            
         end;
+
+        taskSt         := tTaskCheckStuck.create;
+        taskSt.process := 0;
+        sTaskMgr.pushTaskToOutput(taskSt);                    
         
         closeHandle(ph);
     end;
@@ -523,8 +528,16 @@ implementation
 
     procedure tTaskCheckStuck.exec;
     begin
-        if messageDlg('L''esecuzione del comando stà impiegando molto tempo. Interromperla?', mtWarning, mbYesNo, 0) = mrYes then
-            closeHandle(self.process);
+        if (self.process = 0) and
+           assigned(self.window)   then
+        begin
+            self.window.close;
+            exit;
+        end;
+                
+        self.window := createMessageDialog('L''esecuzione del comando stà impiegando molto tempo. Interromperla?', mtWarning, mbYesNo);         
+        if self.window.showModal = mrYes then
+           closeHandle(self.process);
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
