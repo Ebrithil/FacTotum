@@ -5,7 +5,7 @@ interface
 uses
     IdHash, System.Classes, System.SysUtils, IdHashSHA, IdHashMessageDigest, ShellAPI, Winapi.Windows,
     vcl.extCtrls, Vcl.StdCtrls, System.StrUtils, System.UITypes, Vcl.forms, vcl.comCtrls, IdComponent, IdURI,
-    vcl.checklst,
+    vcl.checklst, Dialogs,
 
     U_Events, U_DataBase, U_Threads, U_InputTasks, U_OutputTasks, U_Download, U_Parser, U_Functions;
 
@@ -99,6 +99,17 @@ type
             procedure exec; override;
     end;
 
+    tTaskCheckStuck = class(tTaskOutput)
+        public
+            process:  integer;
+            procedure exec; override;
+    end;
+
+const
+    seconds = 1000;
+    minutes = 60 * seconds;
+    defaultWaitCommandWarningTime = 30 * minutes;
+
 var
     sFileMgr: tFileManager;
 
@@ -157,7 +168,9 @@ implementation
     var
         exInfo:     tShellExecuteInfo;
         tmpCmd:     string;
-        ph:         DWORD;
+        ph,
+        waitSt:     DWORD;
+        taskSt:     tTaskCheckStuck;
     begin
         tmpCmd := self.m_stpFolder + cmd.hash + '\' + cmd.cmmd;
         if not fileExists(tmpCmd) then
@@ -180,7 +193,21 @@ implementation
             exit;
         end;
         ph := exInfo.hProcess;
-        waitForSingleObject(exInfo.hProcess, infinite);
+
+        waitSt := WAIT_TIMEOUT;
+        
+        while (waitSt = WAIT_TIMEOUT) do
+        begin
+            waitSt := waitForSingleObject(exInfo.hProcess, defaultWaitCommandWarningTime);          
+
+            if waitSt = WAIT_OBJECT_0 then
+                break;
+
+            taskSt := tTaskCheckStuck.create;
+            taskSt.process := ph;
+            sTaskMgr.pushTaskToOutput(taskSt);            
+        end;
+        
         closeHandle(ph);
     end;
 
@@ -492,6 +519,12 @@ implementation
         (self.dummyTargets[3] as tProgressBar).position := 0;
         (self.dummyTargets[4] as tLabel).caption        := '0%';
         (self.dummyTargets[5] as tLabel).caption        := '0%';
+    end;
+
+    procedure tTaskCheckStuck.exec;
+    begin
+        if messageDlg('L''esecuzione del comando stà impiegando molto tempo. Interromperla?', mtWarning, mbYesNo, 0) = mrYes then
+            closeHandle(self.process);
     end;
 
     procedure tTaskDownload.onDownloadBegin(aSender: tObject; aWorkMode: tWorkMode; aWorkCountMax: Int64);
