@@ -305,6 +305,9 @@ implementation
         // Inizializzo l'event handler
         sEventHdlr.initialize(lvEvents, tLog);
 
+        // Eseguo la manutenzione dell'archivio
+        sFileMgr.cleanupArchive(self.handle);
+
         // Centro la GUI nello schermo
         fFacTotum.left     := (Screen.Width - Width)   div 2;
         fFacTotum.top      := (Screen.Height - Height) div 2;
@@ -333,7 +336,6 @@ implementation
         selectedFolder,
         selectedFile:   string;
         taskAdd:        tTaskInsertArchiveSetup;
-        taskRem:        tTaskRemoveArchiveSetup;
    begin
         selectedFile   := '';
         selectedFolder := '';
@@ -404,14 +406,6 @@ implementation
                 leCmmdInfo.text := extractFileName(selectedFile);
                 leCmmdInfoExit(sender);
                 leCmmdInfo.setFocus;
-
-                // Ma devo anche ripulire l'hash memorizzato e rimuovere il
-                // file precedente dal DataBase se nessun altro lo usa ancora
-                taskRem        := tTaskRemoveArchiveSetup.create;
-                taskRem.handle := handle;
-                taskRem.cmdRec := tvConfig.selected.data;
-
-                sTaskMgr.pushTaskToInput(taskRem);
             end;
 
             // La cartella deve contenere il file, oppure non verrà considerata

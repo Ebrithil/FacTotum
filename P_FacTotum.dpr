@@ -32,7 +32,7 @@ begin
     application.initialize;
 
     sEventHdlr         := eventHandler.create;
-    sTaskMgr           := taskManager.create;
+    sTaskMgr           := tTaskManager.create;
     sUpdateParser      := updateParser.create;
     sDownloadMgr       := downloadManager.create;
     sFileMgr           := tFileManager.create;

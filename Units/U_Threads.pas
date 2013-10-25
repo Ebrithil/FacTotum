@@ -20,7 +20,7 @@ type
 
     tThreads = Array of thread;
 
-    taskManager = class // Wrapper di funzioni ed oggetti relativi alla gestione dei task
+    tTaskManager = class // Wrapper di funzioni ed oggetti relativi alla gestione dei task
         public
             constructor create; overload;
             constructor create(const threadsCount: byte); overload;
@@ -48,7 +48,7 @@ const
     defaultThreadPoolSleepTime = 50;
 
 var
-    sTaskMgr: taskManager;
+    sTaskMgr: tTaskManager;
 
 implementation
     procedure createEvent(description: string; eventType: tEventImage); inline;
@@ -91,12 +91,12 @@ implementation
         end;
     end;
 
-    constructor taskManager.create;
+    constructor tTaskManager.create;
     begin
         self.create(CPUCount)
     end;
 
-    destructor taskManager.Destroy(forced: boolean = false);
+    destructor tTaskManager.Destroy(forced: boolean = false);
     var
         i: integer;
     begin
@@ -118,7 +118,7 @@ implementation
         inherited Destroy;
     end;
 
-    constructor taskManager.create(const threadsCount: byte);
+    constructor tTaskManager.create(const threadsCount: byte);
     var
         i: byte;
     begin
@@ -127,15 +127,18 @@ implementation
         m_inputTasks  := tList.create;
         m_outputTasks := tList.create;
 
+        m_outputTasks.add(
+            sEventHdlr.createEvent( 'ThreadPool: inizializzazione di '
+                                  + intToStr(threadsCount) + ' threads.',
+                                    tImageIndex(eiInfo) )
+        );
+
         setLength(m_threadPool, threadsCount);
-
-        m_outputTasks.add( sEventHdlr.createEvent('Inizializzazione threadpool a ' + IntToStr(threadsCount) + ' threads.', tImageIndex(eiInfo)) );
-
         for i := 0 to threadsCount - 1 do
             m_threadPool[i] := thread.create;
     end;
 
-    function taskManager.getBusyThreadsCount: byte;
+    function tTaskManager.getBusyThreadsCount: byte;
     var
         i: byte;
     begin
@@ -145,44 +148,44 @@ implementation
                 inc(result);
     end;
 
-    function taskManager.getThreadsCount: byte;
+    function tTaskManager.getThreadsCount: byte;
     begin
         result := length(m_threadPool);
     end;
 
-    procedure taskManager.pushTaskToInput(taskToAdd: tTask);
+    procedure tTaskManager.pushTaskToInput(taskToAdd: tTask);
     begin
         self.pushTaskToQueue(taskToAdd, m_inputTasks, m_inputMutex)
     end;
 
-    function taskManager.pullTaskFromInput: tTask;
+    function tTaskManager.pullTaskFromInput: tTask;
     begin
         result := self.pullTaskFromQueue(m_inputTasks, m_inputMutex)
     end;
 
-    procedure taskManager.pushTaskToOutput(taskToAdd: tTaskOutput);
+    procedure tTaskManager.pushTaskToOutput(taskToAdd: tTaskOutput);
     begin
         self.pushTaskToQueue(taskToAdd, m_outputTasks, m_outputMutex)
     end;
 
-    function taskManager.isTaskOutputEmpty: boolean;
+    function tTaskManager.isTaskOutputEmpty: boolean;
     begin
         result := (m_outputTasks.count = 0);
     end;
 
-    function taskManager.pullTaskFromOutput: tTaskOutput;
+    function tTaskManager.pullTaskFromOutput: tTaskOutput;
     begin
         result := self.pullTaskFromQueue(m_outputTasks, m_outputMutex) as tTaskOutput
     end;
 
-    procedure taskManager.pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
+    procedure tTaskManager.pushTaskToQueue(taskToAdd: tTask; taskQueue: tList; queueMutex: tMutex);
     begin
         queueMutex.acquire;
         taskQueue.add(taskToAdd);
         queueMutex.release;
     end;
 
-    function taskManager.pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
+    function tTaskManager.pullTaskFromQueue(taskQueue: tList; queueMutex: tMutex): tTask;
     begin
         queueMutex.acquire;
 

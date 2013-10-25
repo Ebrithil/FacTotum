@@ -15,19 +15,19 @@ type
             m_hasher:    tIdHash;
             m_stpFolder: string;
             function     isArchived(hash: string): boolean;
-            function     isUniqueSetup(hash: string): boolean;
             function     getFileHash(fileName: string): string; overload;
             function     getFileHash(fileData: tMemoryStream): string; overload;
             function     getCmdRecordsByHash(const hash: string): tList;
        public
             constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup');
             destructor   Destroy; override;
+            procedure    cleanupArchive(handle: tHandle);
+            procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
             function     isAvailable(const fileName, fileHash: string): boolean;
             function     fileExistsInPath(fileName: string): boolean;
-            procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
             function     insertArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; folderName: string = ''): boolean;
             function     updateArchiveSetup(handle: tHandle; cmdRec: tCmdRecord; fileName: string; data: tMemoryStream): boolean;
-            function     removeArchiveSetup(handle: tHandle; cmdRec: tCmdRecord): boolean;
+            function     removeArchiveSetup(handle: tHandle; hash: string): boolean;
             function     executeFileOperation(handle: tHandle; fileOP: short; pathFrom: string; pathTo: string = ''): boolean;
     end;
 
@@ -65,18 +65,10 @@ type
             procedure exec; override;
     end;
 
-    tOutTaskInsertArchiveSetup = class(tTaskOutput)
+    tTaskInsertArchiveSetupReport = class(tTaskOutput)
         public
             selectedFile,
             selectedFolder: string;
-
-            procedure exec; override;
-    end;
-
-    tTaskRemoveArchiveSetup = class(tTask)
-        public
-            handle: tHandle;
-            cmdRec: tCmdRecord;
 
             procedure exec; override;
     end;
@@ -324,34 +316,28 @@ implementation
         result := true;
     end;
 
-    function tFileManager.removeArchiveSetup(handle: tHandle; cmdRec: tCmdRecord): boolean;
+    function tFileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
     begin
-        result := false;
-
-        if cmdRec.hash <> '' then
-        begin
-            if self.isUniqueSetup(cmdRec.hash) then
-                result := self.executeFileOperation(handle, FO_DELETE, cmdRec.hash);
-
-            cmdRec.hash := '';
-            result := sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
-        end;
+        if hash <> '' then
+            if self.executeFileOperation(handle, FO_DELETE, hash) then
+                result := true
+            else
+            begin
+                result := false;
+                createEvent('Archivio: impossibile eliminare la cartella'
+                          + '[' + hash + '].', eiError);
+            end;
     end;
 
     function tFileManager.isArchived(hash: string): boolean;
     begin
-        result := directoryExists(hash);
+        result := directoryExists(self.m_stpFolder + hash);
     end;
 
     function tFileManager.isAvailable(const fileName, fileHash: string): boolean;
     begin
         result := fileExists(self.m_stpFolder + fileHash + '\' + fileName) or
                   fileExistsInPath(fileName);
-    end;
-
-    function tFileManager.isUniqueSetup(hash: string): boolean;
-    begin
-        result := sdbMgr.isUniqueHash(hash);
     end;
 
     function tFileManager.getCmdRecordsByHash(const hash: string): tList;
@@ -396,16 +382,37 @@ implementation
             result := true;
     end;
 
+    procedure tFileManager.cleanupArchive(handle: tHandle);
+    var
+        i,
+        counter:  word;
+        hashList: tStringList;
+    begin
+        createEvent('Archivio: manutenzione iniziata.',
+                    eiInfo);
+
+        i        := 0;
+        counter  := 0;
+        hashList := sdbMgr.getStoredHashList;
+        for i := 0 to pred(hashList.count) do
+            if not self.isArchived(hashList[i]) then
+                if self.removeArchiveSetup(handle, hashList[i]) then
+                    inc(counter);
+
+        createEvent('Archivio: manutenzione completata, rimossi '
+                   + intToStr(counter) + ' archivi inutilizzati.', eiInfo);
+    end;
+
     procedure tTaskInsertArchiveSetup.exec;
     var
-        taskAdded: tOutTaskInsertArchiveSetup;
+        taskAdded: tTaskInsertArchiveSetupReport;
     begin
         if not sFileMgr.insertArchiveSetup(self.formHandle, self.cmdRec,
                                            self.fileName,   self.folderName)
         then
             exit;
 
-        taskAdded                 := tOutTaskInsertArchiveSetup.create;
+        taskAdded                 := tTaskInsertArchiveSetupReport.create;
         taskAdded.selectedFile    := self.fileName;
         taskAdded.selectedFolder  := self.folderName;
         setLength(taskAdded.dummyTargets, 1);
@@ -414,7 +421,7 @@ implementation
         sTaskMgr.pushTaskToOutput(taskAdded);
     end;
 
-    procedure tOutTaskInsertArchiveSetup.exec;
+    procedure tTaskInsertArchiveSetupReport.exec;
     var
         targetLe: tLabeledEdit;
     begin
@@ -427,11 +434,6 @@ implementation
             targetLe.text := ansiReplaceStr(self.selectedFile, self.selectedFolder + '\', '')
         else
             targetLe.text := extractFileName(selectedFile);
-    end;
-
-    procedure tTaskRemoveArchiveSetup.exec;
-    begin
-        sFileMgr.removeArchiveSetup(self.handle, self.cmdRec);
     end;
 
     procedure tTaskDownload.onDownload(aSender: tObject; aWorkMode: tWorkMode; aWorkCount: Int64);

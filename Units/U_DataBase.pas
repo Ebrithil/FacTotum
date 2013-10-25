@@ -64,6 +64,7 @@ type
             function      insertdbRecord(var pRecord: tdbRecord): boolean;
             function      deletedbRecord(var pRecord: tdbRecord): boolean;
             function      updatedbRecord(var pRecord: tdbRecord): boolean;
+            function      getStoredHashList: tStringList;
             function      getSoftwareList(const searchIndb: boolean = false): tList;
             function      getSwRecordByGUID(const guid: integer; const searchIndb: boolean = false):  tSwRecord;
             function      getCmdRecordByGUID(const guid: integer; const searchIndb: boolean = false): tCmdRecord;
@@ -168,19 +169,20 @@ implementation
     begin
         if not( fileExists(m_dbNamePath) ) then
         begin
-             createEvent('DataBase non trovato.', eiAlert);
-             createEvent('Il DataBase verra'' ricreato.', eiAlert);
+             createEvent('DataBase: file non trovato.', eiAlert);
+             createEvent('DataBase: il file verra'' ricreato.', eiAlert);
         end;
 
         setDllDirectory('resources');
         try
             try
                 m_connector.open;
-                createEvent('Stabilita connessione al DataBase.', eiInfo);
+                createEvent('DataBase: connessione stabilita.', eiInfo);
                 self.rebuilddbStructure;
             except
                 on e: exception do
-                    createEvent('Impossibile connettersi al DataBase: ' + e.Message, eiError);
+                    createEvent('DataBase: impossibile stabilire la connessione: '
+                              + e.Message, eiError);
             end;
         finally
             setDllDirectory('');
@@ -191,10 +193,11 @@ implementation
     begin
         try
             m_connector.close;
-            createEvent('Terminata connessione al DataBase.', eiInfo);
+            createEvent('DataBase: connessione terminata.', eiInfo);
         except
             on e: exception do
-                createEvent('Impossibile disconnettersi dal DataBase: ' + e.message, eiError);
+                createEvent('DataBase: impossibile terminare la connessione: '
+                          + e.message, eiError);
         end;
     end;
 
@@ -664,6 +667,44 @@ implementation
         begin
             sqlData.free;
             createEvent('Database: Errore nella ricerca del Comando [' + intToStr(guid) + '].', eiError);
+        end;
+    end;
+
+    function dbManager.getStoredHashList: tStringList;
+    var
+        query:   string;
+        sqlData: tDataSet;
+    begin
+        result := tStringList.create;
+
+        query := format(
+          'SELECT %s '
+        + 'FROM %s '
+        + 'GROUP BY %s;',
+          [
+          // Select
+          dbStrings[dbFieldCmdHash],
+          // From
+          dbStrings[dbTableCommands],
+          // Group By
+          dbStrings[dbFieldCmdHash]
+          ]
+        );
+        sqlData := self.queryRes(query);
+
+        if not sqlData.isEmpty then
+        begin
+            sqlData.first;
+            while not(sqlData.eof) do
+            begin
+                result.add( sqlData.fieldByName(dbStrings[dbFieldCmdHash]).value );
+                sqlData.next;
+            end;
+        end
+        else
+        begin
+            sqlData.free;
+            createEvent('Database: nessun hash memorizzato.', eiAlert);
         end;
     end;
 
