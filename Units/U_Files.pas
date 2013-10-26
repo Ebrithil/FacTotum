@@ -14,6 +14,7 @@ type
        protected
             m_hasher:    tIdHash;
             m_stpFolder: string;
+            function     getArchiveDirList: tStringList;
             function     isArchived(hash: string): boolean;
             function     getFileHash(fileName: string): string; overload;
             function     getFileHash(fileData: tMemoryStream): string; overload;
@@ -128,6 +129,24 @@ implementation
     destructor tFileManager.Destroy;
     begin
         m_hasher.free;
+    end;
+
+    function tFileManager.getArchiveDirList: tStringList;
+    var
+        sr : tSearchRec;
+    begin
+        result := tStringList.create;
+        if findFirst(self.m_stpFolder + '*.*', faDirectory, sr) = 0 then
+        begin
+            repeat
+                if ( (sr.attr and faDirectory <> 0) and
+                     (sr.name <> '.')               and
+                     (sr.Name <> '..') )
+                then
+                    result.add(sr.name);
+            until findNext(sr) <> 0;
+            system.sysUtils.findClose(sr);
+        end;
     end;
 
     function tFileManager.fileExistsInPath(fileName: string): boolean;
@@ -319,7 +338,9 @@ implementation
     function tFileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
     begin
         if hash <> '' then
-            if self.executeFileOperation(handle, FO_DELETE, hash) then
+            if self.executeFileOperation(handle, FO_DELETE,
+                                         self.m_stpFolder + hash)
+            then
                 result := true
             else
             begin
@@ -386,6 +407,7 @@ implementation
     var
         i,
         counter:  word;
+        dirList,
         hashList: tStringList;
     begin
         createEvent('Archivio: manutenzione iniziata.',
@@ -393,12 +415,15 @@ implementation
 
         i        := 0;
         counter  := 0;
+        dirList  := self.getArchiveDirList;
         hashList := sdbMgr.getStoredHashList;
-        for i := 0 to pred(hashList.count) do
-            if not self.isArchived(hashList[i]) then
-                if self.removeArchiveSetup(handle, hashList[i]) then
+        for i := 0 to pred(dirList.count) do
+            if hashList.indexOf(dirList[i]) = -1 then
+                if self.removeArchiveSetup(handle, dirList[i]) then
                     inc(counter);
 
+        dirList.free;
+        hashList.free;
         createEvent('Archivio: manutenzione completata, rimossi '
                    + intToStr(counter) + ' archivi inutilizzati.', eiInfo);
     end;
