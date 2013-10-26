@@ -284,6 +284,8 @@ implementation
         data.saveToFile(tmpFile);
         data.free;
 
+        // Se e' impossibile trovare il vecchio file, allora procedo con un
+        // nuovo inserimento
         if not self.isAvailable(cmdRec.cmmd, cmdRec.hash) then
             if not self.insertArchiveSetup(handle, cmdRec, tmpFile) then
                 exit
@@ -291,41 +293,43 @@ implementation
         else if (cmdRec.hash <> '') then
         begin
             // Rinomino il vecchio eseguibile del comando
-            if not self.executeFileOperation(handle, FO_RENAME, cmdRec.cmmd, cmdRec.cmmd + '.old') then
+            if not self.executeFileOperation(handle, FO_RENAME,
+                                             m_stpFolder + cmdRec.cmmd,
+                                             m_stpFolder + cmdRec.cmmd + '.old')
+            then
                 exit;
 
             // Sposto il nuovo eseguibile nella vecchia cartella
-            if not self.executeFileOperation(handle, FO_MOVE, getEnvironmentVariable('TEMP') + '\' + fileName, m_stpFolder + cmdRec.hash + '\' + fileName) then
+            if not self.executeFileOperation(handle, FO_MOVE,
+                                             getEnvironmentVariable('TEMP')
+                                           + '\' + fileName, m_stpFolder
+                                           + cmdRec.hash + '\' + fileName)
+            then
                 exit;
 
             // Rinomino la vecchia cartella con il nuovo hash
-            if not self.executeFileOperation(handle, FO_RENAME, m_stpFolder + cmdRec.hash, m_stpFolder + newHash) then
+            if not self.executeFileOperation(handle, FO_RENAME,
+                                             m_stpFolder + cmdRec.hash,
+                                             m_stpFolder + newHash)
+            then
                 exit;
 
             // Aggiorno il database con le nuove informazioni
             cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, cmdRec.cmmd, fileName);
         end
-        else
-        begin
-            if not self.executeFileOperation(handle, FO_MOVE, tmpFile, m_stpFolder + newHash + '\' + fileName) then
-                exit;
+        else if not self.executeFileOperation(handle, FO_MOVE, tmpFile,
+                                              m_stpFolder + newHash
+                                            + '\' + fileName)
+             then
+                 exit;
 
-            // Aggiorno il database con le nuove informazioni
-            cmdRec.cmmd := fileName;
-        end;
-        cmdRec.hash := newHash;
-        sdbMgr.updatedbRecord( tDBRecord(cmdRec) );
-
-        // Aggiorno allo stesso modo tutti gli altri comandi con lo stesso hash
+        // Aggiorno in database tutti i comandi con lo stesso hash
         cmdRecList := self.getCmdRecordsByHash(newHash);
         for i := 0 to pred( cmdRecList.count ) do
         begin
-            tCmdRecord(cmdRecList[i]).hash := cmdRec.hash;
+            tCmdRecord(cmdRecList[i]).hash := newHash;
             tCmdRecord(cmdRecList[i]).vers := cmdRec.vers;
-            tCmdRecord(cmdRecList[i]).cmmd := ansiReplaceStr(
-                                                  tCmdRecord(cmdRecList[i]).cmmd,
-                                                  tCmdRecord(cmdRecList[i]).cmmd,
-                                                  fileName);
+            tCmdRecord(cmdRecList[i]).cmmd := fileName;
 
             tmpRec := tDBRecord(cmdRecList[i]);
             sdbMgr.updatedbRecord( tmpRec );

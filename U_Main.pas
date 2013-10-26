@@ -400,12 +400,14 @@ implementation
         begin
             // Se il file esiste nella path, la cartella non puo' essere
             // importata, ed e' sufficiente aggiornare il campo del comando
-            if sFileMgr.fileExistsInPath(selectedFile) then
+            if sFileMgr.fileExistsInPath( extractFileName(selectedFile) ) then
             begin
                 selectedFolder  := '';
+                tCmdRecord(tvConfig.selected.data).hash := '';
                 leCmmdInfo.text := extractFileName(selectedFile);
                 leCmmdInfoExit(sender);
                 leCmmdInfo.setFocus;
+                exit;
             end;
 
             // La cartella deve contenere il file, oppure non verrà considerata
