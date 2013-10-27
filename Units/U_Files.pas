@@ -272,7 +272,7 @@ implementation
         tmpFile:    string;
         cmdRecList: tList;
     begin
-        result   := true;
+        result   := false;
         newHash  := self.getFileHash(data);
 
         // Nome di default
@@ -284,47 +284,48 @@ implementation
         data.saveToFile(tmpFile);
         data.free;
 
-        // Se e' impossibile trovare il vecchio file, allora procedo con un
-        // nuovo inserimento
-        if not self.isAvailable(cmdRec.cmmd, cmdRec.hash) then
-            if not self.insertArchiveSetup(handle, cmdRec, tmpFile) then
-                exit
-            else
-        else if (cmdRec.hash <> '') then
+        // Se e' impossibile trovare il vecchio file, o se è nella path,
+        // allora procedo con un nuovo inserimento
+        if ( (cmdRec.hash <> '') and not self.isArchived(cmdRec.hash) ) or
+              self.fileExistsInPath(cmdRec.cmmd)
+        then
+        begin
+            result:= self.insertArchiveSetup(handle, cmdRec, tmpFile);
+            exit;
+        end
+        // Altrimenti procedo con l'aggiornamento
+        else
         begin
             // Rinomino il vecchio eseguibile del comando
-            if not self.executeFileOperation(handle, FO_RENAME,
-                                             m_stpFolder + cmdRec.cmmd,
-                                             m_stpFolder + cmdRec.cmmd + '.old')
+            if not self.executeFileOperation(
+                handle, FO_RENAME,
+                m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd,
+                m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd + '.old'
+            )
             then
                 exit;
 
             // Sposto il nuovo eseguibile nella vecchia cartella
-            if not self.executeFileOperation(handle, FO_MOVE,
-                                             getEnvironmentVariable('TEMP')
-                                           + '\' + fileName, m_stpFolder
-                                           + cmdRec.hash + '\' + fileName)
+            if not self.executeFileOperation(
+                handle, FO_MOVE,
+                getEnvironmentVariable('TEMP') + '\' + fileName,
+                m_stpFolder + cmdRec.hash + '\' + fileName
+            )
             then
                 exit;
 
             // Rinomino la vecchia cartella con il nuovo hash
-            if not self.executeFileOperation(handle, FO_RENAME,
-                                             m_stpFolder + cmdRec.hash,
-                                             m_stpFolder + newHash)
+            if not self.executeFileOperation(
+                handle, FO_RENAME,
+                m_stpFolder + cmdRec.hash,
+                m_stpFolder + newHash
+            )
             then
                 exit;
-
-            // Aggiorno il database con le nuove informazioni
-            cmdRec.cmmd := ansiReplaceStr(cmdRec.cmmd, cmdRec.cmmd, fileName);
-        end
-        else if not self.executeFileOperation(handle, FO_MOVE, tmpFile,
-                                              m_stpFolder + newHash
-                                            + '\' + fileName)
-             then
-                 exit;
+        end;
 
         // Aggiorno in database tutti i comandi con lo stesso hash
-        cmdRecList := self.getCmdRecordsByHash(newHash);
+        cmdRecList := self.getCmdRecordsByHash(cmdRec.hash);
         for i := 0 to pred( cmdRecList.count ) do
         begin
             tCmdRecord(cmdRecList[i]).hash := newHash;
@@ -332,26 +333,28 @@ implementation
             tCmdRecord(cmdRecList[i]).cmmd := fileName;
 
             tmpRec := tDBRecord(cmdRecList[i]);
-            sdbMgr.updatedbRecord( tmpRec );
+            if not sdbMgr.updatedbRecord( tmpRec ) then
+            begin
+                cmdRecList.free;
+                exit;
+            end;
         end;
-
         cmdRecList.free;
+
         result := true;
     end;
 
     function tFileManager.removeArchiveSetup(handle: tHandle; hash: string): boolean;
     begin
+        result := false;
         if hash <> '' then
-            if self.executeFileOperation(handle, FO_DELETE,
-                                         self.m_stpFolder + hash)
-            then
-                result := true
-            else
-            begin
-                result := false;
+        begin
+            result := self.executeFileOperation(handle, FO_DELETE,
+                                                self.m_stpFolder + hash);
+            if not result then
                 createEvent('Archivio: impossibile eliminare la cartella'
                           + '[' + hash + '].', eiError);
-            end;
+        end;
     end;
 
     function tFileManager.isArchived(hash: string): boolean;
@@ -384,6 +387,7 @@ implementation
     var
         soFileOperation: tSHFileOpStruct;
         errorCode:       integer;
+        errorStr:        string;
     begin
         fillChar( soFileOperation, sizeOf(soFileOperation), #0 );
 
@@ -397,10 +401,14 @@ implementation
         end;
 
         errorCode := shFileOperation(soFileOperation);
+        errorStr  := intToHex(errorCode, 8);
+        if errorCode <> 0 then
+            while errorStr[1] = '0' do
+                delete(errorStr, 1, 1);
 
         if ( (errorCode <> 0) or soFileOperation.fAnyOperationsAborted ) then
         begin
-            createEvent('Errore 0x' + intToHex(errorCode, 8) + ': impossibile eseguire l''operazione ' + intToStr(fileOP) + ' [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
+            createEvent('Errore 0x' + errorStr + ': impossibile eseguire l''operazione ' + intToStr(fileOP) + ' [' + soFileOperation.pFrom + '] in [' + soFileOperation.pTo + ']', eiError);
             result := false;
         end
         else
