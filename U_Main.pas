@@ -95,13 +95,18 @@ type
             procedure rgArchInfoExit(sender: tObject);
             procedure ctrlInfoKeyPress(sender: tObject; var key: char);
             procedure tvConfigChange(sender: tObject; node: tTreeNode);
-            procedure tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
-            procedure tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
-            procedure leVersInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
+            procedure tvConfigEdited(sender: tObject; node: tTreeNode;
+                var s: string);
+            procedure tvConfigMouseDown(sender: tObject; button: tMouseButton;
+                shift: tShiftState; x, y: integer);
+            procedure leVersInfoKeyDown(sender: tObject; var key: word;
+                shift: tShiftState);
             procedure leVersInfoKeyPress(sender: tObject; var key: char);
-            procedure leVersInfoContextPopup(sender: tObject; mousePos: tPoint; var handled: boolean);
+            procedure leVersInfoContextPopup(sender: tObject; mousePos: tPoint;
+                var handled: boolean);
             procedure formClose(sender: tObject; var action: tCloseAction);
-            procedure lvUpdateMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+            procedure lvUpdateMouseDown(sender: tObject; button: tMouseButton;
+                shift: tShiftState; x, y: integer);
 
         protected
             lastNode: tTreeNode;
@@ -127,6 +132,7 @@ implementation
         i:        integer;
         node:     tTreeNode;
         swRec:    tSwRecord;
+        cmdRec:   tCmdRecord;
     begin
         tvConfig.items.clear;
 
@@ -146,7 +152,11 @@ implementation
                 continue;
 
             for j := 0 to pred(swRec.commands.count) do
-                tvConfig.items.addChild( node, tCmdRecord( swRec.commands[j]).name ).data := tCmdRecord(swRec.commands[j]);
+            begin
+                cmdRec :=  tCmdRecord(swRec.commands[j]);
+                with tvConfig.items.addChild(node, cmdRec.name) do
+                    data := cmdRec;
+            end;
 
             node.expand(true);
         end;
@@ -175,14 +185,16 @@ implementation
             begin
                 cmdRec  := cList.items[j];
 
-                if (cmdRec.uURL = '') or (cmdRec.vers = '') then // TODO: Da rimuovere quando sarà previsto l'update manuale
+                // TODO: Da rimuovere quando sarà previsto l'update manuale
+                if (cmdRec.uURL = '') or (cmdRec.vers = '') then
                     continue;
 
                 with lvUpdate.items.add do
                 begin
                     data    := cmdRec;
                     caption := '';
-                    subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) + ']' );
+                    subItems.add( swRec.name + ' [' + intToStr(cmdRec.guid) +
+                        ']' );
                     subItems.add(cmdRec.vers);
                     subItems.add('');
                     subItems.add('');
@@ -198,9 +210,10 @@ implementation
                     progRec               := displayRect(drBounds);
 
                     for k := 0 to pred( integer(lvColProgress) ) do
-                        progRec.left := progRec.left + lvUpdate.columns[k].width;
+                        inc(progRec.left, lvUpdate.columns[k].width);
 
-                    progRec.right      := progRec.left + lvUpdate.columns[ integer(lvColProgress) ].width;
+                    progRec.right      := progRec.left +
+                        lvUpdate.columns[integer(lvColProgress)].width;
                     progBar.boundsRect := progRec;
 
                     stateIndex := tImageIndex(eiDotYellow);
@@ -238,15 +251,18 @@ implementation
 // Start implementation of idle operations
 //------------------------------------------------------------------------------
 
-    procedure tfFacTotum.applicationIdleEvents(sender: tObject; var done: boolean);
+    procedure tfFacTotum.applicationIdleEvents(sender: tObject;
+        var done: boolean);
     var
         i,
         updComp: integer;
         chkJobs: boolean;
         taskOut: tTaskOutput;
+        newPos:  extended;
     begin
         // Visualizza il carico di lavoro della ThreadPool
-        pbEvents.position := round(sTaskMgr.getBusyThreadsCount * (pbEvents.max / sTaskMgr.getThreadsCount));
+        newPos              := pbEvents.max / sTaskMgr.getThreadsCount;
+        pbEvents.position   := round(sTaskMgr.getBusyThreadsCount * newPos);
         lEventsProg.caption := intToStr(pbEvents.position) + '%';
 
         // Visualizza l'avanzamento della ricerca aggiornamenti
@@ -254,12 +270,15 @@ implementation
         if lvUpdate.items.count > 0 then
         begin
             for i := 0 to pred(lvUpdate.items.count) do
-                if trim(lvUpdate.items[i].subItems[ pred( integer(lvColUV) ) ]) <> '' then
-                    inc(updComp);
+                with lvUpdate.items[i] do
+                    if trim(subItems[pred( integer(lvColUV) )]) <> '' then
+                        inc(updComp);
 
             pbUpdate.max        := lvUpdate.items.count;
             pbUpdate.position   := updComp;
-            lUpdateProg.caption := floatToStr( trunc( (pbUpdate.position / pbUpdate.max) * 100 ) ) + '%';
+
+            newPos              := (pbUpdate.position / pbUpdate.max) * 100;
+            lUpdateProg.caption := floatToStr( trunc(newpos) ) + '%';
         end;
 
         if not bUpdate.enabled then
@@ -346,11 +365,14 @@ implementation
         // Componenti utilizzabili solo da Windows Vista in poi
         if tOSVersion.major >= 6 then
         begin
-            odSelectCombo                   := tFileOpenDialog.create(self);
-            odSelectCombo.title             := 'Seleziona il file d''installazione';
-            odSelectCombo.options           := [fdoAllNonStorageItems, fdoFileMustExist];
-            odSelectCombo.defaultFolder     := getCurrentDir;
-            odSelectCombo.okButtonLabel     := 'Seleziona';
+            odSelectCombo               := tFileOpenDialog.create(self);
+            with odSelectCombo do
+            begin
+                title         := 'Seleziona il file d''installazione';
+                options       := [fdoAllNonStorageItems, fdoFileMustExist];
+                defaultFolder := getCurrentDir;
+                okButtonLabel := 'Seleziona';
+            end;
             with odSelectCombo.fileTypes.add do
             begin
                displayName := 'File eseguibili';
@@ -363,36 +385,46 @@ implementation
             end;
 
             if odSelectCombo.execute then
-                selectedFile                := odSelectCombo.fileName;
+                selectedFile := odSelectCombo.fileName;
 
-            if messageDlg('Vuoi aggiungere una cartella d''installazione?', mtConfirmation, mbYesNo, 0) = mrYes then
+            with odSelectCombo do
             begin
-                odSelectCombo.title         := 'Seleziona la cartella d''installazione';
-                odSelectCombo.options       := [fdoPickFolders, fdoPathMustExist];
-                odSelectCombo.defaultFolder := extractFileDir(selectedFile);
-                odSelectCombo.fileTypes.clear;
+                if messageDlg('Vuoi aggiungere una cartella d''installazione?',
+                    mtConfirmation, mbYesNo, 0) = mrYes then
+                begin
+                    title         := 'Seleziona la cartella d''installazione';
+                    options       := [fdoPickFolders, fdoPathMustExist];
+                    defaultFolder := extractFileDir(selectedFile);
+                    fileTypes.clear;
 
-                if odSelectCombo.execute then
-                   selectedFolder           := odSelectCombo.fileName;
+                    if execute then
+                       selectedFolder := fileName;
+                end;
+
+                free;
             end;
-
-            odSelectCombo.free;
         end
         else  // Altrimenti, rollback a componenti compatibili con XP
         begin
-            odSelectFile            := tOpenDialog.create(self);
-            odSelectFile.title      := 'Seleziona il file d''installazione';
-            odSelectFile.filter     := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
-            odSelectFile.options    := [ofFileMustExist];
-            odSelectFile.initialDir := getCurrentDir;
+            odSelectFile := tOpenDialog.create(self);
+            with odSelectFile do
+            begin
+                title      := 'Seleziona il file d''installazione';
+                filter     := 'File eseguibili|*.exe; *.msi|Tutti i file|*.*';
+                options    := [ofFileMustExist];
+                initialDir := getCurrentDir;
 
-            if odSelectFile.execute then
-               selectedFile         := odSelectFile.fileName;
+                if execute then
+                   selectedFile := fileName;
 
-            if messageDlg('Vuoi aggiungere una cartella d''installazione?', mtConfirmation, mbYesNo, 0) = mrYes then
-                selectDirectory('Seleziona la cartella d''installazione', getEnvironmentVariable('SYSTEMDRIVE') + '\', selectedFolder);
+                if messageDlg('Vuoi aggiungere una cartella d''installazione?',
+                    mtConfirmation, mbYesNo, 0) = mrYes then
+                    selectDirectory('Seleziona la cartella d''installazione',
+                    getEnvironmentVariable('SYSTEMDRIVE') +
+                    '\', selectedFolder);
 
-            odSelectFile.free;
+                free;
+            end;
         end;
 
         // Verifico che l'utente non abbia chiuso la finestra senza selezionare
@@ -483,21 +515,28 @@ implementation
         taskInsert   := tTaskRecordOP.create;
         command      := tCmdRecord.create;
 
-        if assigned(tvConfig.selected) and assigned(tvConfig.selected.parent) then
+        if assigned(tvConfig.selected)        and
+           assigned(tvConfig.selected.parent) then
         begin
             taskInsert.pRecord    := command;
             taskInsert.tOperation := DOR_INSERT;
-            command.swid          := tSwRecord(tvConfig.selected.parent.data).guid;
-            command.prty          := tSwRecord(tvConfig.selected.parent.data).commands.count;
+            with tSwRecord(tvConfig.selected.parent.data) do
+            begin
+                command.swid := guid;
+                command.prty := commands.count;
+            end;
         end
         else
         begin
-            taskInsert.pRecord                     := tSwRecord.create;
-            taskInsert.tOperation                  := DOR_INSERT;
-            tSwRecord(taskInsert.pRecord).name     := '<Nuovo Software>';
-            tSwRecord(taskInsert.pRecord).commands := tList.create;
-            command.prty                           := 0;
-            tSwRecord(taskInsert.pRecord).commands.add(command);
+            taskInsert.pRecord    := tSwRecord.create;
+            taskInsert.tOperation := DOR_INSERT;
+            command.prty          := 0;
+            with tSwRecord(taskInsert.pRecord) do
+            begin
+                name     := '<Nuovo Software>';
+                commands := tList.create;
+                commands.add(command);
+            end;
         end;
 
         command.arch := byte(archNone);
@@ -517,22 +556,27 @@ implementation
     var
         curRow:       integer;
         taskDownload: tTaskDownload;
+        selected:     tListItem;
     begin
         lvUpdate.selected.stateIndex := tImageIndex(eiDotYellow);
+        taskDownload                 := tTaskDownload.create;
+        selected                     := lvUpdate.selected;
 
-        taskDownload              := tTaskDownload.create;
-        taskDownload.formHandle   := handle;
-        taskDownload.pRecord      := lvUpdate.selected.data;
-        taskDownload.pRecord.vers := lvUpdate.selected.subItems[pred( integer(lvColUV) )];
+        with taskDownload do
+        begin
+            formHandle   := handle;
+            pRecord      := selected.data;
+            pRecord.vers := selected.subItems[pred( integer(lvColUV) )];
 
-        curRow := lvUpdate.selected.index;
-        setLength(taskDownload.dummyTargets, 2);
-        taskDownload.dummyTargets[0] := tProgressBar( lvUpdate.controls[curRow] );
-        taskDownload.dummyTargets[1] := lvUpdate.selected;
+            curRow := selected.index;
+            setLength(dummyTargets, 2);
+            dummyTargets[0] := tProgressBar(lvUpdate.controls[curRow]);
+            dummyTargets[1] := selected;
+        end;
 
         sTaskMgr.pushTaskToInput(taskDownload);
 
-        lvUpdate.selected.subitems[pred( integer(lvColStatus) )] := '0%';
+        selected.subitems[pred( integer(lvColStatus) )] := '0%';
     end;
 
     procedure tfFacTotum.miDeleteClick(sender: tObject);
@@ -563,10 +607,11 @@ implementation
 
     procedure tfFacTotum.pmUpdatePopup(sender: tObject);
     begin
-        if assigned(lvUpdate.selected) then
-            miUpdate.enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed)
-        else
-            miUpdate.enabled := false;
+        with miUpdate do
+            if assigned(lvUpdate.selected) then
+                enabled := lvUpdate.selected.stateIndex = tImageIndex(eiDotRed)
+            else
+                enabled := false;
     end;
 
     procedure tfFacTotum.pmSoftwarePopup(sender: tObject);
@@ -593,22 +638,25 @@ implementation
     var
         tmpNode:    tTreeNode;
         taskUpdate: tTaskRecordOP;
+        cmdRec:     tCmdRecord;
     begin
         if assigned(self.lastNode) then
             tmpNode := self.lastNode
         else
             tmpNode := tvConfig.selected;
 
+         cmdRec := tCmdRecord(tmpNode.data);
+
         leCmmdInfo.text := trim(leCmmdInfo.text);
-        if tCmdRecord(tmpNode.data).cmmd <> leCmmdInfo.text then
-            if sFileMgr.isAvailable(leCmmdInfo.text, tCmdRecord(tmpNode.data).hash) or
-               (leCmmdInfo.text = '')                                              then
+        if cmdRec.cmmd <> leCmmdInfo.text then
+            if sFileMgr.isAvailable(leCmmdInfo.text, cmdRec.hash) or
+               (leCmmdInfo.text = '')                             then
             begin
                 taskUpdate := tTaskRecordOP.create;
 
-                tCmdRecord(tmpNode.data).cmmd := leCmmdInfo.text;
-                taskUpdate.pRecord            := tmpNode.data;
-                taskUpdate.tOperation         := DOR_UPDATE;
+                cmdRec.cmmd           := leCmmdInfo.text;
+                taskUpdate.pRecord    := tmpNode.data;
+                taskUpdate.tOperation := DOR_UPDATE;
 
                 setLength(taskUpdate.dummyTargets, 2);
                 taskUpdate.dummyTargets[0] := tvConfig;
@@ -804,7 +852,8 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode; var s: string);
+    procedure tfFacTotum.tvConfigEdited(sender: tObject; node: tTreeNode;
+        var s: string);
     var
         taskUpdate: tTaskRecordOP;
     begin
@@ -824,7 +873,8 @@ implementation
         sTaskMgr.pushTaskToInput(taskUpdate);
     end;
 
-    procedure tfFacTotum.tvConfigMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+    procedure tfFacTotum.tvConfigMouseDown(sender: tObject;
+        button: tMouseButton; shift: tShiftState; x, y: integer);
     var
         node: tTreeNode;
     begin
@@ -837,7 +887,8 @@ implementation
         end;
     end;
 
-    procedure tfFacTotum.leVersInfoKeyDown(sender: tObject; var key: word; shift: tShiftState);
+    procedure tfFacTotum.leVersInfoKeyDown(sender: tObject;
+        var key: word; shift: tShiftState);
     begin
         // Disabilito l'utilizzo di alcuni tasti
         if key in [46] then
@@ -864,16 +915,21 @@ implementation
 
         chrBef := #0;
         chrAft := #0;
-        // Se possibile, ricavo i caratteri all'inizio e alla fine della selezione
+        // Ricavo i caratteri all'inizio e alla fine della selezione
         if (leVersInfo.selStart > 0) then
-            chrBef := leVersInfo.text[leVersInfo.selStart];
-        if (leVersInfo.selStart + leVersInfo.selLength) < length(leVersInfo.text) then
-            chrAft := leVersInfo.text[succ(leVersInfo.selStart + leVersInfo.selLength)];
+            chrBef :=
+            leVersInfo.text[leVersInfo.selStart];
+        if (leVersInfo.selStart + leVersInfo.selLength) <
+            length(leVersInfo.text) then
+            chrAft :=
+            leVersInfo.text[succ(leVersInfo.selStart + leVersInfo.selLength)];
 
         // Il primo carattere non può essere un punto
-        if ( (leVersInfo.selStart = 0)  and (key = '.') )             or
-           ( (leVersInfo.selStart = 0)  and (leVersInfo.selLength > 0) and (chrAft = '.') and (key = #8) ) or
-           ( (leVersInfo.selStart <= 1) and (leVersInfo.selLength = 0) and (chrAft = '.') and (key = #8) ) then
+        if ( (leVersInfo.selStart = 0)  and (key = '.') )              or
+           ( (leVersInfo.selStart = 0)  and (leVersInfo.selLength > 0) and
+           (chrAft = '.') and (key = #8) )                             or
+           ( (leVersInfo.selStart <= 1) and (leVersInfo.selLength = 0) and
+           (chrAft = '.') and (key = #8) )                             then
         begin
             key := #0;
             exit;
@@ -892,19 +948,22 @@ implementation
         end;
         // Cancellando, non posso unire due punti
         if ( (key = #8) and (pred(leVersInfo.selStart) > 0) ) then
-            if ( (leVersInfo.text[pred(leVersInfo.selStart)] = '.') and (chrAft = '.') ) then
+            if ( (leVersInfo.text[pred(leVersInfo.selStart)] = '.') and
+               (chrAft = '.') ) then
             begin
                 key := #0;
                 exit;
             end;
     end;
 
-    procedure tfFacTotum.lvUpdateMouseDown(sender: tObject; button: tMouseButton; shift: tShiftState; x, y: integer);
+    procedure tfFacTotum.lvUpdateMouseDown(sender: tObject;
+        button: tMouseButton; shift: tShiftState; x, y: integer);
     begin
         lvUpdate.selected := lvUpdate.getItemAt(x, y);
     end;
 
-    procedure tfFacTotum.leVersInfoContextPopup(sender: tObject; mousePos: TPoint; var handled: boolean);
+    procedure tfFacTotum.leVersInfoContextPopup(sender: tObject;
+        mousePos: TPoint; var handled: boolean);
     begin
         handled := true;
     end;
@@ -914,7 +973,8 @@ implementation
         if sTaskMgr.getBusyThreadsCount > 0 then
             if messageDlg('Ci sono ancora dei processi in esecuzione.'
                         + #13 + #13
-                        + 'Vuoi interromperli subito?', mtWarning, mbYesNo, 0) = mrYes then
+                        + 'Vuoi interromperli subito?',
+                        mtWarning, mbYesNo, 0) = mrYes then
                 sTaskMgr.Destroy(true)
             else
                 sTaskMgr.Destroy
