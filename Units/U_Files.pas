@@ -16,11 +16,12 @@ type
             m_stpFolder: string;
             function     getArchiveDirList: tStringList;
             function     isArchived(hash: string): boolean;
+            function     getElemCount(const path: string): word;
             function     getFileHash(fileName: string): string; overload;
             function     getFileHash(fileData: tMemoryStream): string; overload;
             function     getCmdRecordsByHash(const hash: string): tList;
        public
-            constructor  create(useMD5: boolean = false; stpFolder: string = 'Setup');
+            constructor  create(useMD5: boolean = false; stpFolder: string = 'setup');
             destructor   Destroy; override;
             procedure    cleanupArchive(handle: tHandle);
             procedure    runCommand(handle: tHandle; cmd: tCmdRecord);
@@ -109,7 +110,7 @@ var
 
 implementation
 
-    constructor tFileManager.create(useMD5: boolean = false; stpFolder: string = 'Setup');
+    constructor tFileManager.create(useMD5: boolean = false; stpFolder: string = 'setup');
     begin
         self.m_stpFolder := includeTrailingPathDelimiter(stpFolder);
         if not( directoryExists(self.m_stpFolder) ) then
@@ -277,7 +278,7 @@ implementation
 
         // Nome di default
         if fileName = '' then
-            fileName := 'Setup.exe';
+            fileName := 'setup.exe';
 
         // Salvo il file scaricato in temp per lo spostamento
         tmpFile := includeTrailingPathDelimiter( getEnvironmentVariable('TEMP') ) + fileName;
@@ -296,14 +297,41 @@ implementation
         // Altrimenti procedo con l'aggiornamento
         else
         begin
-            // Rinomino il vecchio eseguibile del comando
+            // Svuoto la cartella dai vecchi backup
             if not self.executeFileOperation(
-                handle, FO_RENAME,
-                m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd,
-                m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd + '.old'
+                handle, FO_DELETE,
+                m_stpFolder + cmdRec.hash + '\*.old'
             )
             then
                 exit;
+            if directoryExists(m_stpFolder + cmdRec.hash + '\old') then
+                if not self.executeFileOperation(
+                    handle, FO_DELETE,
+                    m_stpFolder + cmdRec.hash + '\old'
+                )
+                then
+                    exit;
+
+            // Archivio i vecchi files per avere un backup
+            if self.getElemCount(m_stpFolder + cmdRec.hash) <= 1 then
+                // Se e' un singolo file lo rinomino
+                if not self.executeFileOperation(
+                    handle, FO_RENAME,
+                    m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd,
+                    m_stpFolder + cmdRec.hash + '\' + cmdRec.cmmd + '.old'
+                )
+                then
+                    exit
+                else
+            else
+                // Altrimenti sposto il contenuto nella cartella \old
+                if not self.executeFileOperation(
+                    handle, FO_MOVE,
+                    m_stpFolder + cmdRec.hash + '\*',
+                    m_stpFolder + cmdRec.hash + '\old'
+                )
+                then
+                    exit;
 
             // Sposto il nuovo eseguibile nella vecchia cartella
             if not self.executeFileOperation(
@@ -362,6 +390,27 @@ implementation
         result := directoryExists(self.m_stpFolder + hash);
     end;
 
+    function tFileManager.getElemCount(const path: string): word;
+    var
+      sr: tSearchRec;
+    begin
+        result := 0;
+
+        if findFirst(
+            includeTrailingPathDelimiter(path) + '*.*',
+            faAnyFile,
+            sr
+        ) = 0
+        then
+        begin
+            repeat
+                if (sr.name <> '.') and (sr.Name <> '..') then
+                    inc(result);
+            until findNext(sr) <> 0;
+            system.sysUtils.findClose(sr);
+        end;
+    end;
+
     function tFileManager.isAvailable(const fileName, fileHash: string): boolean;
     begin
         result := fileExists(self.m_stpFolder + fileHash + '\' + fileName) or
@@ -397,10 +446,13 @@ implementation
             wFunc  := fileOP;
             pFrom  := pchar(pathFrom + #0);
             pTo    := pchar(pathTo + #0);
-            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
+            fFlags := FOF_NOCONFIRMATION or FOF_NOCONFIRMMKDIR or
+                      FOF_SIMPLEPROGRESS or FOF_NOERRORUI;
         end;
 
         errorCode := shFileOperation(soFileOperation);
+        if errorCode = 118 then
+            errorCode := 0;  // Bruttissimo hack da capire e sistemare ASAP
         errorStr  := intToHex(errorCode, 8);
         if errorCode <> 0 then
             while errorStr[1] = '0' do
@@ -425,7 +477,6 @@ implementation
         createEvent('Archivio: manutenzione iniziata.',
                     eiInfo);
 
-        i        := 0;
         counter  := 0;
         dirList  := self.getArchiveDirList;
         hashList := sdbMgr.getStoredHashList;
