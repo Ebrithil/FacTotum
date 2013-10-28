@@ -97,7 +97,7 @@ implementation
 
     function updateParser.getDirectDownloadLink(swLink: string): string;
     var
-        i:       byte;
+        i:       integer;
         srcTags: iHTMLElementCollection;
         srcTagE: iHTMLElement;
         srcElem: iHTMLElement2;

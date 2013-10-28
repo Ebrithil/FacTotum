@@ -288,7 +288,7 @@ implementation
         // Se e' impossibile trovare il vecchio file, o se è nella path,
         // allora procedo con un nuovo inserimento
         if ( (cmdRec.hash <> '') and not self.isArchived(cmdRec.hash) ) or
-              self.fileExistsInPath(cmdRec.cmmd)
+              self.fileExistsInPath(cmdRec.cmmd) or (cmdRec.hash = '')
         then
         begin
             result:= self.insertArchiveSetup(handle, cmdRec, tmpFile);
@@ -470,7 +470,7 @@ implementation
     procedure tFileManager.cleanupArchive(handle: tHandle);
     var
         i,
-        counter:  word;
+        counter:  integer;
         dirList,
         hashList: tStringList;
     begin
