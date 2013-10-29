@@ -211,7 +211,7 @@ implementation
         
         while (waitSt = WAIT_TIMEOUT) do
         begin
-            waitSt := waitForSingleObject(exInfo.hProcess, defaultWaitCommandWarningTime);          
+            waitSt := waitForSingleObject(exInfo.hProcess, defaultWaitCommandWarningTime);
 
             if waitSt = WAIT_OBJECT_0 then
                 break;
@@ -618,10 +618,11 @@ implementation
 
     procedure tTaskCheckStuck.exec;
     begin
-        if (self.process = 0) and
-           assigned(self.window)   then
+        if (self.process = 0) then
         begin
-            self.window.close;
+            if assigned(self.window) then
+                self.window.close;
+
             exit;
         end;
                 
